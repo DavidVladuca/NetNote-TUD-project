@@ -1,9 +1,9 @@
 | Key | Value |
 | --- | --- |
 | Date : | 27.11.2024 |
-| Time : | 15:30-16:30 | (if according to time duration estimation: 14:45-16:05)
+| Time : | 15:30-16:50 | 
 | Location : | DW PC1 Cubicle 9 |
-| Chair | James Sylwester |
+| Chair | Mario Gonzalez Piñeiro |
 | Minute Taker | Tom Holinka |
 
 | Attendees : | David Vladucs, Andrei Tudor, Mario Gonzalez Piniero, Lachezar Marinov, Tom Holinka, James Sylwester |
@@ -22,7 +22,7 @@
         - present to TA for general feedback
         - ensure that everything is submitted in the correct location
         - discuss concerns (if any)
-    - < Agenda - item 3> Brainstorm potential additions to the app and generate code/UML diagrams (20 mins)
+    - < Agenda - item 3> Brainstorm potential additions to the app and generate code/UML diagrams (30-40 mins)
 
 - Summarize action points : Who , what , when ? (3 min )
 - Feedback round : What went well and what can be improved next time ? (5 min )
