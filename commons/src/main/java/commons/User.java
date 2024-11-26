@@ -32,6 +32,7 @@ public class User {
      * @param name - name of the User
      */
     public User(String name) {
+        this.name = name;
         this.notes = new ArrayList<>();
     }
 
