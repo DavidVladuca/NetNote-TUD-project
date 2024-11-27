@@ -2,14 +2,10 @@ package commons;
 
 import static org.apache.commons.lang3.builder.ToStringStyle.MULTI_LINE_STYLE;
 
+import jakarta.persistence.*;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 
 @Entity
 public class Note {
@@ -17,7 +13,9 @@ public class Note {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     public long id;
-
+    @ManyToOne
+    @JoinColumn(name = "user_id") // Adjust the column name as needed
+    private User user;
     public String contents;
 
     @SuppressWarnings("unused")
