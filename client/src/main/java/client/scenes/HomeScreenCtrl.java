@@ -23,22 +23,57 @@ public class HomeScreenCtrl {
     public TextField searchF;
     public WebView markDownOutput;
 
+    public String title = "";
+    public String content = "";
+
     public final Parser parser = Parser.builder().build();
     public final HtmlRenderer renderer = HtmlRenderer.builder().build();
 
     /**
      * This method initializes the controller
-     * and sets up the listener for the text area that the user types in.
+     * and sets up the listener for the text area that the user types in. - based on other methods it calls
      */
     @FXML
     public void initialize() {
+
+        markDownTitle();
+
+        markDownContent();
+
+    }
+
+    /**
+     * This method adds the listener to the title field. It automatically converts the content to
+     * a heading of type h1, because it is a title
+     */
+    public void markDownTitle() {
+        noteTitleF.textProperty().addListener(new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                // MD -> HTML
+                title = "<h1>" + renderer.render(parser.parse(newValue)) + "</h1>";
+                // Adds title and content together so it's not overridden
+                String titleAndContent = title + content;
+                // WebView is updated based on the HTML file
+                markDownOutput.getEngine().loadContent(titleAndContent);
+            }
+        });
+    }
+
+    /**
+     * This method adds the listener to the content/body field.
+     * It fully supports the Markdown syntax based on the commonmark library.
+     */
+    public void markDownContent() {
         noteBodyF.textProperty().addListener(new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
                 // MD -> HTML
-                String html = renderer.render(parser.parse(newValue));
+                content = renderer.render(parser.parse(newValue));
+                // Adds title and content together so it's not overridden
+                String titleAndContent = title + content;
                 // WebView is updated based on the HTML file
-                markDownOutput.getEngine().loadContent(html);
+                markDownOutput.getEngine().loadContent(titleAndContent);
             }
         });
     }
