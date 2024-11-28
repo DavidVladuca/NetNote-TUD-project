@@ -1,0 +1,12 @@
+2024-11-28 12:46:37.641339+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "create table [*]user (id bigint not null, name varchar(255), primary key (id))"; expected "identifier"; SQL statement:
+create table user (id bigint not null, name varchar(255), primary key (id)) [42001-224]
+2024-11-28 12:46:37.660330+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "alter table if exists note add constraint FKmoddtnuw3yy6ct34xnw6u0boh foreign key (user_id) references [*]user"; expected "identifier"; SQL statement:
+alter table if exists note add constraint FKmoddtnuw3yy6ct34xnw6u0boh foreign key (user_id) references user [42001-224]
+2024-11-28 12:48:18.801703+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "create table [*]user (id bigint not null, name varchar(255), primary key (id))"; expected "identifier"; SQL statement:
+create table user (id bigint not null, name varchar(255), primary key (id)) [42001-224]
+2024-11-28 12:48:18.811704+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "alter table if exists note add constraint FKmoddtnuw3yy6ct34xnw6u0boh foreign key (user_id) references [*]user"; expected "identifier"; SQL statement:
+alter table if exists note add constraint FKmoddtnuw3yy6ct34xnw6u0boh foreign key (user_id) references user [42001-224]
