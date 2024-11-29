@@ -35,6 +35,14 @@ public class Server {
     }
 
     /**
+     * This method adds a collection to the server
+     * @param collection - collection that we are adding
+     */
+    public void addCollection(Collection collection) {
+        this.collections.add(collection);
+    }
+
+    /**
      * Equals method for the Server class.
      * Returns true if obj is also a Server and has the same serverId.
      *
