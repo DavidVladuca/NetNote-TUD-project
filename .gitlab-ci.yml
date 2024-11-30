@@ -2,7 +2,5 @@ image: maven:3.9.9-amazoncorretto-23
 
 build:
   script:
-    # Update packages and install Xvfb
-    - apt-get update && apt-get install -y xvfb
-    # Run Maven tests with Xvfb for JavaFX compatibility
-    - xvfb-run -a mvn -B -ntp clean verify
+    - mvn -B -ntp clean verify
+
