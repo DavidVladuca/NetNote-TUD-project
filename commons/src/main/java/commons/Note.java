@@ -13,12 +13,13 @@ public class Note {
     private int noteId;
 
     @ManyToOne
-    @JoinColumn(name = "collection_id", nullable = false)
-    private Collection collection;
+    @JoinColumn(name = "user_id", nullable = false) // Ensure that the title is mandatory in the database
+    private User user;
 
     @ManyToOne
-    @JoinColumn(name = "user", nullable = false)
-    private User user;
+    @JoinColumn(name = "collection_id", nullable = false) // Ensure that the title is mandatory in the database
+    private Collection collection;
+
 
     @Column(nullable = false) // Ensure that the title is mandatory in the database
     private String title;
@@ -59,6 +60,38 @@ public class Note {
      */
     public void setNoteId(int noteId) {
         this.noteId = noteId;
+    }
+
+    /**
+     * Getter for the title
+     * @return String value of the title
+     */
+    public String getTitle() {
+        return title;
+    }
+
+    /**
+     * Setter for the title
+     * @param title - the value of the title that we want to set
+     */
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    /**
+     * Getter for the body
+     * @return String value of the body
+     */
+    public String getBody() {
+        return body;
+    }
+
+    /**
+     * Setter for the body
+     * @param body - the value of the body that we want to set
+     */
+    public void setBody(String body) {
+        this.body = body;
     }
 
     /**
@@ -106,19 +139,6 @@ public class Note {
                 "Body:\n" + body + "\n" +
                 "Tags: " + tagsString + "\n";
     }
-
-    /**
-     * gets body of the note
-     * @return - body of the text in string MarkDown format
-     */
-    public String getBody() {return body;}
-
-    /**
-     * gets title of the note
-     * @return - title of the text in string MarkDown format
-     */
-    public String getTitle() {return title;}
-
     /**
      * gets indices for all matches for a particular search text
      * @param search_text - inputted text by user
@@ -137,5 +157,4 @@ public class Note {
         return matches;
     }
 
-    public void setBody(String body){this.body = body;}
 }
