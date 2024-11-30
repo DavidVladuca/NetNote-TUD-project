@@ -11,14 +11,17 @@ public class NoteTest {
     private Note note2;
     private Note differentNote;
     private Collection collection1;
+    private User user1;
 
     @BeforeEach
     public void setUp() {
         collection1 = new Collection();
         Collection collection2 = new Collection();
-        note1 = new Note("Title 1", "Test Content 1", collection1);
-        note2 = new Note("Title 1", "Test Content 1", collection1);
-        differentNote = new Note("Title 2", "Test Content 2", collection2);
+        user1 = new User();
+        User user2 = new User();
+        note1 = new Note("Title 1", "Test Content 1", collection1, user1);
+        note2 = new Note("Title 1", "Test Content 1", collection1, user1);
+        differentNote = new Note("Title 2", "Test Content 2", collection2, user2);
     }
 
     @Test
