@@ -14,7 +14,7 @@ public class Server {
     private List<Collection> collections;
 
     // Default constructor for JPA
-    protected Server() {
+    public Server() {
         this.collections = new ArrayList<>();
     }
 
