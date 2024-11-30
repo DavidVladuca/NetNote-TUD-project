@@ -11,19 +11,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Table(name = "users")
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     public long id;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    public List<Note> notes;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    public List<Note> notes = new ArrayList<>();
 
     public String name;
 
     @SuppressWarnings("unused")
-    private User() {
+    User() {
         // for object mapper
     }
 

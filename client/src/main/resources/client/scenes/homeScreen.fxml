@@ -11,11 +11,11 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.web.WebView?>
 
-<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="607.0" prefWidth="1000.0" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.scenes.HomeScreenCtrl">
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="607.0" prefWidth="1000.0" styleClass="background" stylesheets="@../../css/style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.scenes.HomeScreenCtrl">
    <children>
-      <HBox layoutY="98.0" prefHeight="510.0" prefWidth="1000.0" styleClass="bordered" stylesheets="@../css/style.css">
+      <HBox layoutY="98.0" prefHeight="510.0" prefWidth="1000.0" styleClass="bordered" stylesheets="@../../css/style.css">
          <children>
-            <VBox prefHeight="517.0" prefWidth="215.0" styleClass="midground" stylesheets="@../css/style.css">
+            <VBox prefHeight="517.0" prefWidth="215.0" styleClass="midground" stylesheets="@../../css/style.css">
                <children>
                   <ScrollPane prefHeight="488.0" prefWidth="216.0">
                      <content>
@@ -24,20 +24,21 @@
                   </ScrollPane>
                   <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
                      <children>
-                        <Button fx:id="addB" mnemonicParsing="false" onAction="#add" styleClass="background" stylesheets="@../css/style.css" text="+" />
-                        <Button fx:id="minusB" mnemonicParsing="false" onAction="#minus" styleClass="background" stylesheets="@../css/style.css" text="-" />
-                        <Button fx:id="undoB" mnemonicParsing="false" onAction="#undo" styleClass="background" stylesheets="@../css/style.css" text="Undo" />
+
+                        <Button fx:id="addB" mnemonicParsing="false" onAction="#add" styleClass="background" stylesheets="@../../css/style.css" text="+" />
+                        <Button fx:id="deleteB" mnemonicParsing="false" onAction="#delete" styleClass="background" stylesheets="@../../css/style.css" text="-" />
+                        <Button fx:id="undoB" mnemonicParsing="false" onAction="#undo" styleClass="background" stylesheets="@../../css/style.css" text="Undo" />
                      </children>
                   </HBox>
                </children>
             </VBox>
-            <VBox prefHeight="510.0" prefWidth="531.0" styleClass="bordered" stylesheets="@../css/style.css">
+            <VBox prefHeight="510.0" prefWidth="531.0" styleClass="bordered" stylesheets="@../../css/style.css">
                <children>
                   <TextField fx:id="noteTitleF" onAction="#titleEdit" promptText="Untitled" />
                   <TextArea fx:id="noteBodyF" prefHeight="487.0" prefWidth="531.0" promptText="Text Area" />
                </children>
             </VBox>
-            <Pane prefHeight="496.0" prefWidth="241.0" styleClass="midground" stylesheets="@../css/style.css">
+            <Pane prefHeight="496.0" prefWidth="241.0" styleClass="midground" stylesheets="@../../css/style.css">
                <children>
                   <WebView fx:id="markDownOutput" prefHeight="496.0" prefWidth="241.0" />
                </children>
@@ -49,6 +50,6 @@
             <Font size="28.0" />
          </font>
       </Text>
-      <TextField fx:id="searchF" layoutX="22.0" layoutY="47.0" onAction="#search" prefHeight="26.0" prefWidth="956.0" promptText="Search..." styleClass="searchField" stylesheets="@../css/style.css" />
+      <TextField fx:id="searchF" layoutX="22.0" layoutY="47.0" onAction="#search" prefHeight="26.0" prefWidth="956.0" promptText="Search..." styleClass="searchField" stylesheets="@../../css/style.css" />
    </children>
 </Pane>

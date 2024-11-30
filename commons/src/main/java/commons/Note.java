@@ -16,8 +16,13 @@ public class Note {
     @JoinColumn(name = "collection_id", nullable = false)
     private Collection collection;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     @Column(nullable = false) // Ensure that the title is mandatory in the database
-    private String title;
+    public
+    String title;
 
     @Column(nullable = false) // Ensure that the title is mandatory in the database
     private String body;
@@ -34,10 +39,11 @@ public class Note {
      * @param body - Content/body of the note.
      * @param collection - The collection the note is part of.
      */
-    public Note(String title, String body, Collection collection) {
+    public Note(String title, String body, Collection collection, User user) {
         this.title = title;
         this.body = body;
         this.collection = collection;
+        this.user = user;
         this.tags = new ArrayList<>(); // declare it empty for now
     }
 
