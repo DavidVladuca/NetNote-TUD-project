@@ -13,16 +13,15 @@ public class Note {
     private int noteId;
 
     @ManyToOne
-    @JoinColumn(name = "collection_id", nullable = false)
-    private Collection collection;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false) // Ensure that the title is mandatory in the database
     private User user;
 
+    @ManyToOne
+    @JoinColumn(name = "collection_id", nullable = false) // Ensure that the title is mandatory in the database
+    private Collection collection;
+
     @Column(nullable = false) // Ensure that the title is mandatory in the database
-    public
-    String title;
+    private String title;
 
     @Column(nullable = false) // Ensure that the title is mandatory in the database
     private String body;
@@ -39,11 +38,10 @@ public class Note {
      * @param body - Content/body of the note.
      * @param collection - The collection the note is part of.
      */
-    public Note(String title, String body, Collection collection, User user) {
+    public Note(String title, String body, Collection collection) {
         this.title = title;
         this.body = body;
         this.collection = collection;
-        this.user = user;
         this.tags = new ArrayList<>(); // declare it empty for now
     }
 
@@ -61,6 +59,38 @@ public class Note {
      */
     public void setNoteId(int noteId) {
         this.noteId = noteId;
+    }
+
+    /**
+     * Getter for the title
+     * @return String value of the title
+     */
+    public String getTitle() {
+        return title;
+    }
+
+    /**
+     * Setter for the title
+     * @param title - the value of the title that we want to set
+     */
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    /**
+     * Getter for the body
+     * @return String value of the body
+     */
+    public String getBody() {
+        return body;
+    }
+
+    /**
+     * Setter for the body
+     * @param body - the value of the body that we want to set
+     */
+    public void setBody(String body) {
+        this.body = body;
     }
 
     /**
