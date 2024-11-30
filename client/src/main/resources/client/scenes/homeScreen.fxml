@@ -25,7 +25,7 @@
                   <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
                      <children>
                         <Button fx:id="addB" mnemonicParsing="false" onAction="#add" styleClass="background" stylesheets="@../../css/style.css" text="+" />
-                        <Button fx:id="minusB" mnemonicParsing="false" onAction="#minus" styleClass="background" stylesheets="@../../css/style.css" text="-" />
+                        <Button fx:id="deleteB" mnemonicParsing="false" onAction="#delete" styleClass="background" stylesheets="@../../css/style.css" text="-" />
                         <Button fx:id="undoB" mnemonicParsing="false" onAction="#undo" styleClass="background" stylesheets="@../../css/style.css" text="Undo" />
                      </children>
                   </HBox>

@@ -1,12 +1,13 @@
 package client.scenes;
 
 import client.HomeScreen;
+import commons.Note;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.web.WebView;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -16,12 +17,15 @@ import java.net.URL;
 public class HomeScreenCtrl {
     @FXML
     public Button addB;
-    public Button minusB;
+    public Button deleteB;
     public Button undoB;
     public TextField noteTitleF;
     public TextArea noteBodyF;
     public TextField searchF;
     public WebView markDownOutput;
+
+    public ListView<Note> notesListView;
+    private ObservableList<Note> notes = FXCollections.observableArrayList();
 
     public String title = "";
     public String content = "";
@@ -40,6 +44,42 @@ public class HomeScreenCtrl {
 
         markDownContent();
 
+        setupNotesListView();
+
+    }
+
+    private void setupNotesListView() {
+        // Binding the ObservableList to the ListView
+        notesListView.setItems(notes);
+
+        // Setting the rendering of each note in the ListView
+        notesListView.setCellFactory(param -> new ListCell<>() {
+
+            /**
+             * Updates the content and appearance of a cell in the ListView.
+             * This method is called whenever the item in the cell changes, or
+             *      the cell becomes empty, or it is being re-rendered due to changes
+             *      in the ListView (e.g., scrolling or data updates).
+             *
+             * @param note - the Note object associated with this cell. It may be null if the cell is empty.
+             * @param empty - a boolean indicating whether the cell is empty.
+             *              If true, the cell should be cleared and not display any content.
+             */
+            @Override
+            protected void updateItem(Note note, boolean empty) {
+                super.updateItem(note, empty);
+                setText(empty || note == null ? null : note.getTitle());
+            }
+        });
+
+        // Handling selection in the ListView
+        notesListView.getSelectionModel().selectedItemProperty().addListener((obs, oldNote, newNote) -> {
+            if (newNote != null) {
+                //change the output in the front-end for title and body
+                noteTitleF.setText(newNote.getTitle());
+                noteBodyF.setText(newNote.getBody());
+            }
+        });
     }
 
     /**
@@ -81,6 +121,7 @@ public class HomeScreenCtrl {
 
     /**
      * Utility function used to locate resources within applications filepath
+     *
      * @param path
      * @return
      */
@@ -98,8 +139,13 @@ public class HomeScreenCtrl {
     /**
      * Removes a selected note
      */
-    public void minus() {
-        System.out.println("Minus");  //Temporary for testing
+    public void delete() {
+        Note selectedNote = notesListView.getSelectionModel().getSelectedItem();
+        if (selectedNote != null) {
+            notes.remove(selectedNote);
+        }
+
+        System.out.println("Delete");  //Temporary for testing
     }
 
     /**
