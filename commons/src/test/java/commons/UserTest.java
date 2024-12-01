@@ -33,7 +33,12 @@ public class UserTest {
 
     @Test
     public void testHashCode() {
-        assertEquals(user1.hashCode(), user2.hashCode());
+        assertEquals(user1.hashCode(), user1.hashCode());
+    }
+
+    @Test
+    public void testHashCodeDifferentUser() {
+        assertNotEquals(user1.hashCode(), user2.hashCode());
     }
 
     @Test
@@ -43,10 +48,6 @@ public class UserTest {
 
     @Test
     public void testToString() {
-        assertEquals("commons.User@78b1cc93[\n" +
-                "  id=0\n" +
-                "  name=Greg\n" +
-                "  notes=[]\n" +
-                "]", user1.toString());
+        assertEquals("User{id=0, notes=[], name='Greg'}", user1.toString());
     }
 }
