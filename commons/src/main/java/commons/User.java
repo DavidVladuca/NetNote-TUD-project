@@ -1,11 +1,7 @@
 package commons;
 
-import static org.apache.commons.lang3.builder.ToStringStyle.MULTI_LINE_STYLE;
-
 import jakarta.persistence.*;
 import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,20 +45,16 @@ public class User {
     }
 
     /**
-     * hashCode method for the User Class
-     * @return a hash code representation of the User Object
-     */
-    @Override
-    public int hashCode() {
-        return HashCodeBuilder.reflectionHashCode(this);
-    }
-
-    /**
      * toString method for the User Class
+     *
      * @return a human friendly representation of the User Object
      */
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this, MULTI_LINE_STYLE);
+        return "User{" +
+                "id=" + id +
+                ", notes=" + notes +
+                ", name='" + name + '\'' +
+                '}';
     }
 }
