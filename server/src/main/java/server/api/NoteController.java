@@ -1,7 +1,6 @@
 package server.api;
 import commons.Collection;
 import commons.Note;
-import commons.Server;
 import commons.User;
 import jakarta.ws.rs.NotFoundException;
 import org.springframework.http.HttpStatus;
@@ -19,7 +18,6 @@ public class NoteController {
 
     private final NoteRepository noteRepository;
     private final CollectionRepository collectionRepository;
-    private final ServerRepository serverRepository;
     private final UserRepository userRepository;
 
     /**
