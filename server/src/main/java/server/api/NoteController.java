@@ -46,11 +46,6 @@ public class NoteController {
     public ResponseEntity<Note> createNote(@RequestBody Note note) {
         User user = new User("Default");
         userRepository.save(user); // User entity non-existent in the database
-        Server server = new Server();
-        serverRepository.save(server);
-        Collection collection = new Collection(server,"Default");
-        server.addCollection(collection);
-        collectionRepository.save(collection);
 
         // Retrieve the existing collection from the database by its ID
         //int collectionId = note.getCollection().getCollectionId();

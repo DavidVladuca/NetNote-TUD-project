@@ -16,7 +16,6 @@ import javafx.scene.web.WebView;
 import javafx.util.StringConverter;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
-import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -24,7 +23,6 @@ import commons.Collection;
 import commons.Server;
 
 
-@Component
 public class HomeScreenCtrl {
     //todo - for all methods, change strings title and body to getting them from the note instead
     @FXML
