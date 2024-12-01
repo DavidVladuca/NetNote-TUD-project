@@ -6,7 +6,10 @@ public class LanguageOptions {
     //todo - missing a lot of tests and javadocs
     ArrayList<Language> lang_options;
     Language english = new Language(0, "English", "EN", "client/src/main/resources/client/homeScreen.fxml"); //make default
+    Language spanish = new Language(1, "Spanish", "ES", "client/src/main/resources/client/homeScreen.fxml");
     int current_index;
+
+    private static LanguageOptions single_instance = null;
 
     /**
      * constructor for language array
@@ -14,7 +17,14 @@ public class LanguageOptions {
     public LanguageOptions() {
         lang_options = new ArrayList<>();
         lang_options.add(english); //default language
+        lang_options.add(spanish);
         current_index = 0;
+    }
+
+    public static synchronized LanguageOptions getInstance(){
+        if (single_instance==null)
+            single_instance = new LanguageOptions();
+        return single_instance;
     }
 
     public Language getCurrentLanguage() {
@@ -44,6 +54,15 @@ public class LanguageOptions {
             languages_abbrs.set(i, lang_options.get(i));
         }
         return languages_abbrs;
+    }
+
+    public Language getLanguageFromAbbr(String abbr) throws IllegalArgumentException{
+        for (int i = 0; i < lang_options.size(); i++) {
+            if (lang_options.get(i).getAbbr().equals(abbr)){
+                return lang_options.get(i);
+            }
+        }
+        throw new IllegalArgumentException("Abbreviation "+abbr+ "not found");
     }
 
 }

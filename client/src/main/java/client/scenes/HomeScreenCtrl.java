@@ -29,8 +29,7 @@ public class HomeScreenCtrl {
     public Button addB;
     public Button deleteB;
     public Button undoB;
-    public LanguageOptions lang_ops= new LanguageOptions(); //todo - have this not be initialized every time
-    public ChoiceBox<Language> selectLangB = new ChoiceBox<Language>();
+    public ChoiceBox<Language> selectLangBox = new ChoiceBox<Language>();
     public TextField noteTitleF;
     public TextArea noteBodyF;
     public TextField searchF;
@@ -59,21 +58,7 @@ public class HomeScreenCtrl {
      */
     @FXML
     public void initialize() {
-        selectLangB.getItems().setAll(lang_ops.getLanguages());//TODO - check if this is the correct location
-        System.out.println(selectLangB.getItems().getFirst().getName());
-        selectLangB.setValue(selectLangB.getItems().getFirst());
-        selectLangB.setConverter(new StringConverter<>() {
-            @Override
-            public String toString(Language language) {
-                return language.getAbbr();
-            }
-
-            @Override
-            public Language fromString(String s) {
-                return null; //todo - implement (make for loop until the right option is found in the options list)
-            }
-        });
-
+        setUpLanguages();
 
         markDownTitle();
 
@@ -245,12 +230,26 @@ public class HomeScreenCtrl {
 
     }
 
-    /**
-     * Allows for language selection
-     */
-    public void select_lang(){
+    public void setUpLanguages(){
+        selectLangBox.getItems().setAll(LanguageOptions.getInstance().getLanguages());
+        selectLangBox.setValue(selectLangBox.getItems().getFirst());
+        selectLangBox.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(Language language) {
+                return language.getAbbr();
+            }
 
-        System.out.println(selectLangB.getItems().toString());
+            @Override
+            public Language fromString(String s) {
+                return null; //todo - implement (make for loop until the right option is found in the options list)
+            }
+        });
+
+        selectLangBox.getSelectionModel().selectedItemProperty().addListener((obs, oldLang, newLang) -> {
+            if (!newLang.equals(oldLang)) {
+                System.out.println(selectLangBox.getValue().getAbbr());
+            }});
+
     }
 
 }

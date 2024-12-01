@@ -15,7 +15,7 @@ public class Language {
      */
     public Language(int id, String name, String abbr, String screen_path) throws IllegalArgumentException{
         if (abbr.length()!=2){
-            throw new IllegalArgumentException("Abbreviation must be two characters long.");
+            throw new IllegalArgumentException("Abbreviation must be two characters long (use ISO 639).");
         } else if (abbr.matches("[^A-Z]")){
             throw new IllegalArgumentException("Abbreviation must only contain uppercase letters");
         }else{
