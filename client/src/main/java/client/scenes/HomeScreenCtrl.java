@@ -1,9 +1,10 @@
 package client.scenes;
 
-import ch.qos.logback.core.net.server.Client;
+
 import client.HomeScreen;
 import commons.Language;
 import commons.LanguageOptions;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import commons.Note;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -17,7 +18,7 @@ import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import server.database.NoteRepository;
+
 import jakarta.ws.rs.client.*;
 import jakarta.ws.rs.core.MediaType;
 
@@ -175,33 +176,28 @@ public class HomeScreenCtrl {
     }
 
     /**
-     * Adds a new note
+     * Adds a new note to ListView and Database
+     * Database still not working properly -- TO BE IMPLEMENTED
      */
     public void add() throws IOException, InterruptedException {
-       //Temporary for testing
-        System.out.println("Add");
+        //Creates a note with text from the fields
         Note newNote = new Note(noteTitleF.getText(), noteBodyF.getText(), null);
-
-            // Add the note to your list or process it
-
-        //var om = new ObjectMapper ();
-        var json = new ObjectMapper().writeValueAsString(newNote);
-        //System.out.println(new ObjectMapper().readValue(json, Note.class));
-        System.out.println(json);
-
+        var json = new ObjectMapper().writeValueAsString(newNote);  //JSON with the new note
+        System.out.println(json);//Temporary for testing
+//        //Request body containing the created note
 //        var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
 //
 //        // Send the POST request
 //        var response = ClientBuilder.newClient()
-//                .target("localhost:8080/api/notes/")
+//                .target("localhost:8080/api/notes/create")
 //                .request(MediaType.APPLICATION_JSON)
 //                .post(requestBody);
-
+        //Add notes to List<View>
         notes.add(newNote);
-        //saveNoteToDatabase(newNote);
+        //Clear the fields
         noteTitleF.clear();
         noteBodyF.clear();
-
+        System.out.println("Add");//Temporary for testing
     }
 
     /**
