@@ -16,18 +16,10 @@ import javafx.scene.web.WebView;
 import javafx.util.StringConverter;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import jakarta.ws.rs.client.*;
-import jakarta.ws.rs.core.MediaType;
-
-
 import java.io.IOException;
-import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
-import commons.Note;
 import commons.Collection;
 import commons.Server;
 
