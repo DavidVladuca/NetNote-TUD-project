@@ -1,8 +1,10 @@
 package client.scenes;
 
+import ch.qos.logback.core.net.server.Client;
 import client.HomeScreen;
 import commons.Language;
 import commons.LanguageOptions;
+import commons.Note;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -13,13 +15,23 @@ import javafx.scene.web.WebView;
 import javafx.util.StringConverter;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import server.database.NoteRepository;
+import jakarta.ws.rs.client.*;
+import jakarta.ws.rs.core.MediaType;
 
+
+import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import commons.Note;
 import commons.Collection;
 import commons.Server;
 
+
+@Component
 public class HomeScreenCtrl {
     //todo - for all methods, change strings title and body to getting them from the note instead
     @FXML
@@ -165,8 +177,31 @@ public class HomeScreenCtrl {
     /**
      * Adds a new note
      */
-    public void add() {
-        System.out.println("Add"); //Temporary for testing
+    public void add() throws IOException, InterruptedException {
+       //Temporary for testing
+        System.out.println("Add");
+        Note newNote = new Note(noteTitleF.getText(), noteBodyF.getText(), null);
+
+            // Add the note to your list or process it
+
+        //var om = new ObjectMapper ();
+        var json = new ObjectMapper().writeValueAsString(newNote);
+        //System.out.println(new ObjectMapper().readValue(json, Note.class));
+        System.out.println(json);
+
+//        var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
+//
+//        // Send the POST request
+//        var response = ClientBuilder.newClient()
+//                .target("localhost:8080/api/notes/")
+//                .request(MediaType.APPLICATION_JSON)
+//                .post(requestBody);
+
+        notes.add(newNote);
+        //saveNoteToDatabase(newNote);
+        noteTitleF.clear();
+        noteBodyF.clear();
+
     }
 
     /**
