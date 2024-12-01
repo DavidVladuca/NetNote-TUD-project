@@ -1,5 +1,7 @@
 package commons;
 
+import java.util.Objects;
+
 public class Language {
     private int id; //needed for the model selection
     private String name;
@@ -59,12 +61,50 @@ public class Language {
         return screen_path;
     }
 
-    //todo - add javadoc
+    /**
+     * Sets a new id
+     * @param new_id
+     */
     public void setId(int new_id){
         this.id = new_id;
     }
 
+    /**
+     * Compares another object for equality
+     * @param other
+     * @return
+     */
+    @Override
+    public boolean equals(Object other) {
+        if(this==other) return true;
+        if(getClass()!=other.getClass()||other==null) return false;
+        Language that = (Language) other;
+        return this.id == that.id &&
+                this.name.equals(that.name) &&
+                this.abbr.equals(that.abbr) &&
+                this.screen_path.equals(that.screen_path);
+    }
 
-    //todo - add equals, hash, and toString methods and tests
+    /**
+     * Returns a hashcode value for the instance
+     * @return int hash value
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name, abbr, screen_path);
+    }
 
+    /**
+     * Returns a humanreadable version of the object as a string
+     * @return
+     */
+    @Override
+    public String toString() {
+        return "Language{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", abbr='" + abbr + '\'' +
+                ", screen_path='" + screen_path + '\'' +
+                '}';
+    }
 }
