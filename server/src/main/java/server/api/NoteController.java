@@ -1,7 +1,6 @@
 package server.api;
 import commons.Collection;
 import commons.Note;
-import commons.Server;
 import commons.User;
 import jakarta.ws.rs.NotFoundException;
 import org.springframework.http.HttpStatus;
