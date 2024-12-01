@@ -20,7 +20,6 @@ public class Note {
     @JoinColumn(name = "collection_id", nullable = false) // Ensure that the title is mandatory in the database
     private Collection collection;
 
-
     @Column(nullable = false) // Ensure that the title is mandatory in the database
     private String title;
 
@@ -157,4 +156,28 @@ public class Note {
         return matches;
     }
 
+
+    /**
+     * Getter for the collection
+     * @return - Collection
+     */
+    public Collection getCollection() {
+        return this.collection;
+    }
+
+    /**
+     * Setter for the collection
+     * @param collection
+     */
+    public void setCollection(Collection collection) {
+        this.collection = collection;
+    }
+
+    /**
+     * Setter for the user
+     * @param user
+     */
+    public void setUser(User user) {
+        this.user = user;
+    }
 }

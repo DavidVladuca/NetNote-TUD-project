@@ -1,8 +1,11 @@
 package client.scenes;
 
+
 import client.HomeScreen;
 import commons.Language;
 import commons.LanguageOptions;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import commons.Note;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -13,12 +16,12 @@ import javafx.scene.web.WebView;
 import javafx.util.StringConverter;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
-
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import commons.Note;
 import commons.Collection;
 import commons.Server;
+
 
 public class HomeScreenCtrl {
     //todo - for all methods, change strings title and body to getting them from the note instead
@@ -163,10 +166,28 @@ public class HomeScreenCtrl {
     }
 
     /**
-     * Adds a new note
+     * Adds a new note to ListView and Database
+     * Database still not working properly -- TO BE IMPLEMENTED
      */
-    public void add() {
-        System.out.println("Add"); //Temporary for testing
+    public void add() throws IOException, InterruptedException {
+        //Creates a note with text from the fields
+        Note newNote = new Note(noteTitleF.getText(), noteBodyF.getText(), null);
+        var json = new ObjectMapper().writeValueAsString(newNote);  //JSON with the new note
+        System.out.println(json);//Temporary for testing
+//        //Request body containing the created note
+//        var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
+//
+//        // Send the POST request
+//        var response = ClientBuilder.newClient()
+//                .target("localhost:8080/api/notes/create")
+//                .request(MediaType.APPLICATION_JSON)
+//                .post(requestBody);
+        //Add notes to List<View>
+        notes.add(newNote);
+        //Clear the fields
+        noteTitleF.clear();
+        noteBodyF.clear();
+        System.out.println("Add");//Temporary for testing
     }
 
     /**

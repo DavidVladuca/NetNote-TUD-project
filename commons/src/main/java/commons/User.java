@@ -22,8 +22,8 @@ public class User {
 
     public String name;
 
-    @SuppressWarnings("unused")
-    private User() {
+
+    protected User() {
         // for object mapper
     }
 
