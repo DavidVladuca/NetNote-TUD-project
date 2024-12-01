@@ -23,7 +23,7 @@ public class Collection {
     private List<Note> notes;
 
     // Default constructor for JPA
-    protected Collection() {
+    public Collection() {
         this.notes = new ArrayList<>();
     }
 

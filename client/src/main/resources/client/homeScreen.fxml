@@ -50,6 +50,6 @@
             <Font size="28.0" />
          </font>
       </Text>
-      <TextField fx:id="searchF" layoutX="22.0" layoutY="47.0" onAction="#search" prefHeight="26.0" prefWidth="956.0" promptText="Search..." styleClass="searchField" stylesheets="@../css/style.css" />
+      <TextField fx:id="searchF" layoutX="22.0" layoutY="47.0" onInputMethodTextChanged="#search" onKeyTyped="#search" prefHeight="26.0" prefWidth="956.0" promptText="Search..." styleClass="searchField" stylesheets="@../css/style.css" />
    </children>
 </Pane>

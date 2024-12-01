@@ -20,6 +20,7 @@ public class Note {
     @JoinColumn(name = "collection_id", nullable = false) // Ensure that the title is mandatory in the database
     private Collection collection;
 
+
     @Column(nullable = false) // Ensure that the title is mandatory in the database
     private String title;
 
@@ -138,4 +139,22 @@ public class Note {
                 "Body:\n" + body + "\n" +
                 "Tags: " + tagsString + "\n";
     }
+    /**
+     * gets indices for all matches for a particular search text
+     * @param search_text - inputted text by user
+     * @return - returns ArrayList of the starting index of all matches in the order in which they appear in the text; -1 if there are no matches, and empty array if no text has been introduced
+     */
+    public ArrayList<Integer> getMatchIndices(String search_text) {
+        ArrayList<Integer> matches = new ArrayList<Integer>();
+        if (search_text.isEmpty()) //before the user starts to write, the method will (likely) still be called todo - check if it is
+            return matches;
+        for (int i = 0; i < body.length() - search_text.length()+1; i++) {
+            if (body.startsWith(search_text, i))
+                matches.add(i);
+        }
+        if (matches.isEmpty())
+            matches.add(-1);
+        return matches;
+    }
+
 }

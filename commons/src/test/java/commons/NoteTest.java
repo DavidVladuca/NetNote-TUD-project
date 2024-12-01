@@ -3,6 +3,8 @@ package commons;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class NoteTest {
@@ -74,4 +76,12 @@ public class NoteTest {
                 """.formatted(collection1.getCollectionId());
         assertEquals(expectedOutput.trim(), note1.toString().trim(), "toString output should match the expected format");
     }
+
+    @Test
+    public void testGetMatchIndexBeginningChar(){
+        ArrayList<Integer> expected = new ArrayList<>();
+        expected.add(0);
+        assertEquals(expected, note1.getMatchIndices("T"));
+    }
+    //Todo - add test for full word, and test for searching wrong word.
 }

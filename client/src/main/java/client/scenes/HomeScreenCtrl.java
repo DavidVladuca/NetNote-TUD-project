@@ -1,7 +1,6 @@
 package client.scenes;
 
 import client.HomeScreen;
-import commons.Note;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -9,12 +8,18 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.web.WebView;
+import org.checkerframework.checker.units.qual.C;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 
 import java.net.URL;
+import java.util.ArrayList;
+import commons.Note;
+import commons.Collection;
+import commons.Server;
 
 public class HomeScreenCtrl {
+    //todo - for all methods, change strings title and body to getting them from the note instead
     @FXML
     public Button addB;
     public Button deleteB;
@@ -24,11 +29,19 @@ public class HomeScreenCtrl {
     public TextField searchF;
     public WebView markDownOutput;
 
+    /*
+    todo - change the 3 below (current_server, current_collection, current_note) -
+     should not be initialized every time, but i needed to have them to have the search method.
+     */
+    public Server current_server = new Server();
+    public Collection current_collection = new Collection(current_server, "Default");
+    public Note current_note = new Note("", "", current_collection);
+
     public ListView<Note> notesListView;
     private ObservableList<Note> notes = FXCollections.observableArrayList();
 
     public String title = "";
-    public String content = "";
+    public String content = ""; //todo - this should be part of the note - not independent strings
 
     public final Parser parser = Parser.builder().build();
     public final HtmlRenderer renderer = HtmlRenderer.builder().build();
@@ -109,6 +122,7 @@ public class HomeScreenCtrl {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
                 // MD -> HTML
+                current_note.setBody(newValue);
                 content = renderer.render(parser.parse(newValue));
                 // Adds title and content together so it's not overridden
                 String titleAndContent = title + content;
@@ -166,6 +180,29 @@ public class HomeScreenCtrl {
      * Searches for a note based on text field input
      */
     public void search() {
-        System.out.println("Search");
+        String search_text = searchF.textProperty().getValue();
+        ArrayList<Integer> match_indices = current_note.getMatchIndices(search_text);
+        String title = current_note.getTitle();
+        String titleAndContent = current_note.getTitle();
+        String bodyHighlighted = current_note.getBody();
+        if (!match_indices.isEmpty()){
+            if (match_indices.getFirst()==-1 && match_indices.size()==1){
+                System.out.println("Not found in "+title);
+            } else{ //parse in special way such that the found results are highlighted
+                for (int i=match_indices.size()-1; i>=0; i--){//iterating from the back to not have to consider changes in index due to additions
+                    bodyHighlighted = bodyHighlighted.substring(0, match_indices.get(i))
+                            +"<mark>"
+                            +search_text
+                            +"</mark>"
+                            +bodyHighlighted.substring(match_indices.get(i)+search_text.length());
+                }
+            }
+        }
+        content = renderer.render(parser.parse(bodyHighlighted));
+        titleAndContent += content;
+        markDownOutput.getEngine().loadContent(titleAndContent);
+
+
     }
+
 }
