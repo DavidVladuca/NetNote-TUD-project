@@ -77,12 +77,13 @@ public class Language {
     @Override
     public boolean equals(Object other) {
         if(this==other) return true;
-        if(getClass()!=other.getClass()||other==null) return false;
+
+        if(other==null||getClass()!=other.getClass()) return false;
         Language that = (Language) other;
         return this.id == that.id &&
-                this.name.equals(that.name) &&
-                this.abbr.equals(that.abbr) &&
-                this.screen_path.equals(that.screen_path);
+                Objects.equals(this.name, that.name) &&
+                Objects.equals(this.abbr, that.abbr) &&
+                Objects.equals(this.screen_path, that.screen_path);
     }
 
     /**
