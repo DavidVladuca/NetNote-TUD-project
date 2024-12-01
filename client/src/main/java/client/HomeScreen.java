@@ -1,11 +1,15 @@
 package client;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.application.Application;
 
 public class HomeScreen extends Application {
+    private static final Injector INJECTOR = Guice.createInjector( new MyModule());
+    private static final MyFXML FXML = new MyFXML ( INJECTOR );
     /**
      * Launches the screen
      * @param args
