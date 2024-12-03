@@ -132,10 +132,10 @@ public class CollectionTest {
         ArrayList<Integer> expected_first_AL = new ArrayList<>();
         ArrayList<Integer> expected_second_AL = new ArrayList<>();
         expected_first_AL.add(1);
-        expected_first_AL.add(5);
+        expected_first_AL.add(11);
         expected_second_AL.add(27);
-        expected_second_AL.add(11);
-        expected_second_AL.add(37);
+        expected_second_AL.add(17);
+        expected_second_AL.add(43);
         expected_output.add(expected_first_AL);
         expected_output.add(expected_second_AL);
 
@@ -145,6 +145,8 @@ public class CollectionTest {
         note2.setNoteId(27);
         note1.setBody("Some body");
         note2.setBody("Some other body (adding extra match: body)");
+        note1.setTitle("Note 1");
+        note2.setTitle("Note 2");
         testCollection.addNote(note1);
         testCollection.addNote(note2);
         assertEquals(expected_output, testCollection.getSearch("body"));
