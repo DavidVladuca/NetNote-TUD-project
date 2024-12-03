@@ -100,4 +100,8 @@ public class Collection {
                 "Collection Title: " + collectionTitle + "\n" +
                 "Notes:\n\n" + (!notesString.isEmpty() ? notesString : "No Notes");
     }
+
+    public String getCollectionTitle() {
+        return collectionTitle;
+    }
 }
