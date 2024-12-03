@@ -9,8 +9,8 @@ import java.util.List;
 public class Collection {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private int collectionId;
+    //@GeneratedValue(strategy = GenerationType.AUTO)
+    private long collectionId;
 
     @ManyToOne
     @JoinColumn(name = "server_id", nullable = false) // Foreign key to Server
@@ -43,7 +43,7 @@ public class Collection {
      * Getter for the collectionId
      * @return integer value of the collectionId
      */
-    public int getCollectionId() {
+    public long getCollectionId() {
         return collectionId;
     }
 
@@ -51,8 +51,56 @@ public class Collection {
      * Setter for the collectionId
      * @param collectionId - the value of the ID that we want to set
      */
-    public void setCollectionId(int collectionId) {
+    public void setCollectionId(long collectionId) {
         this.collectionId = collectionId;
+    }
+
+    /**
+     * Getter for the Server
+     * @return - Server
+     */
+    public Server getServer() {
+        return server;
+    }
+
+    /**
+     * Setter for the server
+     * @param server - Server provided
+     */
+    public void setServer(Server server) {
+        this.server = server;
+    }
+
+    /**
+     * Getter for the Title of the collection
+     * @return title of the collection
+     */
+    public String getCollectionTitle() {
+        return collectionTitle;
+    }
+
+    /**
+     * Setter for the collection title
+     * @param collectionTitle - title of the collection provided
+     */
+    public void setCollectionTitle(String collectionTitle) {
+        this.collectionTitle = collectionTitle;
+    }
+
+    /**
+     * Getter for the Notes
+     * @return - Notes of the collection
+     */
+    public List<Note> getNotes() {
+        return notes;
+    }
+
+    /**
+     * Setter for the Notes
+     * @param notes - List of Notes provided
+     */
+    public void setNotes(List<Note> notes) {
+        this.notes = notes;
     }
 
     /**
@@ -78,7 +126,7 @@ public class Collection {
      */
     @Override
     public int hashCode() {
-        return Integer.hashCode(collectionId);
+        return Long.hashCode(collectionId);
     }
 
     /**
