@@ -9,6 +9,7 @@ import commons.Note;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MediaType;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -63,6 +64,7 @@ public class HomeScreenCtrl {
     @FXML
     public void initialize() {
         setUpLanguages();
+
         setUpCollections();
         
         markDownTitle();
@@ -103,6 +105,8 @@ public class HomeScreenCtrl {
                 //change the output in the front-end for title and body
                 noteTitleF.setText(newNote.getTitle());
                 noteBodyF.setText(newNote.getBody());
+
+                Platform.runLater(() -> notesListView.getSelectionModel().clearSelection());
             }
         });
     }
