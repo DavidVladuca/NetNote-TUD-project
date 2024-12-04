@@ -148,4 +148,39 @@ public class Collection {
                 "Collection Title: " + collectionTitle + "\n" +
                 "Notes:\n\n" + (!notesString.isEmpty() ? notesString : "No Notes");
     }
+
+    /**
+     * method to add note
+     * @param new_note - note to be added to the collection
+     */
+    public void addNote(Note new_note){notes.add(new_note);} //todo - make it so that you can also add notes
+    //todo - add tests
+    /**
+     * searches collections
+     * @param search_text - text that needs to be matched
+     * @return - returns an arraylist of arraylists, where each nested arraylist's first integer is the note id, and all following
+     * integers are indices within that note of the first match in the note. Uses the note's search itself to find them. If
+     * empty string, returns null. If no matches, returns a single nested arraylist containing -1 (to check for no matches,
+     * getFirst().getFirst()==-1).
+     */
+    public ArrayList<ArrayList<Long>>  getSearch(String search_text){
+        ArrayList<ArrayList<Long>> result = new ArrayList<>();
+        if (search_text.isEmpty())
+            return result;
+
+        for (int i=0; i<notes.size(); i++){
+            ArrayList<Long> note_match = new ArrayList<>();
+            if (notes.get(i).getMatchIndices(search_text).getFirst()!=-1){ //already checked before if empty, so this will not be empty
+                note_match.add(notes.get(i).getNoteId());
+                note_match.addAll(notes.get(i).getMatchIndices(search_text));
+                result.add(note_match);
+            }
+        }
+        if (result.isEmpty()){
+            ArrayList<Long> note_match = new ArrayList<>();
+            note_match.add(-1L);
+            result.add(note_match); //if no matches, returns 1 arraylist containing -1 (getFirst().getFirst()==-1)
+        }
+        return result;
+    }
 }

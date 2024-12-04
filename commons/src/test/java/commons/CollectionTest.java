@@ -1,7 +1,10 @@
 package commons;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -95,5 +98,57 @@ public class CollectionTest {
                 """.formatted(emptyCollection.getCollectionId(), server1.getServerId());
 
         assertEquals(expectedOutput.trim(), emptyCollection.toString().trim(), "toString should match the expected format for an empty collection");
+    }
+    @Test
+    public void testSearchEmpty(){
+        Collection testCollection = new Collection();
+        Note note1 = new Note();
+        Note note2 = new Note();
+        note1.setBody("Some body");
+        note2.setBody("Some other body");
+        testCollection.addNote(note1);
+        testCollection.addNote(note2);
+        assertEquals(new ArrayList<>(), testCollection.getSearch(""));
+    }
+    @Test
+    public void testSearchNoMatch(){
+        Collection testCollection = new Collection();
+        ArrayList<ArrayList<Integer>> expected_output = new ArrayList<>();
+        ArrayList<Integer> expected_first_AL = new ArrayList<>();
+        expected_first_AL.add(-1);
+        expected_output.add(expected_first_AL);
+        Note note1 = new Note();
+        Note note2 = new Note();
+        note1.setBody("Some body");
+        note2.setBody("Some other body");
+        testCollection.addNote(note1);
+        testCollection.addNote(note2);
+        assertEquals(expected_output, testCollection.getSearch("Not in body"));
+    }
+    @Test
+    public void testSearchMultipleNoteMatch(){
+        Collection testCollection = new Collection();
+        ArrayList<ArrayList<Integer>> expected_output = new ArrayList<>();
+        ArrayList<Integer> expected_first_AL = new ArrayList<>();
+        ArrayList<Integer> expected_second_AL = new ArrayList<>();
+        expected_first_AL.add(1);
+        expected_first_AL.add(11);
+        expected_second_AL.add(27);
+        expected_second_AL.add(17);
+        expected_second_AL.add(43);
+        expected_output.add(expected_first_AL);
+        expected_output.add(expected_second_AL);
+
+        Note note1 = new Note();
+        Note note2 = new Note();
+        note1.setNoteId(1);
+        note2.setNoteId(27);
+        note1.setBody("Some body");
+        note2.setBody("Some other body (adding extra match: body)");
+        note1.setTitle("Note 1");
+        note2.setTitle("Note 2");
+        testCollection.addNote(note1);
+        testCollection.addNote(note2);
+        assertEquals(expected_output, testCollection.getSearch("body"));
     }
 }

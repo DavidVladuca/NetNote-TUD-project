@@ -119,6 +119,7 @@ public class HomeScreenCtrl {
         noteTitleF.textProperty().addListener(new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                current_note.setTitle(newValue);
                 // MD -> HTML
                 title = "<h1>" + renderer.render(parser.parse(newValue)) + "</h1>";
                 // Adds title and content together so it's not overridden
@@ -214,25 +215,34 @@ public class HomeScreenCtrl {
     public void search() {
         String search_text = searchF.textProperty().getValue();
         ArrayList<Integer> match_indices = current_note.getMatchIndices(search_text);
-        String title = current_note.getTitle();
-        String titleAndContent = current_note.getTitle();
+        String titleHighlighted = current_note.getTitle();
         String bodyHighlighted = current_note.getBody();
         if (!match_indices.isEmpty()){
             if (match_indices.getFirst()==-1 && match_indices.size()==1){
-                System.out.println("Not found in "+title);
+                System.out.println("Not found in \""+current_note.getTitle()+"\"");
             } else{ //parse in special way such that the found results are highlighted
                 for (int i=match_indices.size()-1; i>=0; i--){//iterating from the back to not have to consider changes in index due to additions
-                    bodyHighlighted = bodyHighlighted.substring(0, match_indices.get(i))
-                            +"<mark>"
-                            +search_text
-                            +"</mark>"
-                            +bodyHighlighted.substring(match_indices.get(i)+search_text.length());
+                    System.out.println(match_indices.get(i));
+                    if (match_indices.get(i)<titleHighlighted.length()){
+                        titleHighlighted = titleHighlighted.substring(0, match_indices.get(i))
+                                + "<mark>"
+                                + search_text
+                                + "</mark>"
+                                + titleHighlighted.substring(match_indices.get(i) + search_text.length());
+                    } else {
+                        bodyHighlighted = bodyHighlighted.substring(0, match_indices.get(i)-titleHighlighted.length())
+                                + "<mark>"
+                                + search_text
+                                + "</mark>"
+                                + bodyHighlighted.substring(match_indices.get(i) -titleHighlighted.length() + search_text.length());
+                    }
                 }
             }
         }
-        content = renderer.render(parser.parse(bodyHighlighted));
-        titleAndContent += content;
-        markDownOutput.getEngine().loadContent(titleAndContent);
+        titleHighlighted  = "<h1>" + renderer.render(parser.parse(titleHighlighted)) + "</h1>";
+        bodyHighlighted = renderer.render(parser.parse(bodyHighlighted));
+        String total_content = titleHighlighted + bodyHighlighted;
+        markDownOutput.getEngine().loadContent(total_content);
 
 
     }
