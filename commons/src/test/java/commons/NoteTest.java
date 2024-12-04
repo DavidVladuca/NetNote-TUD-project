@@ -81,6 +81,7 @@ public class NoteTest {
     public void testGetMatchIndexBeginningChar(){
         ArrayList<Integer> expected = new ArrayList<>();
         expected.add(0);
+        expected.add(7);
         assertEquals(expected, note1.getMatchIndices("T"));
     }
     //Todo - add test for full word, and test for searching wrong word.
