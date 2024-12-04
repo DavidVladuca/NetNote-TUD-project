@@ -163,13 +163,13 @@ public class Collection {
      * empty string, returns null. If no matches, returns a single nested arraylist containing -1 (to check for no matches,
      * getFirst().getFirst()==-1).
      */
-    public ArrayList<ArrayList<Integer>>  getSearch(String search_text){
-        ArrayList<ArrayList<Integer>> result = new ArrayList<>();
+    public ArrayList<ArrayList<Long>>  getSearch(String search_text){
+        ArrayList<ArrayList<Long>> result = new ArrayList<>();
         if (search_text.isEmpty())
             return result;
 
         for (int i=0; i<notes.size(); i++){
-            ArrayList<Integer> note_match = new ArrayList<>();
+            ArrayList<Long> note_match = new ArrayList<>();
             if (notes.get(i).getMatchIndices(search_text).getFirst()!=-1){ //already checked before if empty, so this will not be empty
                 note_match.add(notes.get(i).getNoteId());
                 note_match.addAll(notes.get(i).getMatchIndices(search_text));
@@ -177,7 +177,7 @@ public class Collection {
             }
         }
         if (result.isEmpty()){
-            ArrayList<Integer> note_match = new ArrayList<>();
+            ArrayList<Long> note_match = new ArrayList<>();
             note_match.add(-1);
             result.add(note_match); //if no matches, returns 1 arraylist containing -1 (getFirst().getFirst()==-1)
         }
