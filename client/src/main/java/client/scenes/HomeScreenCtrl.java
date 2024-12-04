@@ -37,6 +37,7 @@ public class HomeScreenCtrl {
     public TextArea noteBodyF;
     public TextField searchF;
     public WebView markDownOutput;
+    public ChoiceBox<Collection> selectCollectionBox = new ChoiceBox<>();
 
     /*
     todo - change the 3 below (current_server, current_collection, current_note) -
@@ -62,7 +63,8 @@ public class HomeScreenCtrl {
     @FXML
     public void initialize() {
         setUpLanguages();
-
+        setUpCollections();
+        
         markDownTitle();
 
         markDownContent();
@@ -250,6 +252,28 @@ public class HomeScreenCtrl {
             if (!newLang.equals(oldLang)) {
                 System.out.println(selectLangBox.getValue().getAbbr());
             }});
+
+    }
+
+    public void setUpCollections() {
+        //todo - implement properly once database MR is sent
+        selectCollectionBox.getItems().addAll(new Collection(current_server, "Default"));
+        selectCollectionBox.setValue(selectCollectionBox.getItems().getFirst());
+        selectCollectionBox.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(Collection collection) {
+                return collection.getCollectionTitle();
+            }
+
+            @Override
+            public Collection fromString(String s) {
+                return null;
+            }
+        });
+
+        selectCollectionBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            System.out.println("Selected: " + newValue);
+        });
 
     }
 
