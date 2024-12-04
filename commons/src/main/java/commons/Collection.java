@@ -178,7 +178,7 @@ public class Collection {
         }
         if (result.isEmpty()){
             ArrayList<Long> note_match = new ArrayList<>();
-            note_match.add(-1);
+            note_match.add(-1L);
             result.add(note_match); //if no matches, returns 1 arraylist containing -1 (getFirst().getFirst()==-1)
         }
         return result;
