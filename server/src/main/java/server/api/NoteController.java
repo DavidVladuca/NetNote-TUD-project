@@ -1,15 +1,13 @@
 package server.api;
 import commons.Collection;
 import commons.Note;
-import commons.User;
-import jakarta.ws.rs.NotFoundException;
+import commons.Server;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import server.database.CollectionRepository;
 import server.database.NoteRepository;
 import server.database.ServerRepository;
-import server.database.UserRepository;
 import java.util.List;
 
 @RestController
@@ -19,45 +17,46 @@ public class NoteController {
     private final NoteRepository noteRepository;
     private final CollectionRepository collectionRepository;
     private final ServerRepository serverRepository;
-    private final UserRepository userRepository;
 
     /**
      * Constructor with repositories for database injection
      * @param noteRepository - NoteRepository
      * @param collectionRepository - CollectionRepository
      * @param serverRepository - ServerRepository
-     * @param userRepository - UserRepository
      */
     public NoteController(NoteRepository noteRepository, CollectionRepository collectionRepository
-            , ServerRepository serverRepository, UserRepository userRepository) {
+            , ServerRepository serverRepository) {
         this.noteRepository = noteRepository;
         this.collectionRepository = collectionRepository;
         this.serverRepository = serverRepository;
-        this.userRepository = userRepository;
     }
 
     /**
-     * Endpoint for creating notes
+     * Endpoint for creating notes - still working with only 1 Default Collection
      * @param note - Note object
      * @return - Response, indicating note was created
      */
     @PostMapping("/create")
     public ResponseEntity<Note> createNote(@RequestBody Note note) {
-        User user = new User("Default");
-        userRepository.save(user); // User entity non-existent in the database
+        // 0 is the default collection in the database
+        // Ensure default Server exists - if not, create it
+        Server server = serverRepository.findById(0L)
+                .orElseGet(() -> {
+                    Server newServer = new Server();
+                    newServer.setServerId(0);
+                    return serverRepository.save(newServer);
+                });
 
-        // Retrieve the existing collection from the database by its ID
-        //int collectionId = note.getCollection().getCollectionId();
-        // 1 is an example collection in the database
-        Collection existingCollection = collectionRepository.findById((long)1)
-                .orElseThrow(() -> new NotFoundException("Collection not found"));
-        User existingUser = userRepository.findById((long)1)
-                .orElseThrow(() -> new NotFoundException("User not found"));
-
+        // Ensure default Collection exists - if not, again, create it
+        Collection collection = collectionRepository.findById(0L).orElseGet(() -> {
+            Collection defaultCollection = new Collection();
+            defaultCollection.setCollectionId(0);
+            defaultCollection.setCollectionTitle("Default Collection");
+            defaultCollection.setServer(server);
+            return collectionRepository.save(defaultCollection);
+        });
         // Set the existing collection in the note (ensure relationship consistency)
-        note.setCollection(existingCollection);
-       note.setUser(existingUser);
-
+        note.setCollection(collection);
         // Save the note
         Note savedNote = noteRepository.save(note);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedNote);

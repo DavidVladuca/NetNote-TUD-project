@@ -6,6 +6,9 @@ import commons.Language;
 import commons.LanguageOptions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import commons.Note;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.MediaType;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -151,28 +154,26 @@ public class HomeScreenCtrl {
     }
 
     /**
-     * Adds a new note to ListView and Database
-     * Database still not working properly -- TO BE IMPLEMENTED
+     * Adds a new note to ListView and Database.
      */
     public void add() throws IOException, InterruptedException {
         //Creates a note with text from the fields
-        Note newNote = new Note(noteTitleF.getText(), noteBodyF.getText(), null);
+        Note newNote = new Note(noteTitleF.getText(), noteBodyF.getText(), current_collection);
         var json = new ObjectMapper().writeValueAsString(newNote);  //JSON with the new note
         System.out.println(json);//Temporary for testing
-//        //Request body containing the created note
-//        var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
-//
-//        // Send the POST request
-//        var response = ClientBuilder.newClient()
-//                .target("localhost:8080/api/notes/create")
-//                .request(MediaType.APPLICATION_JSON)
-//                .post(requestBody);
+       //Request body containing the created note
+       var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
+       // Send the POST request
+       var response = ClientBuilder.newClient()
+               .target("http://localhost:8080/api/notes/create")
+               .request(MediaType.APPLICATION_JSON)
+               .post(requestBody);
         //Add notes to List<View>
         notes.add(newNote);
         //Clear the fields
         noteTitleF.clear();
         noteBodyF.clear();
-        System.out.println("Add");//Temporary for testing
+        System.out.println("Add"); // Temporary for testing
     }
 
     /**

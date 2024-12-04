@@ -10,11 +10,7 @@ public class Note {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private int noteId;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false) // Ensure that the title is mandatory in the database
-    private User user;
+    private long noteId;
 
     @ManyToOne
     @JoinColumn(name = "collection_id", nullable = false) // Ensure that the title is mandatory in the database
@@ -49,7 +45,7 @@ public class Note {
      * Getter for the noteId
      * @return integer value of the noteId
      */
-    public int getNoteId() {
+    public long getNoteId() {
         return noteId;
     }
 
@@ -57,7 +53,7 @@ public class Note {
      * Setter for the noteId
      * @param noteId - the value of the ID that we want to set
      */
-    public void setNoteId(int noteId) {
+    public void setNoteId(long noteId) {
         this.noteId = noteId;
     }
 
@@ -94,6 +90,38 @@ public class Note {
     }
 
     /**
+     * Getter for the collection
+     * @return - Collection
+     */
+    public Collection getCollection() {
+        return this.collection;
+    }
+
+    /**
+     * Setter for the collection
+     * @param collection
+     */
+    public void setCollection(Collection collection) {
+        this.collection = collection;
+    }
+
+    /**
+     * Getter for the Tags
+     * @return - the list of Strings representing the tags
+     */
+    public List<String> getTags() {
+        return tags;
+    }
+
+    /**
+     * Setter for the tags
+     * @param tags - list of Strings representing the tags
+     */
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
+
+    /**
      * Equals method for the Note class.
      * Returns true if obj is also a Note and has the same ID.
      * Else returns false
@@ -116,7 +144,7 @@ public class Note {
      */
     @Override
     public int hashCode() {
-        return Integer.hashCode(noteId);
+        return Long.hashCode(noteId);
     }
 
     /**
@@ -154,30 +182,5 @@ public class Note {
         if (matches.isEmpty())
             matches.add(-1);
         return matches;
-    }
-
-
-    /**
-     * Getter for the collection
-     * @return - Collection
-     */
-    public Collection getCollection() {
-        return this.collection;
-    }
-
-    /**
-     * Setter for the collection
-     * @param collection
-     */
-    public void setCollection(Collection collection) {
-        this.collection = collection;
-    }
-
-    /**
-     * Setter for the user
-     * @param user
-     */
-    public void setUser(User user) {
-        this.user = user;
     }
 }

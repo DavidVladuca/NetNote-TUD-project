@@ -21,8 +21,8 @@ public class ServerTest {
     @Test
     public void getterAndSetterTest() {
         server1.setServerId(3);
-        int expected = 3;
-        int actual = server1.getServerId();
+        long expected = 3;
+        long actual = server1.getServerId();
         assertEquals(expected, actual);
     }
 

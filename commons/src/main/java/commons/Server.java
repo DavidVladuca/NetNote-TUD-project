@@ -7,8 +7,8 @@ import java.util.List;
 public class Server {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private int serverId;
+    //@GeneratedValue(strategy = GenerationType.AUTO)
+    private long serverId;
 
     @OneToMany(mappedBy = "server", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Collection> collections;
@@ -22,7 +22,7 @@ public class Server {
      * Getter for the serverId
      * @return integer value of the serverId
      */
-    public int getServerId() {
+    public long getServerId() {
         return serverId;
     }
 
@@ -30,8 +30,16 @@ public class Server {
      * Setter for the serverId
      * @param serverId - the value of the ID that we want to set
      */
-    public void setServerId(int serverId) {
+    public void setServerId(long serverId) {
         this.serverId = serverId;
+    }
+
+    public List<Collection> getCollections() {
+        return collections;
+    }
+
+    public void setCollections(List<Collection> collections) {
+        this.collections = collections;
     }
 
     /**
@@ -65,7 +73,7 @@ public class Server {
      */
     @Override
     public int hashCode() {
-        return Integer.hashCode(serverId);
+        return Long.hashCode(serverId);
     }
 
     /**
