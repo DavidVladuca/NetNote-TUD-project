@@ -171,9 +171,9 @@ public class Note {
      * @param search_text - inputted text by user
      * @return - returns ArrayList of the starting index of all matches in the order in which they appear in the text; -1 if there are no matches, and empty array if no text has been introduced
      */
-    public ArrayList<Integer> getMatchIndices(String search_text) {
+    public ArrayList<Long> getMatchIndices(String search_text) {
         String total_content = title+body;
-        ArrayList<Integer> matches = new ArrayList<Integer>();
+        ArrayList<Long> matches = new ArrayList<Long>();
         if (search_text.isEmpty()) //before the user starts to write, the method will (likely) still be called todo - check if it is
             return matches;
         for (int i = 0; i < total_content.length() - search_text.length()+1; i++) {
