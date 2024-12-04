@@ -210,27 +210,27 @@ public class HomeScreenCtrl {
      */
     public void search() {
         String search_text = searchF.textProperty().getValue();
-        ArrayList<Integer> match_indices = current_note.getMatchIndices(search_text);
+        ArrayList<Long> match_indices = current_note.getMatchIndices(search_text);
         String titleHighlighted = current_note.getTitle();
         String bodyHighlighted = current_note.getBody();
         if (!match_indices.isEmpty()){
-            if (match_indices.getFirst()==-1 && match_indices.size()==1){
+            if (match_indices.getFirst()==-1L && match_indices.size()==1L){
                 System.out.println("Not found in \""+current_note.getTitle()+"\"");
             } else{ //parse in special way such that the found results are highlighted
                 for (int i=match_indices.size()-1; i>=0; i--){//iterating from the back to not have to consider changes in index due to additions
                     System.out.println(match_indices.get(i));
                     if (match_indices.get(i)<titleHighlighted.length()){
-                        titleHighlighted = titleHighlighted.substring(0, match_indices.get(i))
+                        titleHighlighted = titleHighlighted.substring(0, Math.toIntExact(match_indices.get(i)))
                                 + "<mark>"
                                 + search_text
                                 + "</mark>"
-                                + titleHighlighted.substring(match_indices.get(i) + search_text.length());
+                                + titleHighlighted.substring((int) (match_indices.get(i) + search_text.length()));
                     } else {
-                        bodyHighlighted = bodyHighlighted.substring(0, match_indices.get(i)-titleHighlighted.length())
+                        bodyHighlighted = bodyHighlighted.substring(0, (int) (match_indices.get(i)-titleHighlighted.length()))
                                 + "<mark>"
                                 + search_text
                                 + "</mark>"
-                                + bodyHighlighted.substring(match_indices.get(i) -titleHighlighted.length() + search_text.length());
+                                + bodyHighlighted.substring((int) (match_indices.get(i) -titleHighlighted.length() + search_text.length()));
                     }
                 }
             }
