@@ -178,10 +178,10 @@ public class Note {
             return matches;
         for (int i = 0; i < total_content.length() - search_text.length()+1; i++) {
             if (total_content.startsWith(search_text, i))
-                matches.add(i);
+                matches.add((long) i);
         }
         if (matches.isEmpty())
-            matches.add(-1);
+            matches.add(-1L);
         return matches;
     }
 }
