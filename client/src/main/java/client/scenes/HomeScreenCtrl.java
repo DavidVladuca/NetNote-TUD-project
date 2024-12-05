@@ -9,6 +9,7 @@ import commons.Note;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MediaType;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -63,6 +64,7 @@ public class HomeScreenCtrl {
     @FXML
     public void initialize() {
         setUpLanguages();
+
         setUpCollections();
         
         markDownTitle();
@@ -103,6 +105,8 @@ public class HomeScreenCtrl {
                 //change the output in the front-end for title and body
                 noteTitleF.setText(newNote.getTitle());
                 noteBodyF.setText(newNote.getBody());
+
+                Platform.runLater(() -> notesListView.getSelectionModel().clearSelection());
             }
         });
     }
@@ -210,7 +214,7 @@ public class HomeScreenCtrl {
      */
     public void search() {
         String search_text = searchF.textProperty().getValue();
-        ArrayList<Integer> match_indices = current_note.getMatchIndices(search_text);
+        ArrayList<Long> match_indices = current_note.getMatchIndices(search_text);
         String titleHighlighted = current_note.getTitle();
         String bodyHighlighted = current_note.getBody();
         if (!match_indices.isEmpty()){
@@ -220,17 +224,17 @@ public class HomeScreenCtrl {
                 for (int i=match_indices.size()-1; i>=0; i--){//iterating from the back to not have to consider changes in index due to additions
                     System.out.println(match_indices.get(i));
                     if (match_indices.get(i)<titleHighlighted.length()){
-                        titleHighlighted = titleHighlighted.substring(0, match_indices.get(i))
+                        titleHighlighted = titleHighlighted.substring(0, Math.toIntExact(match_indices.get(i)))
                                 + "<mark>"
                                 + search_text
                                 + "</mark>"
-                                + titleHighlighted.substring(match_indices.get(i) + search_text.length());
+                                + titleHighlighted.substring((int) (match_indices.get(i) + search_text.length()));
                     } else {
-                        bodyHighlighted = bodyHighlighted.substring(0, match_indices.get(i)-titleHighlighted.length())
+                        bodyHighlighted = bodyHighlighted.substring(0, (int) (match_indices.get(i)-titleHighlighted.length()))
                                 + "<mark>"
                                 + search_text
                                 + "</mark>"
-                                + bodyHighlighted.substring(match_indices.get(i) -titleHighlighted.length() + search_text.length());
+                                + bodyHighlighted.substring((int) (match_indices.get(i) -titleHighlighted.length() + search_text.length()));
                     }
                 }
             }

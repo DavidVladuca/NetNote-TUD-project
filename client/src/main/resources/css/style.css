@@ -27,3 +27,17 @@
     -fx-border-width: 2;
     -fx-padding: 5;
 }
+
+.list-cell:hover {
+    -fx-background-color: lightgray;
+    -fx-cursor: hand;
+}
+
+.button {
+    -fx-cursor: hand;
+}
+
+.choice-box {
+    -fx-cursor: hand;
+}
+

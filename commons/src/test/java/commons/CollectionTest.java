@@ -113,9 +113,9 @@ public class CollectionTest {
     @Test
     public void testSearchNoMatch(){
         Collection testCollection = new Collection();
-        ArrayList<ArrayList<Integer>> expected_output = new ArrayList<>();
-        ArrayList<Integer> expected_first_AL = new ArrayList<>();
-        expected_first_AL.add(-1);
+        ArrayList<ArrayList<Long>> expected_output = new ArrayList<>();
+        ArrayList<Long> expected_first_AL = new ArrayList<>();
+        expected_first_AL.add(-1L);
         expected_output.add(expected_first_AL);
         Note note1 = new Note();
         Note note2 = new Note();
@@ -128,21 +128,21 @@ public class CollectionTest {
     @Test
     public void testSearchMultipleNoteMatch(){
         Collection testCollection = new Collection();
-        ArrayList<ArrayList<Integer>> expected_output = new ArrayList<>();
-        ArrayList<Integer> expected_first_AL = new ArrayList<>();
-        ArrayList<Integer> expected_second_AL = new ArrayList<>();
-        expected_first_AL.add(1);
-        expected_first_AL.add(11);
-        expected_second_AL.add(27);
-        expected_second_AL.add(17);
-        expected_second_AL.add(43);
+        ArrayList<ArrayList<Long>> expected_output = new ArrayList<>();
+        ArrayList<Long> expected_first_AL = new ArrayList<>();
+        ArrayList<Long> expected_second_AL = new ArrayList<>();
+        expected_first_AL.add(1L);
+        expected_first_AL.add(11L);
+        expected_second_AL.add(27L);
+        expected_second_AL.add(17L);
+        expected_second_AL.add(43L);
         expected_output.add(expected_first_AL);
         expected_output.add(expected_second_AL);
 
         Note note1 = new Note();
         Note note2 = new Note();
-        note1.setNoteId(1);
-        note2.setNoteId(27);
+        note1.setNoteId(1L);
+        note2.setNoteId(27L);
         note1.setBody("Some body");
         note2.setBody("Some other body (adding extra match: body)");
         note1.setTitle("Note 1");
