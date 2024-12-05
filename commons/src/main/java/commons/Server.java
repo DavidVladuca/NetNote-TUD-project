@@ -1,4 +1,5 @@
 package commons;
+import com.fasterxml.jackson.annotation.*;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +11,8 @@ public class Server {
     //@GeneratedValue(strategy = GenerationType.AUTO)
     private long serverId;
 
-    @OneToMany(mappedBy = "server", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "server", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @JsonManagedReference
     private List<Collection> collections;
 
     // Default constructor for JPA

@@ -1,5 +1,6 @@
 package commons;
 
+import com.fasterxml.jackson.annotation.*;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
@@ -12,8 +13,9 @@ public class Note {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long noteId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collection_id", nullable = false) // Ensure that the title is mandatory in the database
+    @JsonBackReference
     private Collection collection;
 
     @Column(nullable = false) // Ensure that the title is mandatory in the database
