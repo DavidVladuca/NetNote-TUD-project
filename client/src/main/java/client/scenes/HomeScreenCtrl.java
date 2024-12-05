@@ -22,6 +22,8 @@ import org.commonmark.renderer.html.HtmlRenderer;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
+
 import commons.Collection;
 import commons.Server;
 
@@ -63,14 +65,42 @@ public class HomeScreenCtrl {
     @FXML
     public void initialize() {
         setUpLanguages();
+        
         setUpCollections();
         
         markDownTitle();
 
         markDownContent();
 
+        loadNotesFromServer();
+
         setupNotesListView();
 
+    }
+
+    private void loadNotesFromServer() {
+        try {
+            // Fetch notes from the server
+            var response = ClientBuilder.newClient()
+                    .target("http://localhost:8080/api/notes/fetch") // Update with your server's API URL
+                    .request(MediaType.APPLICATION_JSON)
+                    .get();
+
+            if (response.getStatus() == 200) {
+                // Parse the JSON response into a List of Note objects
+                String json = response.readEntity(String.class);
+                ObjectMapper mapper = new ObjectMapper();
+                List<Note> fetchedNotes = mapper.readValue(json, mapper.getTypeFactory().constructCollectionType(List.class, Note.class));
+
+                // Add the fetched notes to the ObservableList
+                notes.clear(); // Clear existing notes
+                notes.addAll(fetchedNotes);
+            } else {
+                System.err.println("Failed to fetch notes. Error code " + response.getStatus());
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading the notes: " + e.getMessage());
+        }
     }
 
     private void setupNotesListView() {

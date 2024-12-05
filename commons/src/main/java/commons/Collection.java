@@ -1,5 +1,6 @@
 package commons;
 
+import com.fasterxml.jackson.annotation.*;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
@@ -12,14 +13,16 @@ public class Collection {
     //@GeneratedValue(strategy = GenerationType.AUTO)
     private long collectionId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "server_id", nullable = false) // Foreign key to Server
+    @JsonBackReference
     private Server server;
 
     @Column(nullable = false) // Ensure that the title is mandatory in the database
     private String collectionTitle;
 
-    @OneToMany(mappedBy = "collection", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "collection", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @JsonManagedReference
     private List<Note> notes;
 
     // Default constructor for JPA

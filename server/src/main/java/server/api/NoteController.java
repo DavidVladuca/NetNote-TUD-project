@@ -81,8 +81,10 @@ public class NoteController {
      */
     @GetMapping("/fetch")
     public List<Note> getAllNotes() {
-        return noteRepository.findAll(); // Fetches all notes from the database
+        return noteRepository.findAll();
     }
+
+
 
     /**
      * Endpoint for fetching a note by ID
