@@ -35,12 +35,16 @@ public class HomeScreenCtrl {
     public Button addB;
     public Button deleteB;
     public Button undoB;
+    public Button dropDownSearchNoteB;
+    public Button prevMatchB;
+    public Button nextMatchB;
     public ChoiceBox<Language> selectLangBox = new ChoiceBox<Language>();
     public TextField noteTitleF;
     public TextArea noteBodyF;
     public TextField searchCollectionF;
     public TextField searchNoteF;
-
+    private int current_search_index = 0;
+    private  ArrayList<Long> note_match_indices;
     public Button searchMore;
     public Button getNextMatch;
     public Button getPreviousMatch;
@@ -250,26 +254,45 @@ public class HomeScreenCtrl {
      */
     public void searchNote() {
         String search_text = searchNoteF.textProperty().getValue();
-        ArrayList<Long> match_indices = current_note.getMatchIndices(search_text);
+        note_match_indices = current_note.getMatchIndices(search_text);
+        if (search_text.isEmpty()){
+            current_search_index=0;
+        }
         String titleHighlighted = current_note.getTitle();
         String bodyHighlighted = current_note.getBody();
-        if (!match_indices.isEmpty()){
-            if (match_indices.getFirst()==-1L && match_indices.size()==1L){
+        if (!note_match_indices.isEmpty()){
+            if (note_match_indices.getFirst()==-1L && note_match_indices.size()==1L){
                 System.out.println("Not found in \""+current_note.getTitle()+"\"");
             } else{ //parse in special way such that the found results are highlighted
-                for (int i=match_indices.size()-1; i>=0; i--){//iterating from the back to not have to consider changes in index due to additions
-                    if (match_indices.get(i)<titleHighlighted.length()){
-                        titleHighlighted = titleHighlighted.substring(0, Math.toIntExact(match_indices.get(i)))
-                                + "<mark>"
-                                + search_text
-                                + "</mark>"
-                                + titleHighlighted.substring((int) (match_indices.get(i) + search_text.length()));
+                for (int i=note_match_indices.size()-1; i>=0; i--){//iterating from the back to not have to consider changes in index due to additions
+                    if (note_match_indices.get(i)<titleHighlighted.length()){
+                        if (i==current_search_index) {
+                            titleHighlighted = titleHighlighted.substring(0, Math.toIntExact(note_match_indices.get(i)))
+                                    + "<mark style=\"background: #E1C16E\">"
+                                    + search_text
+                                    + "</mark>"
+                                    + titleHighlighted.substring((int) (note_match_indices.get(i) + search_text.length()));
+                        } else {
+                            titleHighlighted = titleHighlighted.substring(0, Math.toIntExact(note_match_indices.get(i)))
+                                    + "<mark>"
+                                    + search_text
+                                    + "</mark>"
+                                    + titleHighlighted.substring((int) (note_match_indices.get(i) + search_text.length()));
+                        }
                     } else {
-                        bodyHighlighted = bodyHighlighted.substring(0, (int) (match_indices.get(i)-titleHighlighted.length()))
-                                + "<mark>"
-                                + search_text
-                                + "</mark>"
-                                + bodyHighlighted.substring((int) (match_indices.get(i) -titleHighlighted.length() + search_text.length()));
+                        if (i==current_search_index){
+                            bodyHighlighted = bodyHighlighted.substring(0, (int) (note_match_indices.get(i) - titleHighlighted.length()))
+                                    + "<mark style=\"background: #E1C16E\">"
+                                    + search_text
+                                    + "</mark>"
+                                    + bodyHighlighted.substring((int) (note_match_indices.get(i) - titleHighlighted.length() + search_text.length()));
+                        } else {
+                            bodyHighlighted = bodyHighlighted.substring(0, (int) (note_match_indices.get(i) - titleHighlighted.length()))
+                                    + "<mark>"
+                                    + search_text
+                                    + "</mark>"
+                                    + bodyHighlighted.substring((int) (note_match_indices.get(i) - titleHighlighted.length() + search_text.length()));
+                        }
                     }
                 }
             }
@@ -287,15 +310,15 @@ public class HomeScreenCtrl {
      */
     public void searchCollection(){//todo - finish
         String search_text = searchCollectionF.textProperty().getValue();
-        ArrayList<ArrayList<Long>> match_indices = current_collection.getSearch(search_text); //todo -check if collection gets updated, or only fetchedNotes
+        ArrayList<ArrayList<Long>> collection_match_indices = current_collection.getSearch(search_text); //todo -check if collection gets updated, or only fetchedNotes
         ObservableList<Note> display_notes = FXCollections.observableArrayList();
-        if (!match_indices.isEmpty()){
-            if (match_indices.getFirst().getFirst()==-1) {
+        if (!collection_match_indices.isEmpty()){
+            if (collection_match_indices.getFirst().getFirst()==-1) {
                 System.out.println("There are no matches for " + search_text);
                 display_notes.clear(); //gives an empty display
             } else{
-                for (int i=0; i< match_indices.size();i++) {
-                    display_notes.add(current_collection.getNotes().get(Math.toIntExact(match_indices.get(i).getFirst())));
+                for (int i=0; i< collection_match_indices.size();i++) {
+                    display_notes.add(current_collection.getNotes().get(Math.toIntExact(collection_match_indices.get(i).getFirst())));
                 }
             }
         } else{
@@ -350,6 +373,34 @@ public class HomeScreenCtrl {
             System.out.println("Selected: " + newValue);
         });
 
+    }
+
+    public void prevMatchB(){
+        if (note_match_indices == null || note_match_indices.isEmpty()){
+            System.out.println("No text been searched");
+        }else if (note_match_indices.getFirst()==-1){
+            System.out.println("No matches; no previous instance");
+        }else if(current_search_index>0){
+            current_search_index--;
+            searchNote();
+        }else{
+            current_search_index= Math.toIntExact(note_match_indices.size()-1);
+            searchNote();
+        }
+    }
+    public void nextMatchB(){
+        System.out.println("");
+        if (note_match_indices ==null || note_match_indices.isEmpty()){
+            System.out.println("No text been searched");
+        }else if (note_match_indices.getFirst()==-1){
+            System.out.println("No matches; no next instance");
+        }else if(current_search_index<note_match_indices.size()-1){
+            current_search_index++;
+            searchNote();
+        }else{
+            current_search_index=0;
+            searchNote();
+        }
     }
 
 }
