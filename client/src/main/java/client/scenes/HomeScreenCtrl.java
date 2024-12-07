@@ -2,6 +2,7 @@ package client.scenes;
 
 
 import client.HomeScreen;
+import com.google.inject.Inject;
 import commons.Language;
 import commons.LanguageOptions;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,13 +29,18 @@ import java.util.List;
 import commons.Collection;
 import commons.Server;
 
-
 public class HomeScreenCtrl {
     //todo - for all methods, change strings title and body to getting them from the note instead
+    private final ScreenCtrl sc;
+
+    @Inject
+    public HomeScreenCtrl(ScreenCtrl sc) {this.sc = sc;}
+
     @FXML
     public Button addB;
     public Button deleteB;
     public Button undoB;
+    public Button editCollectionsB;
     public ChoiceBox<Language> selectLangBox = new ChoiceBox<Language>();
     public TextField noteTitleF;
     public TextArea noteBodyF;
@@ -64,19 +70,18 @@ public class HomeScreenCtrl {
      * and sets up the listener for the text area that the user types in. - based on other methods it calls
      */
     @FXML
-    public void initialize() {
+    public void initialize() throws IOException {
         setUpLanguages();
-
         setUpCollections();
-        
         markDownTitle();
-
         markDownContent();
-
         loadNotesFromServer();
-
         setupNotesListView();
+    }
 
+    public void editCollections() {
+        System.out.println("Edit Collections View Selected");
+        sc.showEditCollection();
     }
 
     private void loadNotesFromServer() {
@@ -228,7 +233,7 @@ public class HomeScreenCtrl {
      * IDK yet
      */
     public void undo() {
-        System.out.println("Undo");  //Temporary for testing
+        System.out.println("Undo");//Temporary for testing
     }
 
     /**
@@ -299,14 +304,15 @@ public class HomeScreenCtrl {
     }
 
     public void setUpCollections() {
-        //todo - implement properly once database MR is sent
-        selectCollectionBox.getItems().addAll(new Collection(current_server, "Default"));
+        selectCollectionBox.getItems().setAll(
+                new Collection(current_server, "Default")
+                //todo - add all collections
+        );
+
         selectCollectionBox.setValue(selectCollectionBox.getItems().getFirst());
         selectCollectionBox.setConverter(new StringConverter<>() {
             @Override
-            public String toString(Collection collection) {
-                return collection.getCollectionTitle();
-            }
+            public String toString(Collection collection) {return collection.getCollectionTitle();}
 
             @Override
             public Collection fromString(String s) {
@@ -314,10 +320,10 @@ public class HomeScreenCtrl {
             }
         });
 
-        selectCollectionBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            System.out.println("Selected: " + newValue);
+        selectCollectionBox.getSelectionModel().selectedItemProperty().addListener((obs, oldCollection, newCollection) -> {
+            if (!newCollection.equals(oldCollection)) {
+                System.out.println(selectCollectionBox.getValue().getCollectionTitle());
+            }
         });
-
     }
-
 }
