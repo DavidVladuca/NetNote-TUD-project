@@ -38,7 +38,12 @@ public class HomeScreenCtrl {
     public ChoiceBox<Language> selectLangBox = new ChoiceBox<Language>();
     public TextField noteTitleF;
     public TextArea noteBodyF;
-    public TextField searchF;
+    public TextField searchCollectionF;
+    public TextField searchNoteF;
+
+    public Button searchMore;
+    public Button getNextMatch;
+    public Button getPreviousMatch;
     public WebView markDownOutput;
     public ChoiceBox<Collection> selectCollectionBox = new ChoiceBox<>();
 
@@ -195,6 +200,8 @@ public class HomeScreenCtrl {
     public void add() throws IOException, InterruptedException {
         //Creates a note with text from the fields
         Note newNote = new Note(noteTitleF.getText(), noteBodyF.getText(), current_collection);
+        newNote.setNoteId(current_collection.getLatestNoteId()+1);
+        current_collection.addNote(newNote);
         var json = new ObjectMapper().writeValueAsString(newNote);  //JSON with the new note
         System.out.println(json);//Temporary for testing
        //Request body containing the created note
@@ -241,8 +248,8 @@ public class HomeScreenCtrl {
     /**
      * Searches for a note based on text field input
      */
-    public void search() {
-        String search_text = searchF.textProperty().getValue();
+    public void searchNote() {
+        String search_text = searchNoteF.textProperty().getValue();
         ArrayList<Long> match_indices = current_note.getMatchIndices(search_text);
         String titleHighlighted = current_note.getTitle();
         String bodyHighlighted = current_note.getBody();
@@ -251,7 +258,6 @@ public class HomeScreenCtrl {
                 System.out.println("Not found in \""+current_note.getTitle()+"\"");
             } else{ //parse in special way such that the found results are highlighted
                 for (int i=match_indices.size()-1; i>=0; i--){//iterating from the back to not have to consider changes in index due to additions
-                    System.out.println(match_indices.get(i));
                     if (match_indices.get(i)<titleHighlighted.length()){
                         titleHighlighted = titleHighlighted.substring(0, Math.toIntExact(match_indices.get(i)))
                                 + "<mark>"
@@ -276,7 +282,33 @@ public class HomeScreenCtrl {
 
     }
 
-    public void setUpLanguages(){
+    /**
+     * Searches through collection and displays notes that match search
+     */
+    public void searchCollection(){//todo - finish
+        String search_text = searchCollectionF.textProperty().getValue();
+        ArrayList<ArrayList<Long>> match_indices = current_collection.getSearch(search_text); //todo -check if collection gets updated, or only fetchedNotes
+        ObservableList<Note> display_notes = FXCollections.observableArrayList();
+        if (!match_indices.isEmpty()){
+            if (match_indices.getFirst().getFirst()==-1) {
+                System.out.println("There are no matches for " + search_text);
+                display_notes.clear(); //gives an empty display
+            } else{
+                for (int i=0; i< match_indices.size();i++) {
+                    display_notes.add(current_collection.getNotes().get(Math.toIntExact(match_indices.get(i).getFirst())));
+                }
+            }
+        } else{
+            display_notes=notes;
+        }
+        notesListView.setItems(display_notes);
+    }
+
+    /**
+     * Sets up the languages - from all languages available, sets English as Default
+     * Listens for changes in language.
+     */
+    public void setUpLanguages(){ //todo - check if there is a way to store user language preference
         selectLangBox.getItems().setAll(LanguageOptions.getInstance().getLanguages());
         selectLangBox.setValue(selectLangBox.getItems().getFirst());
         selectLangBox.setConverter(new StringConverter<>() {

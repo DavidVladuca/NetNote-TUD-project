@@ -11,7 +11,7 @@ public class Note {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private long noteId;
+    private long noteId; //todo - this does not work well all notes have id 0
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collection_id", nullable = false) // Ensure that the title is mandatory in the database
