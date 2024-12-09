@@ -127,7 +127,7 @@
 				<artifactId>javafx-maven-plugin</artifactId>
 				<version>0.0.8</version>
 				<configuration>
-					<mainClass>client.HomeScreen</mainClass>
+					<mainClass>client.Scene</mainClass>
 				</configuration>
 			</plugin>
 			<plugin>
