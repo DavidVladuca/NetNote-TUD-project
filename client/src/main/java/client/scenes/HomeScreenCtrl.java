@@ -25,6 +25,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import commons.Collection;
 import commons.Server;
@@ -62,6 +65,10 @@ public class HomeScreenCtrl {
     public String title = "";
     public String content = ""; //todo - this should be part of the note - not independent strings
 
+    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private String lastSyncedTitle = "";
+    private String lastSyncedBody = "";
+
     public final Parser parser = Parser.builder().build();
     public final HtmlRenderer renderer = HtmlRenderer.builder().build();
 
@@ -70,13 +77,66 @@ public class HomeScreenCtrl {
      * and sets up the listener for the text area that the user types in. - based on other methods it calls
      */
     @FXML
-    public void initialize() throws IOException {
+    public void initialize() {
+        scheduler.scheduleAtFixedRate(this::syncIfChanged, 0, 5, TimeUnit.SECONDS);
         setUpLanguages();
         setUpCollections();
         markDownTitle();
         markDownContent();
         loadNotesFromServer();
         setupNotesListView();
+    }
+
+    /**
+     * This method ensures that the title and the content of the Note
+     * will be synced with the database every 5 seconds if something was changed.
+     * 5 seconds is specified in initialize method
+     */
+    private void syncIfChanged() {
+        Platform.runLater(() -> {
+            // Check if the note content has changed since the last sync
+            if (current_note != null &&
+                    (!current_note.getTitle().equals(lastSyncedTitle) ||
+                            !current_note.getBody().equals(lastSyncedBody))) {
+
+                // Sync with the server if change
+                syncNoteWithServer(current_note);
+
+                // Update the last synced title and body to current title and body
+                lastSyncedTitle = current_note.getTitle();
+                lastSyncedBody = current_note.getBody();
+
+                System.out.println("Note synced with the server at: " + java.time.LocalTime.now()); // for testing
+            }
+        });
+    }
+
+    /**
+     * This method ensures the syncing with the server (database)
+     * @param note - note provided - in syncIfChanged method to be specific
+     */
+    private void syncNoteWithServer(Note note) {
+        try {
+            String json = new ObjectMapper().writeValueAsString(note);
+            System.out.println("Serialized JSON: " + json);  // for testing
+
+            var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
+            // the put request to actually update the content with json
+            var response = ClientBuilder.newClient()
+                    .target("http://localhost:8080/api/notes/update")
+                    .request(MediaType.APPLICATION_JSON)
+                    .put(requestBody);
+
+            System.out.println("Response Status: " + response.getStatus()); // for testing
+            System.out.println("Response Body: " + response.readEntity(String.class)); // for testing
+            // if something screwed up :D
+            if (response.getStatus() != 200) {
+                System.err.println("Failed to update note on server. Status code: " + response.getStatus());
+            }
+        } catch (Exception e) {
+            System.err.println("Error syncing note with server: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     public void editCollections() {
@@ -136,6 +196,7 @@ public class HomeScreenCtrl {
         // Handling selection in the ListView
         notesListView.getSelectionModel().selectedItemProperty().addListener((obs, oldNote, newNote) -> {
             if (newNote != null) {
+                current_note = newNote;
                 //change the output in the front-end for title and body
                 noteTitleF.setText(newNote.getTitle());
                 noteBodyF.setText(newNote.getBody());
