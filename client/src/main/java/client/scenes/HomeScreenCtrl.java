@@ -261,6 +261,7 @@ public class HomeScreenCtrl {
     public void add() throws IOException, InterruptedException {
         //Creates a note with text from the fields
         Note newNote = new Note(noteTitleF.getText(), noteBodyF.getText(), current_collection);
+        current_collection.addNote(newNote);
         var json = new ObjectMapper().writeValueAsString(newNote);  //JSON with the new note
         System.out.println(json);//Temporary for testing
        //Request body containing the created note
@@ -285,6 +286,8 @@ public class HomeScreenCtrl {
         Note selectedNote = notesListView.getSelectionModel().getSelectedItem();
         if (selectedNote != null) {
             notes.remove(selectedNote);
+            selectedNote.getCollection().removeNote(selectedNote);
+            notesListView.getSelectionModel().clearSelection();
         }
 
         System.out.println("Delete");  //Temporary for testing
@@ -298,10 +301,46 @@ public class HomeScreenCtrl {
     }
 
     /**
-     * Edits the title of currently selected note
+     * Edits the title of the currently selected note
      */
     public void titleEdit() {
+
         System.out.println("Title Edit");  //Temporary for testing
+
+        Note selectedNote = notesListView.getSelectionModel().getSelectedItem();
+
+        if (selectedNote != null) {
+            Collection selectedCollection = selectedNote.getCollection();
+
+            // Searching for title duplicates in the respective collection
+            int ok=1;
+            for(int i=0; i<selectedCollection.getNotes().size(); i++) {
+                if(selectedCollection.getNotes().get(i).getTitle().equals(noteTitleF.getText())
+                        && !selectedCollection.getNotes().get(i).equals(selectedNote)) {
+                    ok=0;
+                }
+            }
+
+            if(ok==1) {
+                //saving the title
+                selectedNote.setTitle(noteTitleF.getText());
+                syncIfChanged();
+            }else{
+                //found a duplicate of the title
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+
+                alert.setTitle("Duplicate Title");
+                alert.setHeaderText("Title Already Exists");
+                alert.setContentText("The title you have chosen already exists in this collection. Please choose a different one.");
+
+                alert.showAndWait(); // Wait for the user to dismiss the alert
+
+                noteTitleF.requestFocus(); // Set focus back to the title field for convenience
+
+                System.out.println("Note title already exists"); // Temporary for testing
+            }
+        }
+
     }
 
     /**
