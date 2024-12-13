@@ -310,45 +310,12 @@ public class HomeScreenCtrl {
      */
     public void refresh() {
         Platform.runLater(() -> {
-            System.out.println("Refreshing the selected note...");
-
-            Note selectedNote = notesListView.getSelectionModel().getSelectedItem();
-
-            // Ensure the displayed note is selected in the ListView
-            if (selectedNote == null && noteBodyF.getText() != null) {
-                for (Note note : notesListView.getItems()) {
-                    if (note.getBody().equals(noteBodyF.getText())) {
-                        notesListView.getSelectionModel().select(note);
-                        selectedNote = note;
-                        break;
-                    }
-                }
-            }
-
-            if (selectedNote == null) {
-                System.out.println("No note is selected for refresh.");
-                return;
-            }
-
+            System.out.println("Refreshing all notes...");
             try {
-                // Fetch the latest version of the selected note from the server
-                Note updatedNote = fetchNoteById(selectedNote.getNoteId());
-
-                if (updatedNote != null) {
-                    // Update the local note object
-                    selectedNote.setTitle(updatedNote.getTitle());
-                    selectedNote.setBody(updatedNote.getBody());
-
-                    // Update the UI fields to reflect the refreshed note
-                    noteTitleF.setText(updatedNote.getTitle());
-                    noteBodyF.setText(updatedNote.getBody());
-
-                    System.out.println("Selected note refreshed successfully!");
-                } else {
-                    System.err.println("Failed to refresh the selected note. Note not found on the server.");
-                }
+                loadNotesFromServer(); // Re-fetches all notes from the server and updates the ObservableList
+                System.out.println("All notes refreshed successfully!");
             } catch (Exception e) {
-                System.err.println("Error refreshing the selected note: " + e.getMessage());
+                System.err.println("Error refreshing notes: " + e.getMessage());
                 e.printStackTrace();
             }
         });
