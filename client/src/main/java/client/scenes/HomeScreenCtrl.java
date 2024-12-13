@@ -21,7 +21,6 @@ import javafx.scene.web.WebView;
 import javafx.util.StringConverter;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -243,7 +242,7 @@ public class HomeScreenCtrl {
             }
         });
     }
-    
+
     /**
      * Utility function used to locate resources within applications filepath
      *
