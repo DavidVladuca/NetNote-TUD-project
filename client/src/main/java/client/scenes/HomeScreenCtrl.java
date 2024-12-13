@@ -243,8 +243,7 @@ public class HomeScreenCtrl {
             }
         });
     }
-
-
+    
     /**
      * Utility function used to locate resources within applications filepath
      *
@@ -258,24 +257,33 @@ public class HomeScreenCtrl {
     /**
      * Adds a new note to ListView and Database.
      */
-    public void add() throws IOException, InterruptedException {
-        //Creates a note with text from the fields
-        Note newNote = new Note(noteTitleF.getText(), noteBodyF.getText(), current_collection);
-        var json = new ObjectMapper().writeValueAsString(newNote);  //JSON with the new note
-        System.out.println(json);//Temporary for testing
-       //Request body containing the created note
-       var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
-       // Send the POST request
-       var response = ClientBuilder.newClient()
-               .target("http://localhost:8080/api/notes/create")
-               .request(MediaType.APPLICATION_JSON)
-               .post(requestBody);
-        //Add notes to List<View>
+    @FXML
+    public void add() {
+        // Generate a unique title for the new note
+        String baseTitle = "New note";
+        String newTitle = baseTitle;
+        int counter = 1;
+        List<String> existingTitles = notes.stream().map(Note::getTitle).toList();
+        while (existingTitles.contains(newTitle)) {
+            newTitle = baseTitle + "(" + counter + ")";
+            counter++;
+        }
+        // Create the new note
+        Note newNote = new Note(newTitle, "", current_collection);
+
+        // Add the new note to the list
         notes.add(newNote);
-        //Clear the fields
-        noteTitleF.clear();
-        noteBodyF.clear();
-        System.out.println("Add"); // Temporary for testing
+
+        // Select the new note in the ListView
+        notesListView.getSelectionModel().select(newNote);
+
+        // Update the current note and synchronize with UI
+        current_note = newNote;
+        noteTitleF.setText(newNote.getTitle());
+        noteBodyF.setText(newNote.getBody());
+
+        // Optionally sync the new note with the server
+        syncNoteWithServer(newNote);
     }
 
     /**
