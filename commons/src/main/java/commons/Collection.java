@@ -156,8 +156,14 @@ public class Collection {
      * method to add note
      * @param new_note - note to be added to the collection
      */
-    public void addNote(Note new_note){notes.add(new_note);} //todo - make it so that you can also add notes
-    //todo - add tests
+    public void addNote(Note new_note){ //todo - add tests
+        notes.add(new_note);
+    }
+
+    public void removeNote(Note note){ //todo - add tests
+        notes.remove(note);
+    }
+
     /**
      * searches collections
      * @param search_text - text that needs to be matched
