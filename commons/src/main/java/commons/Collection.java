@@ -156,11 +156,11 @@ public class Collection {
      * method to add note
      * @param new_note - note to be added to the collection
      */
-    public void addNote(Note new_note){ //todo - add tests
+    public void addNote(Note new_note){
         notes.add(new_note);
     }
 
-    public void removeNote(Note note){ //todo - add tests
+    public void removeNote(Note note){
         notes.remove(note);
     }
 

@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -85,4 +87,74 @@ public class NoteTest {
         assertEquals(expected, note1.getMatchIndices("T"));
     }
     //Todo - add test for full word, and test for searching wrong word.
+
+    @Test
+    void getNoteId() {
+        // Test getting the note ID
+        note1.setNoteId(5);
+        assertEquals(5, note1.getNoteId(), "getNoteId should return the correct ID");
+    }
+
+    @Test
+    void setNoteId() {
+        // Test setting the note ID
+        note1.setNoteId(10);
+        assertEquals(10, note1.getNoteId(), "setNoteId should correctly set the ID");
+    }
+
+    @Test
+    void getTitle() {
+        // Test getting the title
+        assertEquals("Title 1", note1.getTitle(), "getTitle should return the correct title");
+    }
+
+    @Test
+    void setTitle() {
+        // Test setting the title
+        note1.setTitle("New Title");
+        assertEquals("New Title", note1.getTitle(), "setTitle should correctly set the title");
+    }
+
+    @Test
+    void getBody() {
+        // Test getting the body content
+        assertEquals("Test Content 1", note1.getBody(), "getBody should return the correct body");
+    }
+
+    @Test
+    void setBody() {
+        // Test setting the body content
+        note1.setBody("New Body");
+        assertEquals("New Body", note1.getBody(), "setBody should correctly set the body");
+    }
+
+    @Test
+    void getCollection() {
+        // Test getting the collection of the note
+        assertEquals(collection1, note1.getCollection(), "getCollection should return the correct collection");
+    }
+
+    @Test
+    void setCollection() {
+        // Test setting the collection of the note
+        Collection newCollection = new Collection();
+        note1.setCollection(newCollection);
+        assertEquals(newCollection, note1.getCollection(), "setCollection should correctly set the collection");
+    }
+
+    @Test
+    void getTags() {
+        // Test getting the tags of the note
+        List<String> expectedTags = new ArrayList<>();
+        assertEquals(expectedTags, note1.getTags(), "getTags should return the correct list of tags");
+    }
+
+    @Test
+    void setTags() {
+        // Test setting the tags of the note
+        List<String> newTags = Arrays.asList("tag1", "tag2");
+        note1.setTags(newTags);
+        assertEquals(newTags, note1.getTags(), "setTags should correctly set the tags");
+    }
+
 }
