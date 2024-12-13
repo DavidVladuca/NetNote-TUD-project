@@ -43,6 +43,7 @@ public class HomeScreenCtrl {
     public Button addB;
     public Button deleteB;
     public Button undoB;
+    public Button refreshB;
     public Button editCollectionsB;
     public ChoiceBox<Language> selectLangBox = new ChoiceBox<Language>();
     public TextField noteTitleF;
@@ -302,6 +303,82 @@ public class HomeScreenCtrl {
      */
     public void titleEdit() {
         System.out.println("Title Edit");  //Temporary for testing
+    }
+
+    /**
+     * Refreshes the notes list by re-fetching the notes from the server.
+     */
+    public void refresh() {
+        Platform.runLater(() -> {
+            System.out.println("Refreshing the selected note...");
+
+            Note selectedNote = notesListView.getSelectionModel().getSelectedItem();
+
+            // Ensure the displayed note is selected in the ListView
+            if (selectedNote == null && noteBodyF.getText() != null) {
+                for (Note note : notesListView.getItems()) {
+                    if (note.getBody().equals(noteBodyF.getText())) {
+                        notesListView.getSelectionModel().select(note);
+                        selectedNote = note;
+                        break;
+                    }
+                }
+            }
+
+            if (selectedNote == null) {
+                System.out.println("No note is selected for refresh.");
+                return;
+            }
+
+            try {
+                // Fetch the latest version of the selected note from the server
+                Note updatedNote = fetchNoteById(selectedNote.getNoteId());
+
+                if (updatedNote != null) {
+                    // Update the local note object
+                    selectedNote.setTitle(updatedNote.getTitle());
+                    selectedNote.setBody(updatedNote.getBody());
+
+                    // Update the UI fields to reflect the refreshed note
+                    noteTitleF.setText(updatedNote.getTitle());
+                    noteBodyF.setText(updatedNote.getBody());
+
+                    System.out.println("Selected note refreshed successfully!");
+                } else {
+                    System.err.println("Failed to refresh the selected note. Note not found on the server.");
+                }
+            } catch (Exception e) {
+                System.err.println("Error refreshing the selected note: " + e.getMessage());
+                e.printStackTrace();
+            }
+        });
+    }
+
+    /**
+     * Fetches a specific note from the server by its ID
+     *
+     * @param noteId The ID of the note to fetch
+     * @return The fetched Note object or null if it was not found or there was an error
+     */
+    private Note fetchNoteById(long noteId) {
+        try {
+            var response = ClientBuilder.newClient()
+                    .target("http://localhost:8080/api/notes/" + noteId) // Replace with actual API endpoint for fetching a single note
+                    .request(MediaType.APPLICATION_JSON)
+                    .get();
+
+            if (response.getStatus() == 200) {
+                String json = response.readEntity(String.class);
+                ObjectMapper mapper = new ObjectMapper();
+                return mapper.readValue(json, Note.class);
+            } else {
+                System.err.println("Failed to fetch note with ID " + noteId + ". Status code: " + response.getStatus());
+                return null;
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching note with ID " + noteId + ": " + e.getMessage());
+            return null;
+        }
     }
 
     /**
