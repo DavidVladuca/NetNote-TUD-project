@@ -43,6 +43,7 @@ public class HomeScreenCtrl {
     public Button addB;
     public Button deleteB;
     public Button undoB;
+    public Button refreshB;
     public Button editCollectionsB;
     public ChoiceBox<Language> selectLangBox = new ChoiceBox<Language>();
     public TextField noteTitleF;
@@ -302,6 +303,49 @@ public class HomeScreenCtrl {
      */
     public void titleEdit() {
         System.out.println("Title Edit");  //Temporary for testing
+    }
+
+    /**
+     * Refreshes the notes list by re-fetching the notes from the server.
+     */
+    public void refresh() {
+        Platform.runLater(() -> {
+            System.out.println("Refreshing all notes...");
+            try {
+                loadNotesFromServer(); // Re-fetches all notes from the server and updates the ObservableList
+                System.out.println("All notes refreshed successfully!");
+            } catch (Exception e) {
+                System.err.println("Error refreshing notes: " + e.getMessage());
+                e.printStackTrace();
+            }
+        });
+    }
+
+    /**
+     * Fetches a specific note from the server by its ID
+     *
+     * @param noteId The ID of the note to fetch
+     * @return The fetched Note object or null if it was not found or there was an error
+     */
+    private Note fetchNoteById(long noteId) {
+        try {
+            var response = ClientBuilder.newClient()
+                    .target("http://localhost:8080/api/notes/" + noteId) // Replace with actual API endpoint for fetching a single note
+                    .request(MediaType.APPLICATION_JSON)
+                    .get();
+
+            if (response.getStatus() == 200) {
+                String json = response.readEntity(String.class);
+                ObjectMapper mapper = new ObjectMapper();
+                return mapper.readValue(json, Note.class);
+            } else {
+                System.err.println("Failed to fetch note with ID " + noteId + ". Status code: " + response.getStatus());
+                return null;
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching note with ID " + noteId + ": " + e.getMessage());
+            return null;
+        }
     }
 
     /**
