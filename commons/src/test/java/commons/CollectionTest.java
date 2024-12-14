@@ -151,4 +151,58 @@ public class CollectionTest {
         testCollection.addNote(note2);
         assertEquals(expected_output, testCollection.getSearch("body"));
     }
+
+    @Test
+    public void testAddNote() {
+        // Creating new notes
+        Note note1 = new Note("Title 1", "Body 1", collection1);
+        Note note2 = new Note("Title 2", "Body 2", collection1);
+
+        // Verifying the collection starts empty
+        assertTrue(collection1.getNotes().isEmpty(), "Collection should start with no notes");
+
+        // Adding the first note
+        collection1.addNote(note1);
+
+        // Verifying the note was added
+        assertEquals(1, collection1.getNotes().size(), "Collection should have one note after adding");
+        assertTrue(collection1.getNotes().contains(note1), "Collection should contain the added note");
+
+        // Adding the second note
+        collection1.addNote(note2);
+
+        // Verifying both notes are present
+        assertEquals(2, collection1.getNotes().size(), "Collection should have two notes after adding");
+        assertTrue(collection1.getNotes().contains(note2), "Collection should contain the second note");
+    }
+
+    @Test
+    public void testRemoveNote() {
+        // Creating new notes
+        Note note1 = new Note("Title 1", "Body 1", collection1);
+        note1.setNoteId(1);
+        Note note2 = new Note("Title 2", "Body 2", collection1);
+        note2.setNoteId(2);
+
+        // Adding the notes to the collection
+        collection1.addNote(note1);
+        collection1.addNote(note2);
+
+        // Verifying both notes are present
+        assertEquals(2, collection1.getNotes().size(), "Collection should initially contain two notes");
+
+        // Removing the first note
+        collection1.removeNote(note1);
+
+        // Verifying the first note was removed and the second note remains
+        assertEquals(1, collection1.getNotes().size(), "Collection should contain one note after removal");
+        assertTrue(!collection1.getNotes().contains(note1), "Collection should not contain the removed note");
+        assertTrue(collection1.getNotes().contains(note2), "Collection should still contain the remaining note");
+
+        // Removing the second note
+        collection1.removeNote(note2);
+
+        // Verifying the collection is now empty
+        assertTrue(collection1.getNotes().isEmpty(), "Collection should be empty after removing all notes");
+    }
 }
