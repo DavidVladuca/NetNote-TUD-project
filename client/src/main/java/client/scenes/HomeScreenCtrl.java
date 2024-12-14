@@ -10,6 +10,7 @@ import commons.Note;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -296,22 +297,42 @@ public class HomeScreenCtrl {
             var result = alert.showAndWait();
             if (result.isPresent() && result.get() == ButtonType.OK) {
                 // Proceed with deletion
-                notes.remove(selectedNote);
-                System.out.println("Note deleted: " + selectedNote.getTitle()); // For testing
+                notes.remove(selectedNote); //Remove from client
+                deleteRequest(selectedNote.getNoteId()); // Remove from server database
+                System.out.println("Note deleted: " + selectedNote.getTitle()); // For testing purposes
+                System.out.println("Note deleted: " + selectedNote.getNoteId()); // For testing purposes
             } else {
-                // User chose to cancel
-                System.out.println("Deletion cancelled.");
+                System.out.println("Deletion cancelled."); // For testing purposes
             }
         } else {
             // Show a warning if no note is selected
             Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("No Note Selected");
+            alert.setTitle("No Note Selected!");
             alert.setHeaderText("No note selected to delete.");
             alert.setContentText("Please select a note from the list to delete.");
             alert.showAndWait();//Temporary for testing
         }
 
         System.out.println("Delete");  //Temporary for testing
+    }
+
+    /**
+     * Sends request to the server to delete a note by a provided ID
+     * @param noteId
+     */
+    public static void deleteRequest(long noteId){
+        Response response = ClientBuilder.newClient()
+                .target("http://localhost:8080/api/notes/delete/" + noteId) // Endpoint for deletion
+                .request()
+                .delete();
+        if (response.getStatus() == Response.Status.NO_CONTENT.getStatusCode()) {
+            System.out.println("Note successfully deleted.");
+        } else if (response.getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
+            System.out.println("Note not found.");
+        } else {
+            System.out.println("Failed to delete note. Status: " + response.getStatus());
+        }
+        response.close();
     }
 
     /**
