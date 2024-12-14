@@ -202,7 +202,7 @@ public class HomeScreenCtrl {
                 noteTitleF.setText(newNote.getTitle());
                 noteBodyF.setText(newNote.getBody());
 
-//                Platform.runLater(() -> notesListView.getSelectionModel().clearSelection());
+                Platform.runLater(() -> notesListView.getSelectionModel());
             }
         });
     }
@@ -286,9 +286,29 @@ public class HomeScreenCtrl {
     public void delete() {
         Note selectedNote = notesListView.getSelectionModel().getSelectedItem();
         if (selectedNote != null) {
-            notes.remove(selectedNote);
-            selectedNote.getCollection().removeNote(selectedNote);
-            notesListView.getSelectionModel().clearSelection();
+            // Create a confirmation alert
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Delete Note");
+            alert.setHeaderText("Are you sure you want to delete this note?");
+            alert.setContentText("Note: \"" + selectedNote.getTitle() + "\"");
+
+            // Wait for the user's response
+            var result = alert.showAndWait();
+            if (result.isPresent() && result.get() == ButtonType.OK) {
+                // Proceed with deletion
+                notes.remove(selectedNote);
+                System.out.println("Note deleted: " + selectedNote.getTitle()); // For testing
+            } else {
+                // User chose to cancel
+                System.out.println("Deletion cancelled.");
+            }
+        } else {
+            // Show a warning if no note is selected
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("No Note Selected");
+            alert.setHeaderText("No note selected to delete.");
+            alert.setContentText("Please select a note from the list to delete.");
+            alert.showAndWait();//Temporary for testing
         }
 
         System.out.println("Delete");  //Temporary for testing
@@ -302,7 +322,7 @@ public class HomeScreenCtrl {
     }
 
     /**
-     * Edits the title of the currently selected note
+     * Edits the title of currently selected note
      */
     public void titleEdit() {
 
