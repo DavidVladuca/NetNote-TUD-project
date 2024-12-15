@@ -22,14 +22,13 @@ import javafx.scene.web.WebView;
 import javafx.util.StringConverter;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
+import java.io.IOException;
 import commons.Collection;
 import commons.Server;
 
@@ -256,7 +255,6 @@ public class HomeScreenCtrl {
         });
     }
 
-
     /**
      * Utility function used to locate resources within applications filepath
      *
@@ -270,27 +268,35 @@ public class HomeScreenCtrl {
     /**
      * Adds a new note to ListView and Database.
      */
+    @FXML
     public void add() throws IOException, InterruptedException {
-        //Creates a note with text from the fields
-        Note newNote = new Note(noteTitleF.getText(), noteBodyF.getText(), current_collection);
-        newNote.setNoteId(current_collection.getLatestNoteId()+1);
-        current_collection.addNote(newNote);
-        var json = new ObjectMapper().writeValueAsString(newNote);  //JSON with the new note
-        System.out.println(json);//Temporary for testing
-       //Request body containing the created note
-       var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
-       // Send the POST request
-       var response = ClientBuilder.newClient()
-               .target("http://localhost:8080/api/notes/create")
-               .request(MediaType.APPLICATION_JSON)
-               .post(requestBody);
-        //Add notes to List<View>
-        notes.add(newNote);
-        //Clear the fields
-        noteTitleF.clear();
-        noteBodyF.clear();
-        System.out.println("Add"); // Temporary for testing
+        // Generate a unique title for the new note
+        String baseTitle = "New note";
+        String newTitle = baseTitle;
+        int counter = 1;
+        List<String> existingTitles = notes.stream().map(Note::getTitle).toList();
+        while (existingTitles.contains(newTitle)) {
+            newTitle = baseTitle + "(" + counter + ")";
+            counter++;
+        }
+
+        // Create the new note
+        Note newNote = new Note(newTitle, "", current_collection);
+        current_collection.addNote(newNote);  // Add to the collection
+        notes.add(newNote);                   // Add to the list
+
+        // Select the new note in the ListView
+        notesListView.getSelectionModel().select(newNote);
+
+        // Update UI fields to reflect the new note
+        current_note = newNote;
+        noteTitleF.setText(newNote.getTitle());
+        noteBodyF.setText(newNote.getBody());
+
+        // Optionally sync the new note with the server
+        syncNoteWithServer(newNote);
     }
+
 
     /**
      * Removes a selected note
