@@ -60,7 +60,7 @@
       <ChoiceBox fx:id="selectLangBox" layoutX="925.0" layoutY="49.0" prefHeight="27.0" prefWidth="59.0" />
       <ChoiceBox fx:id="selectCollectionBox" layoutX="759.0" layoutY="49.0" prefWidth="150.0" />
       <Text layoutX="925.0" layoutY="44.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Language" />
-      <Button fx:id="editCollectionsB" layoutX="22.0" layoutY="8.0" mnemonicParsing="false" onAction="#editCollections" styleClass="midground" stylesheets="@../css/style.css" text="Edit Collections" />
+      <Button fx:id="editCollectionsB" layoutX="22.0" layoutY="8.0" mnemonicParsing="false" onAction="#editCollections" styleClass="midground" stylesheets="@../css/style.css" text="Edit Collections " />
       <Text layoutX="759.0" layoutY="44.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Collection" />
    </children>
 </Pane>
