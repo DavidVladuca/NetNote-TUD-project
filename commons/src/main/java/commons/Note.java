@@ -34,7 +34,7 @@ public class Note {
     private Set<Tag> tags = new HashSet<>();
 
     // Protected no-arg constructor for JPA and object mappers
-    protected Note() {}
+    public Note() {}
 
     /**
      * Constructor for the Note class.
