@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -153,7 +155,10 @@ public class NoteTest {
     void setTags() {
         // Test setting the tags of the note
         List<String> newTags = Arrays.asList("tag1", "tag2");
-        note1.setTags(newTags);
+        Set<Tag> tagSet = newTags.stream()
+                .map(Tag::new) // Assuming Tag has a constructor that accepts a String
+                .collect(Collectors.toSet());
+        note1.setTags(tagSet);
         assertEquals(newTags, note1.getTags(), "setTags should correctly set the tags");
     }
 
