@@ -3,10 +3,7 @@ package commons;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -72,7 +69,12 @@ public class NoteTest {
         Tag tag2 = new Tag("Tag2");
         tag1.setTagId(1);
         tag2.setTagId(2);
-        note1.setTags(Set.of(tag1, tag2));
+
+        Set<Tag> expectedTags = new LinkedHashSet<>();
+        expectedTags.add(tag1);
+        expectedTags.add(tag2);
+
+        note1.setTags(expectedTags);
 
         note1.setNoteId(1);
         String expectedOutput = """
