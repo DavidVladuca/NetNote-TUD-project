@@ -10,6 +10,7 @@ import commons.Note;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -42,6 +43,7 @@ public class HomeScreenCtrl {
     public Button addB;
     public Button deleteB;
     public Button undoB;
+    public Button refreshB;
     public Button editCollectionsB;
     public ChoiceBox<Language> selectLangBox = new ChoiceBox<Language>();
     public TextField noteTitleF;
@@ -200,7 +202,7 @@ public class HomeScreenCtrl {
                 noteTitleF.setText(newNote.getTitle());
                 noteBodyF.setText(newNote.getBody());
 
-                Platform.runLater(() -> notesListView.getSelectionModel().clearSelection());
+                Platform.runLater(() -> notesListView.getSelectionModel());
             }
         });
     }
@@ -257,7 +259,7 @@ public class HomeScreenCtrl {
      * Adds a new note to ListView and Database.
      */
     @FXML
-    public void add() {
+    public void add() throws IOException, InterruptedException {
         // Generate a unique title for the new note
         String baseTitle = "New note";
         String newTitle = baseTitle;
@@ -267,16 +269,16 @@ public class HomeScreenCtrl {
             newTitle = baseTitle + "(" + counter + ")";
             counter++;
         }
+
         // Create the new note
         Note newNote = new Note(newTitle, "", current_collection);
-
-        // Add the new note to the list
-        notes.add(newNote);
+        current_collection.addNote(newNote);  // Add to the collection
+        notes.add(newNote);                   // Add to the list
 
         // Select the new note in the ListView
         notesListView.getSelectionModel().select(newNote);
 
-        // Update the current note and synchronize with UI
+        // Update UI fields to reflect the new note
         current_note = newNote;
         noteTitleF.setText(newNote.getTitle());
         noteBodyF.setText(newNote.getBody());
@@ -285,16 +287,61 @@ public class HomeScreenCtrl {
         syncNoteWithServer(newNote);
     }
 
+
     /**
      * Removes a selected note
      */
     public void delete() {
         Note selectedNote = notesListView.getSelectionModel().getSelectedItem();
         if (selectedNote != null) {
-            notes.remove(selectedNote);
-        }
+            // Create a confirmation alert
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Delete Note");
+            alert.setHeaderText("Are you sure you want to delete this note?");
+            alert.setContentText("Note: \"" + selectedNote.getTitle() + "\"");
+            var result = alert.showAndWait(); // Waiting for user response
+            if (result.isPresent() && result.get() == ButtonType.OK) {
+                // Proceed with deletion
+                notes.remove(selectedNote); //Remove from client
+                deleteRequest(selectedNote.getNoteId()); // Remove from server database
+                System.out.println("Note deleted: " + selectedNote.getTitle()); // For testing purposes
+                System.out.println("Note deleted: " + selectedNote.getNoteId());
 
+                //Confirmation alert that note was deleted
+                alert.setTitle("Note Deleted");
+                alert.setHeaderText(null);
+                alert.setContentText("The note has been successfully deleted!");
+                alert.showAndWait();
+            }
+        }
+        // Show a warning if no note is selected
+        else {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("No Note Selected!");
+            alert.setHeaderText("No note selected to delete.");
+            alert.setContentText("Please select a note from the list to delete.");
+            alert.showAndWait();
+        }
         System.out.println("Delete");  //Temporary for testing
+    }
+
+    /**
+     * Sends request to the server to delete a note by a provided ID
+     * @param noteId
+     */
+    public static void deleteRequest(long noteId){
+        Response response = ClientBuilder.newClient()
+                .target("http://localhost:8080/api/notes/delete/" + noteId) // Endpoint for deletion
+                .request()
+                .delete();
+        if (response.getStatus() == Response.Status.NO_CONTENT.getStatusCode()) {
+            System.out.println("Note successfully deleted.");
+        } else if (response.getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
+            System.out.println("Note not found.");
+        } else {
+            System.out.println("Failed to delete note. Status: " + response.getStatus());
+        }
+        response.close();
     }
 
     /**
@@ -308,7 +355,86 @@ public class HomeScreenCtrl {
      * Edits the title of currently selected note
      */
     public void titleEdit() {
+
         System.out.println("Title Edit");  //Temporary for testing
+
+        Note selectedNote = notesListView.getSelectionModel().getSelectedItem();
+
+        if (selectedNote != null) {
+            Collection selectedCollection = selectedNote.getCollection();
+
+            // Searching for title duplicates in the respective collection
+            int ok=1;
+            for(int i=0; i<selectedCollection.getNotes().size(); i++) {
+                if(selectedCollection.getNotes().get(i).getTitle().equals(noteTitleF.getText())
+                        && !selectedCollection.getNotes().get(i).equals(selectedNote)) {
+                    ok=0;
+                }
+            }
+
+            if(ok==1) {
+                //saving the title
+                selectedNote.setTitle(noteTitleF.getText());
+                syncIfChanged();
+            }else{
+                //found a duplicate of the title
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+
+                alert.setTitle("Duplicate Title");
+                alert.setHeaderText("Title Already Exists");
+                alert.setContentText("The title you have chosen already exists in this collection. Please choose a different one.");
+
+                alert.showAndWait(); // Wait for the user to dismiss the alert
+
+                noteTitleF.requestFocus(); // Set focus back to the title field for convenience
+
+                System.out.println("Note title already exists"); // Temporary for testing
+            }
+        }
+
+    }
+
+    /**
+     * Refreshes the notes list by re-fetching the notes from the server.
+     */
+    public void refresh() {
+        Platform.runLater(() -> {
+            System.out.println("Refreshing all notes...");
+            try {
+                loadNotesFromServer(); // Re-fetches all notes from the server and updates the ObservableList
+                System.out.println("All notes refreshed successfully!");
+            } catch (Exception e) {
+                System.err.println("Error refreshing notes: " + e.getMessage());
+                e.printStackTrace();
+            }
+        });
+    }
+
+    /**
+     * Fetches a specific note from the server by its ID
+     *
+     * @param noteId The ID of the note to fetch
+     * @return The fetched Note object or null if it was not found or there was an error
+     */
+    private Note fetchNoteById(long noteId) {
+        try {
+            var response = ClientBuilder.newClient()
+                    .target("http://localhost:8080/api/notes/" + noteId) // Replace with actual API endpoint for fetching a single note
+                    .request(MediaType.APPLICATION_JSON)
+                    .get();
+
+            if (response.getStatus() == 200) {
+                String json = response.readEntity(String.class);
+                ObjectMapper mapper = new ObjectMapper();
+                return mapper.readValue(json, Note.class);
+            } else {
+                System.err.println("Failed to fetch note with ID " + noteId + ". Status code: " + response.getStatus());
+                return null;
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching note with ID " + noteId + ": " + e.getMessage());
+            return null;
+        }
     }
 
     /**
