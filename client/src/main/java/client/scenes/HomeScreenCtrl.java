@@ -2,6 +2,7 @@ package client.scenes;
 
 
 import client.HomeScreen;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import commons.Language;
 import commons.LanguageOptions;
@@ -62,6 +63,7 @@ public class HomeScreenCtrl {
     public Button getPreviousMatch;
     public WebView markDownOutput;
     public ChoiceBox<Collection> selectCollectionBox = new ChoiceBox<>();
+    private Note lastDeletedNote = null;
 
     /*
     todo - change the 3 below (current_server, current_collection, current_note) -
@@ -275,21 +277,26 @@ public class HomeScreenCtrl {
         Note newNote = new Note(noteTitleF.getText(), noteBodyF.getText(), current_collection);
         newNote.setNoteId(current_collection.getLatestNoteId()+1);
         current_collection.addNote(newNote);
-        var json = new ObjectMapper().writeValueAsString(newNote);  //JSON with the new note
-        System.out.println(json);//Temporary for testing
-       //Request body containing the created note
-       var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
-       // Send the POST request
-       var response = ClientBuilder.newClient()
-               .target("http://localhost:8080/api/notes/create")
-               .request(MediaType.APPLICATION_JSON)
-               .post(requestBody);
+        addRequest(newNote);
         //Add notes to List<View>
         notes.add(newNote);
         //Clear the fields
         noteTitleF.clear();
         noteBodyF.clear();
         System.out.println("Add"); // Temporary for testing
+    }
+
+    /**
+     * Sends request to the server to add a note with a provided Note
+     * @param note - Note
+     */
+    public void addRequest(Note note) throws JsonProcessingException {
+        var json = new ObjectMapper().writeValueAsString(note);
+        var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
+        var response = ClientBuilder.newClient()
+                .target("http://localhost:8080/api/notes/create") // Update with the correct endpoint for adding a note
+                .request(MediaType.APPLICATION_JSON)
+                .post(requestBody);
     }
 
     /**
@@ -306,6 +313,7 @@ public class HomeScreenCtrl {
             var result = alert.showAndWait(); // Waiting for user response
             if (result.isPresent() && result.get() == ButtonType.OK) {
                 // Proceed with deletion
+                lastDeletedNote = selectedNote;
                 notes.remove(selectedNote); //Remove from client
                 deleteRequest(selectedNote.getNoteId()); // Remove from server database
                 System.out.println("Note deleted: " + selectedNote.getTitle()); // For testing purposes
@@ -349,11 +357,31 @@ public class HomeScreenCtrl {
     }
 
     /**
-     * IDK yet
+     * Restores the last deleted note
      */
-    public void undo() {
+    public void undo() throws JsonProcessingException {
         System.out.println("Undo");//Temporary for testing
+        if (lastDeletedNote != null) {
+            // Add the deleted note back to the list and the server
+            notes.add(lastDeletedNote); // Adds note to the client
+            addRequest(lastDeletedNote); // Adds note to the database
+            lastDeletedNote = null; //Reset the lastDeletedNote attribute
+            //Alert informing the user about the restored note - Could be deleted later
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Undo Successful");
+            alert.setHeaderText(null);
+            alert.setContentText("The deleted note has been restored.");
+            alert.showAndWait();
+        } else {
+            // If there is no deleted note show an alert
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Nothing to Undo");
+            alert.setHeaderText("No deleted note to restore");
+            alert.setContentText("Please delete a note first if you want to undo");
+            alert.showAndWait();
+        }
     }
+
 
     /**
      * Edits the title of currently selected note
