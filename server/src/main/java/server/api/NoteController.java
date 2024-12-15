@@ -123,7 +123,7 @@ public class NoteController {
      * @param id - Long containing id of the note to be removed
      * @return - Response, indicating note was removed
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteNote(@PathVariable Long id) {
         if (!noteRepository.existsById(id)) {
             return ResponseEntity.notFound().build(); // Return Not Found if the note does not exist
