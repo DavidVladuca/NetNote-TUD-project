@@ -161,6 +161,11 @@ public class Collection {
         latestNoteId++;
     } //todo - make it so that you can also add notes
     //todo - add tests
+
+
+    public void removeNote(Note note){notes.remove(note);
+    }
+
     /**
      * searches collections
      * @param search_text - text that needs to be matched

@@ -2,6 +2,7 @@ package client.scenes;
 
 
 import client.HomeScreen;
+import com.google.inject.Inject;
 import commons.Language;
 import commons.LanguageOptions;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,13 +25,20 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import commons.Collection;
 import commons.Server;
 
-
 public class HomeScreenCtrl {
     //todo - for all methods, change strings title and body to getting them from the note instead
+    private final ScreenCtrl sc;
+
+    @Inject
+    public HomeScreenCtrl(ScreenCtrl sc) {this.sc = sc;}
+
     @FXML
     public Button addB;
     public Button deleteB;
@@ -38,6 +46,9 @@ public class HomeScreenCtrl {
     public Button dropDownSearchNoteB;
     public Button prevMatchB;
     public Button nextMatchB;
+
+    public Button refreshB;
+    public Button editCollectionsB;
     public ChoiceBox<Language> selectLangBox = new ChoiceBox<Language>();
     public TextField noteTitleF;
     public TextArea noteBodyF;
@@ -65,6 +76,10 @@ public class HomeScreenCtrl {
     public String title = "";
     public String content = ""; //todo - this should be part of the note - not independent strings
 
+    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private String lastSyncedTitle = "";
+    private String lastSyncedBody = "";
+
     public final Parser parser = Parser.builder().build();
     public final HtmlRenderer renderer = HtmlRenderer.builder().build();
 
@@ -74,18 +89,70 @@ public class HomeScreenCtrl {
      */
     @FXML
     public void initialize() {
+        scheduler.scheduleAtFixedRate(this::syncIfChanged, 0, 5, TimeUnit.SECONDS);
         setUpLanguages();
-
         setUpCollections();
-        
         markDownTitle();
-
         markDownContent();
-
         loadNotesFromServer();
-
         setupNotesListView();
+    }
 
+    /**
+     * This method ensures that the title and the content of the Note
+     * will be synced with the database every 5 seconds if something was changed.
+     * 5 seconds is specified in initialize method
+     */
+    private void syncIfChanged() {
+        Platform.runLater(() -> {
+            // Check if the note content has changed since the last sync
+            if (current_note != null &&
+                    (!current_note.getTitle().equals(lastSyncedTitle) ||
+                            !current_note.getBody().equals(lastSyncedBody))) {
+
+                // Sync with the server if change
+                syncNoteWithServer(current_note);
+
+                // Update the last synced title and body to current title and body
+                lastSyncedTitle = current_note.getTitle();
+                lastSyncedBody = current_note.getBody();
+
+                System.out.println("Note synced with the server at: " + java.time.LocalTime.now()); // for testing
+            }
+        });
+    }
+
+    /**
+     * This method ensures the syncing with the server (database)
+     * @param note - note provided - in syncIfChanged method to be specific
+     */
+    private void syncNoteWithServer(Note note) {
+        try {
+            String json = new ObjectMapper().writeValueAsString(note);
+            System.out.println("Serialized JSON: " + json);  // for testing
+
+            var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
+            // the put request to actually update the content with json
+            var response = ClientBuilder.newClient()
+                    .target("http://localhost:8080/api/notes/update")
+                    .request(MediaType.APPLICATION_JSON)
+                    .put(requestBody);
+
+            System.out.println("Response Status: " + response.getStatus()); // for testing
+            System.out.println("Response Body: " + response.readEntity(String.class)); // for testing
+            // if something screwed up :D
+            if (response.getStatus() != 200) {
+                System.err.println("Failed to update note on server. Status code: " + response.getStatus());
+            }
+        } catch (Exception e) {
+            System.err.println("Error syncing note with server: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void editCollections() {
+        System.out.println("Edit Collections View Selected");
+        sc.showEditCollection();
     }
 
     private void loadNotesFromServer() {
@@ -140,11 +207,12 @@ public class HomeScreenCtrl {
         // Handling selection in the ListView
         notesListView.getSelectionModel().selectedItemProperty().addListener((obs, oldNote, newNote) -> {
             if (newNote != null) {
+                current_note = newNote;
                 //change the output in the front-end for title and body
                 noteTitleF.setText(newNote.getTitle());
                 noteBodyF.setText(newNote.getBody());
 
-                Platform.runLater(() -> notesListView.getSelectionModel().clearSelection());
+//                Platform.runLater(() -> notesListView.getSelectionModel().clearSelection());
             }
         });
     }
@@ -230,6 +298,8 @@ public class HomeScreenCtrl {
         Note selectedNote = notesListView.getSelectionModel().getSelectedItem();
         if (selectedNote != null) {
             notes.remove(selectedNote);
+            selectedNote.getCollection().removeNote(selectedNote);
+            notesListView.getSelectionModel().clearSelection();
         }
 
         System.out.println("Delete");  //Temporary for testing
@@ -239,14 +309,93 @@ public class HomeScreenCtrl {
      * IDK yet
      */
     public void undo() {
-        System.out.println("Undo");  //Temporary for testing
+        System.out.println("Undo");//Temporary for testing
     }
 
     /**
-     * Edits the title of currently selected note
+     * Edits the title of the currently selected note
      */
     public void titleEdit() {
+
         System.out.println("Title Edit");  //Temporary for testing
+
+        Note selectedNote = notesListView.getSelectionModel().getSelectedItem();
+
+        if (selectedNote != null) {
+            Collection selectedCollection = selectedNote.getCollection();
+
+            // Searching for title duplicates in the respective collection
+            int ok=1;
+            for(int i=0; i<selectedCollection.getNotes().size(); i++) {
+                if(selectedCollection.getNotes().get(i).getTitle().equals(noteTitleF.getText())
+                        && !selectedCollection.getNotes().get(i).equals(selectedNote)) {
+                    ok=0;
+                }
+            }
+
+            if(ok==1) {
+                //saving the title
+                selectedNote.setTitle(noteTitleF.getText());
+                syncIfChanged();
+            }else{
+                //found a duplicate of the title
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+
+                alert.setTitle("Duplicate Title");
+                alert.setHeaderText("Title Already Exists");
+                alert.setContentText("The title you have chosen already exists in this collection. Please choose a different one.");
+
+                alert.showAndWait(); // Wait for the user to dismiss the alert
+
+                noteTitleF.requestFocus(); // Set focus back to the title field for convenience
+
+                System.out.println("Note title already exists"); // Temporary for testing
+            }
+        }
+
+    }
+
+    /**
+     * Refreshes the notes list by re-fetching the notes from the server.
+     */
+    public void refresh() {
+        Platform.runLater(() -> {
+            System.out.println("Refreshing all notes...");
+            try {
+                loadNotesFromServer(); // Re-fetches all notes from the server and updates the ObservableList
+                System.out.println("All notes refreshed successfully!");
+            } catch (Exception e) {
+                System.err.println("Error refreshing notes: " + e.getMessage());
+                e.printStackTrace();
+            }
+        });
+    }
+
+    /**
+     * Fetches a specific note from the server by its ID
+     *
+     * @param noteId The ID of the note to fetch
+     * @return The fetched Note object or null if it was not found or there was an error
+     */
+    private Note fetchNoteById(long noteId) {
+        try {
+            var response = ClientBuilder.newClient()
+                    .target("http://localhost:8080/api/notes/" + noteId) // Replace with actual API endpoint for fetching a single note
+                    .request(MediaType.APPLICATION_JSON)
+                    .get();
+
+            if (response.getStatus() == 200) {
+                String json = response.readEntity(String.class);
+                ObjectMapper mapper = new ObjectMapper();
+                return mapper.readValue(json, Note.class);
+            } else {
+                System.err.println("Failed to fetch note with ID " + noteId + ". Status code: " + response.getStatus());
+                return null;
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching note with ID " + noteId + ": " + e.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -354,14 +503,15 @@ public class HomeScreenCtrl {
     }
 
     public void setUpCollections() {
-        //todo - implement properly once database MR is sent
-        selectCollectionBox.getItems().addAll(new Collection(current_server, "Default"));
+        selectCollectionBox.getItems().setAll(
+                new Collection(current_server, "Default")
+                //todo - add all collections
+        );
+
         selectCollectionBox.setValue(selectCollectionBox.getItems().getFirst());
         selectCollectionBox.setConverter(new StringConverter<>() {
             @Override
-            public String toString(Collection collection) {
-                return collection.getCollectionTitle();
-            }
+            public String toString(Collection collection) {return collection.getCollectionTitle();}
 
             @Override
             public Collection fromString(String s) {
@@ -369,10 +519,11 @@ public class HomeScreenCtrl {
             }
         });
 
-        selectCollectionBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            System.out.println("Selected: " + newValue);
+        selectCollectionBox.getSelectionModel().selectedItemProperty().addListener((obs, oldCollection, newCollection) -> {
+            if (!newCollection.equals(oldCollection)) {
+                System.out.println(selectCollectionBox.getValue().getCollectionTitle());
+            }
         });
-
     }
 
     public void prevMatchB(){
@@ -402,5 +553,4 @@ public class HomeScreenCtrl {
             searchNote();
         }
     }
-
 }
