@@ -50,5 +50,24 @@ class TagTest {
         assertEquals(expectedOutput, tag1.toString(), "toString output should match the expected format");
     }
 
-    //Todo - hashcode tests
+    @Test
+    public void testHashCode_SameIdsAndNames_ReturnsSameHashCode() {
+        tag1.setTagId(1);
+        tag2.setTagId(1);
+        assertEquals(tag1.hashCode(), tag2.hashCode(), "Tags with the same ID and name should have the same hash code");
+    }
+
+    @Test
+    public void testHashCode_DifferentIds_ReturnsDifferentHashCodes() {
+        tag1.setTagId(1);
+        differentTag.setTagId(2);
+        assertNotEquals(tag1.hashCode(), differentTag.hashCode(), "Tags with different IDs should have different hash codes");
+    }
+
+    @Test
+    public void testHashCode_ConsistentHashCode() {
+        tag1.setTagId(1);
+        int initialHashCode = tag1.hashCode();
+        assertEquals(initialHashCode, tag1.hashCode(), "The hash code for the same object should remain consistent across multiple calls");
+    }
 }
