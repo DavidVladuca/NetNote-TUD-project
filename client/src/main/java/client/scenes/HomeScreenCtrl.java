@@ -292,27 +292,29 @@ public class HomeScreenCtrl {
             alert.setTitle("Delete Note");
             alert.setHeaderText("Are you sure you want to delete this note?");
             alert.setContentText("Note: \"" + selectedNote.getTitle() + "\"");
-
-            // Wait for the user's response
-            var result = alert.showAndWait();
+            var result = alert.showAndWait(); // Waiting for user response
             if (result.isPresent() && result.get() == ButtonType.OK) {
                 // Proceed with deletion
                 notes.remove(selectedNote); //Remove from client
                 deleteRequest(selectedNote.getNoteId()); // Remove from server database
                 System.out.println("Note deleted: " + selectedNote.getTitle()); // For testing purposes
-                System.out.println("Note deleted: " + selectedNote.getNoteId()); // For testing purposes
-            } else {
-                System.out.println("Deletion cancelled."); // For testing purposes
+                System.out.println("Note deleted: " + selectedNote.getNoteId());
+
+                //Confirmation alert that note was deleted
+                alert.setTitle("Note Deleted");
+                alert.setHeaderText(null);
+                alert.setContentText("The note has been successfully deleted!");
+                alert.showAndWait();
             }
-        } else {
-            // Show a warning if no note is selected
+        }
+        // Show a warning if no note is selected
+        else {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("No Note Selected!");
             alert.setHeaderText("No note selected to delete.");
             alert.setContentText("Please select a note from the list to delete.");
-            alert.showAndWait();//Temporary for testing
+            alert.showAndWait();
         }
-
         System.out.println("Delete");  //Temporary for testing
     }
 
