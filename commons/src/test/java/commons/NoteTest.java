@@ -3,11 +3,7 @@ package commons;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -68,6 +64,18 @@ public class NoteTest {
 
     @Test
     public void testToString() {
+        // Add tags to the note
+        Tag tag1 = new Tag("Tag1");
+        Tag tag2 = new Tag("Tag2");
+        tag1.setTagId(1);
+        tag2.setTagId(2);
+
+        Set<Tag> expectedTags = new LinkedHashSet<>();
+        expectedTags.add(tag1);
+        expectedTags.add(tag2);
+
+        note1.setTags(expectedTags);
+
         note1.setNoteId(1);
         String expectedOutput = """
                 Note:
@@ -76,7 +84,7 @@ public class NoteTest {
                 Title: Title 1
                 Body:
                 Test Content 1
-                Tags:
+                Tags: Tag1, Tag2
                 """.formatted(collection1.getCollectionId());
         assertEquals(expectedOutput.trim(), note1.toString().trim(), "toString output should match the expected format");
     }
