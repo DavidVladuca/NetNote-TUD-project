@@ -146,19 +146,29 @@ public class NoteTest {
 
     @Test
     void getTags() {
-        // Test getting the tags of the note
-        List<String> expectedTags = new ArrayList<>();
-        assertEquals(expectedTags, note1.getTags(), "getTags should return the correct list of tags");
+        // Set up tags and add them to the note
+        Tag tag1 = new Tag("Tag1");
+        Tag tag2 = new Tag("Tag2");
+        tag1.setTagId(1);
+        tag2.setTagId(2);
+        Set<Tag> expectedTags = Set.of(tag1, tag2);
+        note1.setTags(expectedTags);
+
+        // Test retrieving tags
+        assertEquals(expectedTags, note1.getTags(), "getTags should return the correct set of tags");
     }
 
     @Test
     void setTags() {
-        // Test setting the tags of the note
-        List<String> newTags = Arrays.asList("tag1", "tag2");
-        Set<Tag> tagSet = newTags.stream()
-                .map(Tag::new) // Assuming Tag has a constructor that accepts a String
-                .collect(Collectors.toSet());
-        note1.setTags(tagSet);
+        // Set up new tags and assign them to the note
+        Tag tag1 = new Tag("Tag1");
+        Tag tag2 = new Tag("Tag2");
+        tag1.setTagId(1);
+        tag2.setTagId(2);
+        Set<Tag> newTags = Set.of(tag1, tag2);
+        note1.setTags(newTags);
+
+        // Test if the tags were correctly assigned
         assertEquals(newTags, note1.getTags(), "setTags should correctly set the tags");
     }
 
