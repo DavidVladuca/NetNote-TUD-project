@@ -28,7 +28,7 @@ public class Note {
     private List<String> tags;
 
     // Protected no-arg constructor for JPA and object mappers
-    protected Note() {}
+    public Note() {}
 
     /**
      * Constructor for the Note class.
