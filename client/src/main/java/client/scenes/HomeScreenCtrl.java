@@ -140,6 +140,9 @@ public class HomeScreenCtrl {
                     .request(MediaType.APPLICATION_JSON)
                     .put(requestBody);
 
+            // Refresh the notes list
+            Platform.runLater(() -> refreshNotesInListView(note));
+
             System.out.println("Response Status: " + response.getStatus()); // for testing
             System.out.println("Response Body: " + response.readEntity(String.class)); // for testing
             // if something screwed up :D
@@ -149,6 +152,19 @@ public class HomeScreenCtrl {
         } catch (Exception e) {
             System.err.println("Error syncing note with server: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    private void refreshNotesInListView(Note note) {
+        for (int i = 0; i < notes.size(); i++) {
+            Note update = notes.get(i);
+            if (note.getNoteId() == update.getNoteId()) {
+                if(update.getTitle() != null && !update.getTitle().equals("")) {
+                    // Update the note's data in the ObservableList
+                    notes.set(i, update);
+                    break;
+                }
+            }
         }
     }
 
