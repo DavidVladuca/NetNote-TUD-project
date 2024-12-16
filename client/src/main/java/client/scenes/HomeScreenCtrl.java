@@ -278,25 +278,55 @@ public class HomeScreenCtrl {
         int counter = 1;
         List<String> existingTitles = notes.stream().map(Note::getTitle).toList();
         while (existingTitles.contains(newTitle)) {
-            newTitle = baseTitle + "(" + counter + ")";
+            newTitle = baseTitle + " (" + counter + ")";
             counter++;
         }
 
         // Create the new note
         Note newNote = new Note(newTitle, "", current_collection);
-        current_collection.addNote(newNote);  // Add to the collection
-        notes.add(newNote);                   // Add to the list
+        // Immediately send the new note to the server to get a valid noteID that is NOT 0
+        try {
+            Note savedNote = saveNoteToServer(newNote); // Calls the create endpoint - see the method
 
-        // Select the new note in the ListView
-        notesListView.getSelectionModel().select(newNote);
+            // Update the collection and UI with the saved note
+            current_collection.addNote(savedNote);  // Add to the collection
+            notes.add(savedNote);                   // Add to the ObservableList
 
-        // Update UI fields to reflect the new note
-        current_note = newNote;
-        noteTitleF.setText(newNote.getTitle());
-        noteBodyF.setText(newNote.getBody());
+            // Select the new note in the ListView
+            notesListView.getSelectionModel().select(savedNote);
 
-        // Optionally sync the new note with the server
-        syncNoteWithServer(newNote);
+            // Update UI fields
+            current_note = savedNote;
+            noteTitleF.setText(savedNote.getTitle());
+            noteBodyF.setText(savedNote.getBody());
+
+        } catch (Exception e) {
+            System.err.println("Failed to save the note: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Sends the note to the server via the create endpoint and returns the saved note.
+     * This ensures the note gets a valid noteId from the server.
+     * It is very similar to addRequest method, however I needed to return a new Note object
+     * for the unique ID
+     * @param note - note provided
+     * @return a Note that was saved with a unique id
+     */
+    public Note saveNoteToServer(Note note) throws IOException {
+        var json = new ObjectMapper().writeValueAsString(note);
+        var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
+        // Connect to the create endpoint, where add requests are processed
+        var response = ClientBuilder.newClient()
+                .target("http://localhost:8080/api/notes/create")
+                .request(MediaType.APPLICATION_JSON)
+                .post(requestBody);
+
+        if (response.getStatus() == 201) {
+            return response.readEntity(Note.class);
+        } else {
+            throw new IOException("Server returned status: " + response.getStatus());
+        }
     }
 
 
