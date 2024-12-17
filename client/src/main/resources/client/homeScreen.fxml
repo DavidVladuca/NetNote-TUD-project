@@ -13,7 +13,7 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.web.WebView?>
 
-<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="607.0" prefWidth="1000.0" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.scenes.HomeScreenCtrl">
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="607.0" prefWidth="1000.0" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <HBox layoutY="98.0" prefHeight="510.0" prefWidth="1000.0" styleClass="bordered" stylesheets="@../css/style.css">
          <children>
@@ -28,16 +28,16 @@
                      <children>
                         <Button fx:id="addB" mnemonicParsing="false" onAction="#add" styleClass="background" stylesheets="@../css/style.css" text="+" />
                         <Button fx:id="deleteB" mnemonicParsing="false" onAction="#delete" styleClass="background" stylesheets="@../css/style.css" text="-" />
-                        <Button fx:id="undoB" mnemonicParsing="false" onAction="#undo" styleClass="background" stylesheets="@../css/style.css" text="Undo" />
-                        <Button fx:id="refreshB" mnemonicParsing="false" onAction="#refresh" styleClass="background" text="Refresh" />
+                        <Button fx:id="undoB" mnemonicParsing="false" onAction="#undo" styleClass="background" stylesheets="@../css/style.css" text="%Undo" />
+                        <Button fx:id="refreshB" mnemonicParsing="false" onAction="#refresh" styleClass="background" text="%Refresh" />
                      </children>
                   </HBox>
                </children>
             </VBox>
             <VBox prefHeight="510.0" prefWidth="531.0" styleClass="bordered" stylesheets="@../css/style.css">
                <children>
-                  <TextField fx:id="noteTitleF" onAction="#titleEdit" promptText="Untitled" />
-                  <TextArea fx:id="noteBodyF" prefHeight="487.0" prefWidth="531.0" promptText="Text Area" />
+                  <TextField fx:id="noteTitleF" onAction="#titleEdit" promptText="%Untitled" />
+                  <TextArea fx:id="noteBodyF" prefHeight="487.0" prefWidth="531.0" promptText="%Text_Area" />
                </children>
             </VBox>
             <Pane prefHeight="496.0" prefWidth="241.0" styleClass="midground" stylesheets="@../css/style.css">
@@ -52,11 +52,11 @@
             <Font size="28.0" />
          </font>
       </Text>
-      <TextField fx:id="searchF" layoutX="22.0" layoutY="47.0" onAction="#search" prefHeight="29.0" prefWidth="727.0" promptText="Search..." styleClass="searchField" stylesheets="@../css/style.css" />
+      <TextField fx:id="searchF" layoutX="22.0" layoutY="47.0" onAction="#search" prefHeight="29.0" prefWidth="727.0" promptText="%Search" styleClass="searchField" stylesheets="@../css/style.css" />
       <ChoiceBox fx:id="selectLangBox" layoutX="925.0" layoutY="49.0" prefHeight="27.0" prefWidth="59.0" />
       <ChoiceBox fx:id="selectCollectionBox" layoutX="759.0" layoutY="49.0" prefWidth="150.0" />
-      <Text layoutX="925.0" layoutY="44.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Language" />
-      <Button fx:id="editCollectionsB" layoutX="22.0" layoutY="8.0" mnemonicParsing="false" onAction="#editCollections" styleClass="midground" stylesheets="@../css/style.css" text="Edit Collections" />
-      <Text layoutX="759.0" layoutY="44.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Collection" />
+      <Text fx:id="language_text" layoutX="925.0" layoutY="44.0" strokeType="OUTSIDE" strokeWidth="0.0" text="%Language" />
+      <Button fx:id="editCollectionsB" layoutX="22.0" layoutY="8.0" mnemonicParsing="false" onAction="#editCollections" styleClass="midground" stylesheets="@../css/style.css" text="%edit_collection" />
+      <Text fx:id="collection_text" layoutX="759.0" layoutY="44.0" strokeType="OUTSIDE" strokeWidth="0.0" text="%Collection" />
    </children>
 </Pane>

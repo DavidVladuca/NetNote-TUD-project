@@ -16,8 +16,12 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.scene.text.Text;
 import javafx.scene.web.WebView;
+import javafx.stage.Stage;
+import javafx.util.Pair;
 import javafx.util.StringConverter;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -25,6 +29,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +41,27 @@ import commons.Server;
 public class HomeScreenCtrl {
     //todo - for all methods, change strings title and body to getting them from the note instead
     private final ScreenCtrl sc;
+    private Stage primaryStage;
+    private javafx.scene.Scene homeScene;
+    private javafx.scene.Scene editCollectionScene;
+
+    public void init(Stage primaryStage, Pair<HomeScreenCtrl, Parent> home, Pair<EditCollectionsViewCtrl, Parent> editCollection) {
+        this.primaryStage = primaryStage;
+        this.homeScene = new javafx.scene.Scene(home.getValue());
+        this.editCollectionScene = new javafx.scene.Scene(editCollection.getValue());
+        showHome();
+        primaryStage.show();
+    }
+
+    public void showHome() {
+        if(primaryStage == null) {throw new IllegalStateException("Primary stage is not initialized");}
+        primaryStage.setScene(homeScene);
+    }
+
+    public void showEditCollection() {
+        if(primaryStage == null) {throw new IllegalStateException("Primary stage is not initialized");}
+        primaryStage.setScene(editCollectionScene);
+    }
 
     @Inject
     public HomeScreenCtrl(ScreenCtrl sc) {this.sc = sc;}
@@ -45,6 +72,11 @@ public class HomeScreenCtrl {
     public Button undoB;
     public Button refreshB;
     public Button editCollectionsB;
+    public Text collection_text;
+    public Text language_text;
+
+    ResourceBundle bundle;
+    Locale locale;
     public ChoiceBox<Language> selectLangBox = new ChoiceBox<Language>();
     public TextField noteTitleF;
     public TextArea noteBodyF;
@@ -443,6 +475,23 @@ public class HomeScreenCtrl {
         selectLangBox.getSelectionModel().selectedItemProperty().addListener((obs, oldLang, newLang) -> {
             if (!newLang.equals(oldLang)) {
                 System.out.println(selectLangBox.getValue().getAbbr());
+                locale = switch (selectLangBox.getValue().getAbbr()){
+                    case "ES" -> new Locale("es", "ES");
+                    case "NL" -> new Locale("nl", "NL");
+                    default -> new Locale("en", "US");
+                };
+                bundle = ResourceBundle.getBundle("MyBundle", locale);
+
+                editCollectionsB.setText(bundle.getString("edit_collection"));
+                searchF.setPromptText(bundle.getString("Search"));
+                collection_text.setText(bundle.getString("Collection"));
+                language_text.setText(bundle.getString("Language"));
+                noteTitleF.setPromptText(bundle.getString("Untitled"));
+                noteBodyF.setPromptText(bundle.getString("Text_Area"));
+                undoB.setText(bundle.getString("Undo"));
+                refreshB.setText(bundle.getString("Refresh"));
+
+
             }});
 
     }
