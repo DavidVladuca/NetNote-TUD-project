@@ -11,7 +11,7 @@ public class LanguageOptionsTest {
     public void checkConstructor() {
         var lo = new LanguageOptions();
         var l = new Language(0, "English", "EN",
-                "client/src/main/resources/client/homeScreen.fxml");
+                "Flags/English_flag.png");
         assertEquals(l, lo.getCurrentLanguage());
     }
 
@@ -19,9 +19,9 @@ public class LanguageOptionsTest {
     public void addLanguageTest() {
         var lo = new LanguageOptions();
         var polish = new Language(2, "Polish", "PL",
-                "client/src/main/resources/client/homeScreen.fxml");
-        var english = new Language(0, "English", "EN", "client/src/main/resources/client/homeScreen.fxml"); //make default
-        var spanish = new Language(1, "Spanish", "ES", "client/src/main/resources/client/homeScreen.fxml");
+                "Flags/Polish_flag.png");
+        var english = new Language(0, "English", "EN", "Flags/English_flag.png"); //make default
+        var spanish = new Language(1, "Spanish", "ES", "Flags/Spanish_flag.png");
         lo.addLanguage(polish);
         ArrayList<Language> languages = new ArrayList<>();
         languages.add(english);
@@ -35,7 +35,7 @@ public class LanguageOptionsTest {
     public void getLanguageFromAbbrTest() {
         var lo = new LanguageOptions();
         var l = new Language(0, "English", "EN",
-                "client/src/main/resources/client/homeScreen.fxml");
+                "Flags/English_flag.png");
         assertEquals(l, lo.getLanguageFromAbbr("EN"));
     }
 
