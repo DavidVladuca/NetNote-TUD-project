@@ -2,6 +2,7 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextArea?>
@@ -53,10 +54,10 @@
          </font>
       </Text>
       <TextField fx:id="searchF" layoutX="22.0" layoutY="47.0" onAction="#search" prefHeight="29.0" prefWidth="727.0" promptText="%Search" styleClass="searchField" stylesheets="@../css/style.css" />
-      <ChoiceBox fx:id="selectLangBox" layoutX="925.0" layoutY="49.0" prefHeight="27.0" prefWidth="59.0" />
       <ChoiceBox fx:id="selectCollectionBox" layoutX="759.0" layoutY="49.0" prefWidth="150.0" />
       <Text fx:id="language_text" layoutX="925.0" layoutY="44.0" strokeType="OUTSIDE" strokeWidth="0.0" text="%Language" />
       <Button fx:id="editCollectionsB" layoutX="22.0" layoutY="8.0" mnemonicParsing="false" onAction="#editCollections" styleClass="midground" stylesheets="@../css/style.css" text="%edit_collection" />
       <Text fx:id="collection_text" layoutX="759.0" layoutY="44.0" strokeType="OUTSIDE" strokeWidth="0.0" text="%Collection" />
+      <ComboBox fx:id="selectLangBox" layoutX="922.0" layoutY="49.0" prefHeight="25.0" prefWidth="70.0" />
    </children>
 </Pane>

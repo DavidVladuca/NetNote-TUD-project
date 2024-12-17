@@ -18,9 +18,12 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.text.Text;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 import javafx.util.Pair;
 import javafx.util.StringConverter;
 import org.commonmark.parser.Parser;
@@ -77,7 +80,7 @@ public class HomeScreenCtrl {
 
     ResourceBundle bundle;
     Locale locale;
-    public ChoiceBox<Language> selectLangBox = new ChoiceBox<Language>();
+    public ComboBox<Language> selectLangBox = new ComboBox<Language>();
     public TextField noteTitleF;
     public TextArea noteBodyF;
     public TextField searchF;
@@ -460,6 +463,55 @@ public class HomeScreenCtrl {
     public void setUpLanguages(){
         selectLangBox.getItems().setAll(LanguageOptions.getInstance().getLanguages());
         selectLangBox.setValue(selectLangBox.getItems().getFirst());
+        // How to do this gotten from stack overflow (https://stackoverflow.com/questions/32334137/javafx-choicebox-with-image-and-text)
+        selectLangBox.setCellFactory(new Callback<ListView<Language>, ListCell<Language>>() {
+            @Override
+            public ListCell<Language> call(ListView<Language> listView) {
+                return new ListCell<Language>() {
+                    @Override
+                    protected void updateItem(Language item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || item == null) {
+                            setText(null);
+                            setGraphic(null);
+                        } else {
+                            String iconPath = item.getImg_path();
+                            Image icon = new Image(getClass().getClassLoader().getResourceAsStream(iconPath));
+                            ImageView iconImageView = new ImageView(icon);
+                            double height = 15;
+                            double width = 30;
+                            iconImageView.setFitHeight(height);
+                            iconImageView.setFitWidth(width);
+                            iconImageView.setPreserveRatio(false);
+                            setGraphic(iconImageView);
+
+                        }
+                    }
+                };
+            }
+        });
+
+        selectLangBox.setButtonCell(new ListCell<Language>() {
+            @Override
+            protected void updateItem(Language item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    String iconPath = item.getImg_path(); //path described from client location
+                    Image icon = new Image(getClass().getClassLoader().getResourceAsStream(iconPath));
+                    ImageView iconImageView = new ImageView(icon);
+                    double height = 15;
+                    double width = 30;
+                    iconImageView.setFitHeight(height);
+                    iconImageView.setFitWidth(width);
+                    iconImageView.setPreserveRatio(false);
+                    setGraphic(iconImageView); // only shows the flag
+                }
+            }
+        });
+
         selectLangBox.setConverter(new StringConverter<>() {
             @Override
             public String toString(Language language) {
@@ -468,7 +520,14 @@ public class HomeScreenCtrl {
 
             @Override
             public Language fromString(String s) {
-                return null; //todo - implement (make for loop until the right option is found in the options list)
+                Language lang;
+                for (int i=0; i<selectLangBox.getItems().size();i++){
+                    if (selectLangBox.getItems().get(i).getAbbr().equals(s)){
+                        lang =selectLangBox.getItems().get(i);
+                        return lang;
+                    }
+                }
+                return selectLangBox.getItems().getFirst();
             }
         });
 
@@ -490,7 +549,6 @@ public class HomeScreenCtrl {
                 noteBodyF.setPromptText(bundle.getString("Text_Area"));
                 undoB.setText(bundle.getString("Undo"));
                 refreshB.setText(bundle.getString("Refresh"));
-
 
             }});
 
