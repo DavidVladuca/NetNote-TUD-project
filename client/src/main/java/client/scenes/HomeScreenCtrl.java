@@ -19,6 +19,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
 import javafx.scene.web.WebView;
 import javafx.util.StringConverter;
 import org.commonmark.parser.Parser;
@@ -91,6 +92,8 @@ public class HomeScreenCtrl {
      */
     @FXML
     public void initialize() {
+        keyboardShortcuts();
+        arrowKeyShortcuts();
         scheduler.scheduleAtFixedRate(this::syncIfChanged, 0, 5, TimeUnit.SECONDS);
         setUpLanguages();
         setUpCollections();
@@ -98,6 +101,76 @@ public class HomeScreenCtrl {
         markDownContent();
         loadNotesFromServer();
         setupNotesListView();
+    }
+
+    /**
+     * This method sets up the keyboard shortcuts specified here
+     * For add - the user needs to click 'Shift + A'
+     * For delete - the user needs to click 'Control + Shift + A'
+     */
+    public void keyboardShortcuts() {
+        Platform.runLater(() -> {
+            addB.getScene().setOnKeyPressed(event -> {
+                // When clicking 'Shift + A' add method will be called
+                if(event.isShiftDown() && event.getCode() == KeyCode.A) {
+                    try {
+                        add();
+                    } catch (IOException | InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                // When clicking 'Shift + D' delete method will be called
+                if(event.isShiftDown()
+                        && event.getCode() == KeyCode.D) {
+                    delete();
+                }
+                // When clicking 'Shift + Tab' the show shortcuts alert will pop up
+                if(event.isShiftDown()
+                        && event.getCode() == KeyCode.TAB) {
+                    showShortcuts();
+                }
+            });
+        });
+    }
+
+    /**
+     * This method sets up the arrow key shortcuts in the TextField for custom navigation with shift
+     */
+    public void arrowKeyShortcuts() {
+        // For note title
+        noteTitleF.setOnKeyPressed(event -> {
+            // When clicking 'Shift + Right Arrow' the focus will go to the notes list view
+            if(event.isShiftDown() && event.getCode() == KeyCode.LEFT) {
+                notesListView.requestFocus();
+            }
+            // When clicking 'Shift + Left Arrow' the focus will go to the note body
+            if(event.isShiftDown() && event.getCode() == KeyCode.RIGHT) {
+                noteBodyF.requestFocus();
+            }
+        });
+        // For note body
+        noteBodyF.setOnKeyPressed(event -> {
+            // When clicking 'Shift + Left Arrow' the focus will go to the note title
+            if(event.isShiftDown() && event.getCode() == KeyCode.LEFT) {
+                noteTitleF.requestFocus();
+            }
+        });
+    }
+
+    /**
+     * Displays a pop-up with the list of keyboard shortcuts and their descriptions.
+     */
+    public void showShortcuts() {
+        Alert shortcuts = new Alert(Alert.AlertType.INFORMATION);
+        shortcuts.setTitle("Keyboard Shortcuts");
+        shortcuts.setHeaderText("Available Keyboard Shortcuts");
+        shortcuts.setContentText(
+                "Shift + A: Add a new note\n" +
+                        "Shift + D: Delete the selected note\n" +
+                        "Shift + Arrow Left/Right: Navigate between fields\n\t\twhen in the text field\n" +
+                        "Shift + Tab: Show shortcuts pop-up"
+        );
+        shortcuts.showAndWait();
     }
 
     /**
