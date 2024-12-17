@@ -45,6 +45,6 @@ public class LanguageTest {
         assertTrue(actual.contains("id"));
         assertTrue(actual.contains("name"));
         assertTrue(actual.contains("abbr"));
-        assertTrue(actual.contains("screen_path"));
+        assertTrue(actual.contains("img_path"));
     }
 }
