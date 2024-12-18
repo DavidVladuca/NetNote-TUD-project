@@ -4,14 +4,15 @@ import com.fasterxml.jackson.annotation.*;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 public class Note {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private long noteId;
+    private long noteId; //todo - this does not work well all notes have id 0
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collection_id", nullable = false) // Ensure that the title is mandatory in the database
@@ -24,11 +25,16 @@ public class Note {
     @Column(nullable = false) // Ensure that the title is mandatory in the database
     private String body;
 
-    @ElementCollection
-    private List<String> tags;
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "note_tag",
+            joinColumns = @JoinColumn(name = "note_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<Tag> tags = new HashSet<>();
 
     // Protected no-arg constructor for JPA and object mappers
-    protected Note() {}
+    public Note() {}
 
     /**
      * Constructor for the Note class.
@@ -40,7 +46,7 @@ public class Note {
         this.title = title;
         this.body = body;
         this.collection = collection;
-        this.tags = new ArrayList<>(); // declare it empty for now
+        this.tags = new HashSet<>(); // declare it empty for now
     }
 
     /**
@@ -109,17 +115,17 @@ public class Note {
 
     /**
      * Getter for the Tags
-     * @return - the list of Strings representing the tags
+     * @return - the list of Tags representing the tags
      */
-    public List<String> getTags() {
+    public Set<Tag> getTags() {
         return tags;
     }
 
     /**
      * Setter for the tags
-     * @param tags - list of Strings representing the tags
+     * @param tags - list of Tags representing the tags
      */
-    public void setTags(List<String> tags) {
+    public void setTags(Set<Tag> tags) {
         this.tags = tags;
     }
 
@@ -156,18 +162,22 @@ public class Note {
     @Override
     public String toString() {
         StringBuilder tagsString = new StringBuilder();
-        for(int i = 0; i < tags.size(); i++) {
-            tagsString.append(tags.get(i));
-            if(i < tags.size() - 1)
-                tagsString.append(", ");
+        for (Tag tag : tags) {
+            tagsString.append(tag.getName());
+            tagsString.append(", ");
+        }
+        // Remove the last comma and space, if any tags were appended
+        if (!tagsString.isEmpty()) {
+            tagsString.setLength(tagsString.length() - 2);
         }
         return "Note:\n" +
                 "Note ID: " + noteId + "\n" +
-                "Collection ID: " + collection.getCollectionId() + "\n" +
+                "Collection ID: " + (collection != null ? collection.getCollectionId() : "No Collection") + "\n" +
                 "Title: " + title + "\n" +
                 "Body:\n" + body + "\n" +
                 "Tags: " + tagsString + "\n";
     }
+
     /**
      * gets indices for all matches for a particular search text
      * @param search_text - inputted text by user

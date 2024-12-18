@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -204,5 +205,68 @@ public class CollectionTest {
 
         // Verifying the collection is now empty
         assertTrue(collection1.getNotes().isEmpty(), "Collection should be empty after removing all notes");
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(collection1.getServer(), "Server should not be null");
+        assertEquals("Test Collection 1", collection1.getCollectionTitle(), "Title should be set correctly");
+        assertTrue(collection1.getNotes().isEmpty(), "Notes list should be initialized empty");
+    }
+
+    @Test
+    public void testGetCollectionId() {
+        collection1.setCollectionId(1);
+        assertEquals(1, collection1.getCollectionId(), "getCollectionId should return the correct ID");
+    }
+
+    @Test
+    public void testSetCollectionId() {
+        collection1.setCollectionId(5);
+        assertEquals(5, collection1.getCollectionId(), "setCollectionId should correctly set the ID");
+    }
+
+    @Test
+    public void testGetServer() {
+        assertEquals(server1, collection1.getServer(), "getServer should return the correct server");
+    }
+
+    @Test
+    public void testSetServer() {
+        Server newServer = new Server();
+        collection1.setServer(newServer);
+        assertEquals(newServer, collection1.getServer(), "setServer should correctly set the server");
+    }
+
+    @Test
+    public void testGetCollectionTitle() {
+        assertEquals("Test Collection 1", collection1.getCollectionTitle(), "getCollectionTitle should return the correct title");
+    }
+
+    @Test
+    public void testSetCollectionTitle() {
+        collection1.setCollectionTitle("New Title");
+        assertEquals("New Title", collection1.getCollectionTitle(), "setCollectionTitle should correctly set the title");
+    }
+
+    @Test
+    public void testGetNotes() {
+        List<Note> notes = new ArrayList<>();
+        collection1.setNotes(notes);
+        assertEquals(notes, collection1.getNotes(), "getNotes should return the correct notes list");
+    }
+
+    @Test
+    public void testSetNotes() {
+        Note note1 = new Note("Title 1", "Body 1", collection1);
+        Note note2 = new Note("Title 2", "Body 2", collection1);
+        List<Note> notes = new ArrayList<>();
+        notes.add(note1);
+        notes.add(note2);
+
+        collection1.setNotes(notes);
+        assertEquals(2, collection1.getNotes().size(), "setNotes should correctly set the notes list");
+        assertTrue(collection1.getNotes().contains(note1), "Notes list should contain note1");
+        assertTrue(collection1.getNotes().contains(note2), "Notes list should contain note2");
     }
 }

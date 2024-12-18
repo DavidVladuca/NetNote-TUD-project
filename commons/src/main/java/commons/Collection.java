@@ -12,7 +12,7 @@ public class Collection {
     @Id
     //@GeneratedValue(strategy = GenerationType.AUTO)
     private long collectionId;
-
+    private long latestNoteId = -1;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "server_id", nullable = false) // Foreign key to Server
     @JsonBackReference
@@ -158,10 +158,12 @@ public class Collection {
      */
     public void addNote(Note new_note){
         notes.add(new_note);
-    }
+        latestNoteId++;
+    } //todo - make it so that you can also add notes
+    //todo - add tests
 
-    public void removeNote(Note note){
-        notes.remove(note);
+
+    public void removeNote(Note note){notes.remove(note);
     }
 
     /**
@@ -191,5 +193,13 @@ public class Collection {
             result.add(note_match); //if no matches, returns 1 arraylist containing -1 (getFirst().getFirst()==-1)
         }
         return result;
+    }
+
+    /**
+     * getter for latest note id
+     * @return returns note id of the previous note
+     */
+    public long getLatestNoteId() {
+        return latestNoteId;
     }
 }
