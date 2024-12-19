@@ -712,7 +712,7 @@ public class HomeScreenCtrl {
                 bundle = ResourceBundle.getBundle("MyBundle", locale);
 
                 editCollectionsB.setText(bundle.getString("edit_collection"));
-                searchF.setPromptText(bundle.getString("Search"));
+                searchCollectionF.setPromptText(bundle.getString("Search"));
                 collection_text.setText(bundle.getString("Collection"));
                 language_text.setText(bundle.getString("Language"));
                 noteTitleF.setPromptText(bundle.getString("Untitled"));
