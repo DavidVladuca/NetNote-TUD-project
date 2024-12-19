@@ -5,7 +5,6 @@
 | Location : | Online           |
 | Chair | Lachezar Marinov |
 | Minute Taker | James Sylwester  |
-
 | Attendees : | David Vladuca, Andrei Tudor, Mario Gonzalez Piniero, Lachezar Marinov, Tom Holinka, James Sylwester |
 
 
