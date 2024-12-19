@@ -516,7 +516,7 @@ public class HomeScreenCtrl {
     /**
      * Searches for a note based on text field input
      */
-    public void searchNote() {
+    public void searchNote() { //make sure this remains like this after merge.
         String search_text = searchNoteF.textProperty().getValue();
         note_match_indices = current_note.getMatchIndices(search_text);
         if (search_text.isEmpty()){
