@@ -89,12 +89,15 @@ public class HomeScreenCtrl {
     public TextField noteTitleF;
     public TextArea noteBodyF;
     public TextField searchCollectionF;
+<<<<<<< HEAD
     public TextField searchNoteF;
     private int current_search_index = 0;
     private  ArrayList<Long> note_match_indices;
     public Button searchMore;
     public Button getNextMatch;
     public Button getPreviousMatch;
+=======
+>>>>>>> language-functionality
     public WebView markDownOutput;
     public ChoiceBox<Collection> selectCollectionBox = new ChoiceBox<>();
     private Note lastDeletedNote = null;
@@ -551,12 +554,18 @@ public class HomeScreenCtrl {
     /**
      * Searches for a note based on text field input
      */
+<<<<<<< HEAD
     public void searchNote() {
         String search_text = searchNoteF.textProperty().getValue();
         note_match_indices = current_note.getMatchIndices(search_text);
         if (search_text.isEmpty()){
             current_search_index=0;
         }
+=======
+    public void search() {
+        String search_text = searchCollectionF.textProperty().getValue();
+        ArrayList<Long> match_indices = current_note.getMatchIndices(search_text);
+>>>>>>> language-functionality
         String titleHighlighted = current_note.getTitle();
         String bodyHighlighted = current_note.getBody();
         if (!note_match_indices.isEmpty()){
