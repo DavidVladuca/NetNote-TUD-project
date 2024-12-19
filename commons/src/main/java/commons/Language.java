@@ -6,16 +6,17 @@ public class Language {
     private int id; //needed for the model selection
     private String name;
     private String abbr; //abbreviation
-    private String screen_path;
+    private String img_path;
+
 
     /**
      * Constructor
      * @param id - id number for the language
      * @param name - name (complete) of the language
      * @param abbr - two letter abbreviation of the language
-     * @param screen_path - path for the location of the main screen for that language
+     * @param img_path - path for the location of the language flag
      */
-    public Language(int id, String name, String abbr, String screen_path) throws IllegalArgumentException{
+    public Language(int id, String name, String abbr, String img_path) throws IllegalArgumentException{
         if (abbr.length()!=2){
             throw new IllegalArgumentException("Abbreviation must be two characters long (use ISO 639).");
         } else if (abbr.matches("[^A-Z]")){
@@ -24,7 +25,7 @@ public class Language {
             this.id = id;
             this.name = name;
             this.abbr = abbr;
-            this.screen_path = screen_path;
+            this.img_path = img_path;
         }
 
     }
@@ -54,11 +55,11 @@ public class Language {
     }
 
     /**
-     * getter for location of the language main screen
-     * @return - returns the path for the main screen of the language
+     * getter for location of the language flag
+     * @return - returns the path for the flag of the language
      */
-    public String getScreen_path(){
-        return screen_path;
+    public String getImg_path(){
+        return img_path;
     }
 
     /**
@@ -83,7 +84,7 @@ public class Language {
         return this.id == that.id &&
                 Objects.equals(this.name, that.name) &&
                 Objects.equals(this.abbr, that.abbr) &&
-                Objects.equals(this.screen_path, that.screen_path);
+                Objects.equals(this.img_path, that.img_path);
     }
 
     /**
@@ -92,7 +93,7 @@ public class Language {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, abbr, screen_path);
+        return Objects.hash(id, name, abbr, img_path);
     }
 
     /**
@@ -105,7 +106,7 @@ public class Language {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", abbr='" + abbr + '\'' +
-                ", screen_path='" + screen_path + '\'' +
+                ", img_path='" + img_path + '\'' +
                 '}';
     }
 }

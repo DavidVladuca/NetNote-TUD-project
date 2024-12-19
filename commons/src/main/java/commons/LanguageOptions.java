@@ -5,8 +5,8 @@ import java.util.ArrayList;
 public class LanguageOptions {
     //todo - missing a lot of tests and javadocs
     ArrayList<Language> lang_options;
-    Language english = new Language(0, "English", "EN", "client/src/main/resources/client/homeScreen.fxml"); //make default
-    Language spanish = new Language(1, "Spanish", "ES", "client/src/main/resources/client/homeScreen.fxml");
+    Language english = new Language(0, "English", "EN", "Flags/English_flag.png"); //note image path is from client
+    Language spanish = new Language(1, "Spanish", "ES", "Flags/Spanish_flag.png");
     int current_index;
 
     private static LanguageOptions single_instance = null;

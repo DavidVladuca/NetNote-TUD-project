@@ -14,7 +14,7 @@ public class LanguageTest {
         assertEquals(1, l.getId());
         assertEquals("Polish", l.getName());
         assertEquals("PL", l.getAbbr());
-        assertEquals("some/path", l.getScreen_path());
+        assertEquals("some/path", l.getImg_path());
     }
 
     @Test
@@ -45,6 +45,6 @@ public class LanguageTest {
         assertTrue(actual.contains("id"));
         assertTrue(actual.contains("name"));
         assertTrue(actual.contains("abbr"));
-        assertTrue(actual.contains("screen_path"));
+        assertTrue(actual.contains("img_path"));
     }
 }
