@@ -53,7 +53,7 @@
             <Font size="28.0" />
          </font>
       </Text>
-      <TextField fx:id="searchF" layoutX="22.0" layoutY="47.0" onAction="#search" prefHeight="29.0" prefWidth="727.0" promptText="%Search" styleClass="searchField" stylesheets="@../css/style.css" />
+      <TextField fx:id="searchF" layoutX="22.0" layoutY="47.0" onAction="#searchCollection" prefHeight="29.0" prefWidth="727.0" promptText="%Search" styleClass="searchField" stylesheets="@../css/style.css" />
       <ChoiceBox fx:id="selectCollectionBox" layoutX="759.0" layoutY="49.0" prefWidth="150.0" />
       <Text fx:id="language_text" layoutX="925.0" layoutY="44.0" strokeType="OUTSIDE" strokeWidth="0.0" text="%Language" />
       <Button fx:id="editCollectionsB" layoutX="22.0" layoutY="8.0" mnemonicParsing="false" onAction="#editCollections" styleClass="midground" stylesheets="@../css/style.css" text="%edit_collection" />

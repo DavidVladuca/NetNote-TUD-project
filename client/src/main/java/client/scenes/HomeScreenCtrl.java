@@ -83,7 +83,7 @@ public class HomeScreenCtrl {
     public ComboBox<Language> selectLangBox = new ComboBox<Language>();
     public TextField noteTitleF;
     public TextArea noteBodyF;
-    public TextField searchF;
+    public TextField searchCollectionF;
     public WebView markDownOutput;
     public ChoiceBox<Collection> selectCollectionBox = new ChoiceBox<>();
 
@@ -426,7 +426,7 @@ public class HomeScreenCtrl {
      * Searches for a note based on text field input
      */
     public void search() {
-        String search_text = searchF.textProperty().getValue();
+        String search_text = searchCollectionF.textProperty().getValue();
         ArrayList<Long> match_indices = current_note.getMatchIndices(search_text);
         String titleHighlighted = current_note.getTitle();
         String bodyHighlighted = current_note.getBody();
@@ -542,7 +542,7 @@ public class HomeScreenCtrl {
                 bundle = ResourceBundle.getBundle("MyBundle", locale);
 
                 editCollectionsB.setText(bundle.getString("edit_collection"));
-                searchF.setPromptText(bundle.getString("Search"));
+                searchCollectionF.setPromptText(bundle.getString("Search"));
                 collection_text.setText(bundle.getString("Collection"));
                 language_text.setText(bundle.getString("Language"));
                 noteTitleF.setPromptText(bundle.getString("Untitled"));
