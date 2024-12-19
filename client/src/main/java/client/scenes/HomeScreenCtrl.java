@@ -2,7 +2,6 @@ package client.scenes;
 
 
 import client.HomeScreen;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import commons.Language;
 import commons.LanguageOptions;
@@ -11,31 +10,61 @@ import commons.Note;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.text.Text;
 import javafx.scene.web.WebView;
+import javafx.stage.Stage;
+import javafx.util.Callback;
+import javafx.util.Pair;
 import javafx.util.StringConverter;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.io.IOException;
+
 import commons.Collection;
 import commons.Server;
 
 public class HomeScreenCtrl {
     //todo - for all methods, change strings title and body to getting them from the note instead
     private final ScreenCtrl sc;
+    private Stage primaryStage;
+    private javafx.scene.Scene homeScene;
+    private javafx.scene.Scene editCollectionScene;
+
+    public void init(Stage primaryStage, Pair<HomeScreenCtrl, Parent> home, Pair<EditCollectionsViewCtrl, Parent> editCollection) {
+        this.primaryStage = primaryStage;
+        this.homeScene = new javafx.scene.Scene(home.getValue());
+        this.editCollectionScene = new javafx.scene.Scene(editCollection.getValue());
+        showHome();
+        primaryStage.show();
+    }
+
+    public void showHome() {
+        if(primaryStage == null) {throw new IllegalStateException("Primary stage is not initialized");}
+        primaryStage.setScene(homeScene);
+    }
+
+    public void showEditCollection() {
+        if(primaryStage == null) {throw new IllegalStateException("Primary stage is not initialized");}
+        primaryStage.setScene(editCollectionScene);
+    }
 
     @Inject
     public HomeScreenCtrl(ScreenCtrl sc) {this.sc = sc;}
@@ -44,25 +73,19 @@ public class HomeScreenCtrl {
     public Button addB;
     public Button deleteB;
     public Button undoB;
-    public Button dropDownSearchNoteB;
-    public Button prevMatchB;
-    public Button nextMatchB;
-
     public Button refreshB;
     public Button editCollectionsB;
-    public ChoiceBox<Language> selectLangBox = new ChoiceBox<Language>();
+    public Text collection_text;
+    public Text language_text;
+
+    ResourceBundle bundle;
+    Locale locale;
+    public ComboBox<Language> selectLangBox = new ComboBox<Language>();
     public TextField noteTitleF;
     public TextArea noteBodyF;
-    public TextField searchCollectionF;
-    public TextField searchNoteF;
-    private int current_search_index = 0;
-    private  ArrayList<Long> note_match_indices;
-    public Button searchMore;
-    public Button getNextMatch;
-    public Button getPreviousMatch;
+    public TextField searchF;
     public WebView markDownOutput;
     public ChoiceBox<Collection> selectCollectionBox = new ChoiceBox<>();
-    private Note lastDeletedNote = null;
 
     /*
     todo - change the 3 below (current_server, current_collection, current_note) -
@@ -214,7 +237,7 @@ public class HomeScreenCtrl {
                 noteTitleF.setText(newNote.getTitle());
                 noteBodyF.setText(newNote.getBody());
 
-                Platform.runLater(() -> notesListView.getSelectionModel());
+//                Platform.runLater(() -> notesListView.getSelectionModel().clearSelection());
             }
         });
     }
@@ -257,6 +280,7 @@ public class HomeScreenCtrl {
         });
     }
 
+
     /**
      * Utility function used to locate resources within applications filepath
      *
@@ -270,77 +294,25 @@ public class HomeScreenCtrl {
     /**
      * Adds a new note to ListView and Database.
      */
-    @FXML
     public void add() throws IOException, InterruptedException {
-        // Generate a unique title for the new note
-        String baseTitle = "New note";
-        String newTitle = baseTitle;
-        int counter = 1;
-        List<String> existingTitles = notes.stream().map(Note::getTitle).toList();
-        while (existingTitles.contains(newTitle)) {
-            newTitle = baseTitle + " (" + counter + ")";
-            counter++;
-        }
-
-        // Create the new note
-        Note newNote = new Note(newTitle, "", current_collection);
-        // Immediately send the new note to the server to get a valid noteID that is NOT 0
-        try {
-            Note savedNote = saveNoteToServer(newNote); // Calls the create endpoint - see the method
-
-            // Update the collection and UI with the saved note
-            current_collection.addNote(savedNote);  // Add to the collection
-            notes.add(savedNote);                   // Add to the ObservableList
-
-            // Select the new note in the ListView
-            notesListView.getSelectionModel().select(savedNote);
-
-            // Update UI fields
-            current_note = savedNote;
-            noteTitleF.setText(savedNote.getTitle());
-            noteBodyF.setText(savedNote.getBody());
-
-        } catch (Exception e) {
-            System.err.println("Failed to save the note: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Sends the note to the server via the create endpoint and returns the saved note.
-     * This ensures the note gets a valid noteId from the server.
-     * It is very similar to addRequest method, however I needed to return a new Note object
-     * for the unique ID
-     * @param note - note provided
-     * @return a Note that was saved with a unique id
-     */
-    public Note saveNoteToServer(Note note) throws IOException {
-        var json = new ObjectMapper().writeValueAsString(note);
-        var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
-        // Connect to the create endpoint, where add requests are processed
-        var response = ClientBuilder.newClient()
-                .target("http://localhost:8080/api/notes/create")
-                .request(MediaType.APPLICATION_JSON)
-                .post(requestBody);
-
-        if (response.getStatus() == 201) {
-            return response.readEntity(Note.class);
-        } else {
-            throw new IOException("Server returned status: " + response.getStatus());
-        }
-    }
-
-
-    /**
-     * Sends request to the server to add a note with a provided Note
-     * @param note - Note
-     */
-    public void addRequest(Note note) throws JsonProcessingException {
-        var json = new ObjectMapper().writeValueAsString(note);
-        var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
-        var response = ClientBuilder.newClient()
-                .target("http://localhost:8080/api/notes/create") // Update with the correct endpoint for adding a note
-                .request(MediaType.APPLICATION_JSON)
-                .post(requestBody);
+        //Creates a note with text from the fields
+        Note newNote = new Note(noteTitleF.getText(), noteBodyF.getText(), current_collection);
+        current_collection.addNote(newNote);
+        var json = new ObjectMapper().writeValueAsString(newNote);  //JSON with the new note
+        System.out.println(json);//Temporary for testing
+       //Request body containing the created note
+       var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
+       // Send the POST request
+       var response = ClientBuilder.newClient()
+               .target("http://localhost:8080/api/notes/create")
+               .request(MediaType.APPLICATION_JSON)
+               .post(requestBody);
+        //Add notes to List<View>
+        notes.add(newNote);
+        //Clear the fields
+        noteTitleF.clear();
+        noteBodyF.clear();
+        System.out.println("Add"); // Temporary for testing
     }
 
     /**
@@ -349,86 +321,23 @@ public class HomeScreenCtrl {
     public void delete() {
         Note selectedNote = notesListView.getSelectionModel().getSelectedItem();
         if (selectedNote != null) {
-            // Create a confirmation alert
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Delete Note");
-            alert.setHeaderText("Are you sure you want to delete this note?");
-            alert.setContentText("Note: \"" + selectedNote.getTitle() + "\"");
-            var result = alert.showAndWait(); // Waiting for user response
-            if (result.isPresent() && result.get() == ButtonType.OK) {
-                // Proceed with deletion
-                lastDeletedNote = selectedNote;
-                notes.remove(selectedNote); //Remove from client
-                deleteRequest(selectedNote.getNoteId()); // Remove from server database
-                System.out.println("Note deleted: " + selectedNote.getTitle()); // For testing purposes
-                System.out.println("Note deleted: " + selectedNote.getNoteId());
+            notes.remove(selectedNote);
+            selectedNote.getCollection().removeNote(selectedNote);
+            notesListView.getSelectionModel().clearSelection();
+        }
 
-                //Confirmation alert that note was deleted
-                alert.setTitle("Note Deleted");
-                alert.setHeaderText(null);
-                alert.setContentText("The note has been successfully deleted!");
-                alert.showAndWait();
-            }
-        }
-        // Show a warning if no note is selected
-        else {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("No Note Selected!");
-            alert.setHeaderText("No note selected to delete.");
-            alert.setContentText("Please select a note from the list to delete.");
-            alert.showAndWait();
-        }
         System.out.println("Delete");  //Temporary for testing
     }
 
     /**
-     * Sends request to the server to delete a note by a provided ID
-     * @param noteId
+     * IDK yet
      */
-    public static void deleteRequest(long noteId){
-        Response response = ClientBuilder.newClient()
-                .target("http://localhost:8080/api/notes/delete/" + noteId) // Endpoint for deletion
-                .request()
-                .delete();
-        if (response.getStatus() == Response.Status.NO_CONTENT.getStatusCode()) {
-            System.out.println("Note successfully deleted.");
-        } else if (response.getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
-            System.out.println("Note not found.");
-        } else {
-            System.out.println("Failed to delete note. Status: " + response.getStatus());
-        }
-        response.close();
-    }
-
-    /**
-     * Restores the last deleted note
-     */
-    public void undo() throws JsonProcessingException {
+    public void undo() {
         System.out.println("Undo");//Temporary for testing
-        if (lastDeletedNote != null) {
-            // Add the deleted note back to the list and the server
-            notes.add(lastDeletedNote); // Adds note to the client
-            addRequest(lastDeletedNote); // Adds note to the database
-            lastDeletedNote = null; //Reset the lastDeletedNote attribute
-            //Alert informing the user about the restored note - Could be deleted later
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Undo Successful");
-            alert.setHeaderText(null);
-            alert.setContentText("The deleted note has been restored.");
-            alert.showAndWait();
-        } else {
-            // If there is no deleted note show an alert
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Nothing to Undo");
-            alert.setHeaderText("No deleted note to restore");
-            alert.setContentText("Please delete a note first if you want to undo");
-            alert.showAndWait();
-        }
     }
 
-
     /**
-     * Edits the title of currently selected note
+     * Edits the title of the currently selected note
      */
     public void titleEdit() {
 
@@ -516,47 +425,29 @@ public class HomeScreenCtrl {
     /**
      * Searches for a note based on text field input
      */
-    public void searchNote() {
-        String search_text = searchNoteF.textProperty().getValue();
-        note_match_indices = current_note.getMatchIndices(search_text);
-        if (search_text.isEmpty()){
-            current_search_index=0;
-        }
+    public void search() {
+        String search_text = searchF.textProperty().getValue();
+        ArrayList<Long> match_indices = current_note.getMatchIndices(search_text);
         String titleHighlighted = current_note.getTitle();
         String bodyHighlighted = current_note.getBody();
-        if (!note_match_indices.isEmpty()){
-            if (note_match_indices.getFirst()==-1L && note_match_indices.size()==1L){
+        if (!match_indices.isEmpty()){
+            if (match_indices.getFirst()==-1L && match_indices.size()==1L){
                 System.out.println("Not found in \""+current_note.getTitle()+"\"");
             } else{ //parse in special way such that the found results are highlighted
-                for (int i=note_match_indices.size()-1; i>=0; i--){//iterating from the back to not have to consider changes in index due to additions
-                    if (note_match_indices.get(i)<titleHighlighted.length()){
-                        if (i==current_search_index) {
-                            titleHighlighted = titleHighlighted.substring(0, Math.toIntExact(note_match_indices.get(i)))
-                                    + "<mark style=\"background: #E1C16E\">"
-                                    + search_text
-                                    + "</mark>"
-                                    + titleHighlighted.substring((int) (note_match_indices.get(i) + search_text.length()));
-                        } else {
-                            titleHighlighted = titleHighlighted.substring(0, Math.toIntExact(note_match_indices.get(i)))
-                                    + "<mark>"
-                                    + search_text
-                                    + "</mark>"
-                                    + titleHighlighted.substring((int) (note_match_indices.get(i) + search_text.length()));
-                        }
+                for (int i=match_indices.size()-1; i>=0; i--){//iterating from the back to not have to consider changes in index due to additions
+                    System.out.println(match_indices.get(i));
+                    if (match_indices.get(i)<titleHighlighted.length()){
+                        titleHighlighted = titleHighlighted.substring(0, Math.toIntExact(match_indices.get(i)))
+                                + "<mark>"
+                                + search_text
+                                + "</mark>"
+                                + titleHighlighted.substring((int) (match_indices.get(i) + search_text.length()));
                     } else {
-                        if (i==current_search_index){
-                            bodyHighlighted = bodyHighlighted.substring(0, (int) (note_match_indices.get(i) - titleHighlighted.length()))
-                                    + "<mark style=\"background: #E1C16E\">"
-                                    + search_text
-                                    + "</mark>"
-                                    + bodyHighlighted.substring((int) (note_match_indices.get(i) - titleHighlighted.length() + search_text.length()));
-                        } else {
-                            bodyHighlighted = bodyHighlighted.substring(0, (int) (note_match_indices.get(i) - titleHighlighted.length()))
-                                    + "<mark>"
-                                    + search_text
-                                    + "</mark>"
-                                    + bodyHighlighted.substring((int) (note_match_indices.get(i) - titleHighlighted.length() + search_text.length()));
-                        }
+                        bodyHighlighted = bodyHighlighted.substring(0, (int) (match_indices.get(i)-titleHighlighted.length()))
+                                + "<mark>"
+                                + search_text
+                                + "</mark>"
+                                + bodyHighlighted.substring((int) (match_indices.get(i) -titleHighlighted.length() + search_text.length()));
                     }
                 }
             }
@@ -569,35 +460,58 @@ public class HomeScreenCtrl {
 
     }
 
-    /**
-     * Searches through collection and displays notes that match search
-     */
-    public void searchCollection(){//todo - finish
-        String search_text = searchCollectionF.textProperty().getValue();
-        ArrayList<ArrayList<Long>> collection_match_indices = current_collection.getSearch(search_text); //todo -check if collection gets updated, or only fetchedNotes
-        ObservableList<Note> display_notes = FXCollections.observableArrayList();
-        if (!collection_match_indices.isEmpty()){
-            if (collection_match_indices.getFirst().getFirst()==-1) {
-                System.out.println("There are no matches for " + search_text);
-                display_notes.clear(); //gives an empty display
-            } else{
-                for (int i=0; i< collection_match_indices.size();i++) {
-                    display_notes.add(current_collection.getNotes().get(Math.toIntExact(collection_match_indices.get(i).getFirst())));
-                }
-            }
-        } else{
-            display_notes=notes;
-        }
-        notesListView.setItems(display_notes);
-    }
-
-    /**
-     * Sets up the languages - from all languages available, sets English as Default
-     * Listens for changes in language.
-     */
-    public void setUpLanguages(){ //todo - check if there is a way to store user language preference
+    public void setUpLanguages(){
         selectLangBox.getItems().setAll(LanguageOptions.getInstance().getLanguages());
         selectLangBox.setValue(selectLangBox.getItems().getFirst());
+        // How to do this gotten from stack overflow (https://stackoverflow.com/questions/32334137/javafx-choicebox-with-image-and-text)
+        selectLangBox.setCellFactory(new Callback<ListView<Language>, ListCell<Language>>() {
+            @Override
+            public ListCell<Language> call(ListView<Language> listView) {
+                return new ListCell<Language>() {
+                    @Override
+                    protected void updateItem(Language item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || item == null) {
+                            setText(null);
+                            setGraphic(null);
+                        } else {
+                            String iconPath = item.getImg_path();
+                            Image icon = new Image(getClass().getClassLoader().getResourceAsStream(iconPath));
+                            ImageView iconImageView = new ImageView(icon);
+                            double height = 15;
+                            double width = 30;
+                            iconImageView.setFitHeight(height);
+                            iconImageView.setFitWidth(width);
+                            iconImageView.setPreserveRatio(false);
+                            setGraphic(iconImageView);
+
+                        }
+                    }
+                };
+            }
+        });
+
+        selectLangBox.setButtonCell(new ListCell<Language>() {
+            @Override
+            protected void updateItem(Language item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    String iconPath = item.getImg_path(); //path described from client location
+                    Image icon = new Image(getClass().getClassLoader().getResourceAsStream(iconPath));
+                    ImageView iconImageView = new ImageView(icon);
+                    double height = 15;
+                    double width = 30;
+                    iconImageView.setFitHeight(height);
+                    iconImageView.setFitWidth(width);
+                    iconImageView.setPreserveRatio(false);
+                    setGraphic(iconImageView); // only shows the flag
+                }
+            }
+        });
+
         selectLangBox.setConverter(new StringConverter<>() {
             @Override
             public String toString(Language language) {
@@ -606,13 +520,36 @@ public class HomeScreenCtrl {
 
             @Override
             public Language fromString(String s) {
-                return null; //todo - implement (make for loop until the right option is found in the options list)
+                Language lang;
+                for (int i=0; i<selectLangBox.getItems().size();i++){
+                    if (selectLangBox.getItems().get(i).getAbbr().equals(s)){
+                        lang =selectLangBox.getItems().get(i);
+                        return lang;
+                    }
+                }
+                return selectLangBox.getItems().getFirst();
             }
         });
 
         selectLangBox.getSelectionModel().selectedItemProperty().addListener((obs, oldLang, newLang) -> {
             if (!newLang.equals(oldLang)) {
                 System.out.println(selectLangBox.getValue().getAbbr());
+                locale = switch (selectLangBox.getValue().getAbbr()){
+                    case "ES" -> new Locale("es", "ES");
+                    case "NL" -> new Locale("nl", "NL");
+                    default -> new Locale("en", "US");
+                };
+                bundle = ResourceBundle.getBundle("MyBundle", locale);
+
+                editCollectionsB.setText(bundle.getString("edit_collection"));
+                searchF.setPromptText(bundle.getString("Search"));
+                collection_text.setText(bundle.getString("Collection"));
+                language_text.setText(bundle.getString("Language"));
+                noteTitleF.setPromptText(bundle.getString("Untitled"));
+                noteBodyF.setPromptText(bundle.getString("Text_Area"));
+                undoB.setText(bundle.getString("Undo"));
+                refreshB.setText(bundle.getString("Refresh"));
+
             }});
 
     }
@@ -639,33 +576,5 @@ public class HomeScreenCtrl {
                 System.out.println(selectCollectionBox.getValue().getCollectionTitle());
             }
         });
-    }
-
-    public void prevMatchB(){
-        if (note_match_indices == null || note_match_indices.isEmpty()){
-            System.out.println("No text been searched");
-        }else if (note_match_indices.getFirst()==-1){
-            System.out.println("No matches; no previous instance");
-        }else if(current_search_index>0){
-            current_search_index--;
-            searchNote();
-        }else{
-            current_search_index= Math.toIntExact(note_match_indices.size()-1);
-            searchNote();
-        }
-    }
-    public void nextMatchB(){
-        System.out.println("");
-        if (note_match_indices ==null || note_match_indices.isEmpty()){
-            System.out.println("No text been searched");
-        }else if (note_match_indices.getFirst()==-1){
-            System.out.println("No matches; no next instance");
-        }else if(current_search_index<note_match_indices.size()-1){
-            current_search_index++;
-            searchNote();
-        }else{
-            current_search_index=0;
-            searchNote();
-        }
     }
 }
