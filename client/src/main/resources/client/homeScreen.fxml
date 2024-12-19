@@ -62,5 +62,6 @@
       <Text layoutX="925.0" layoutY="44.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Language" />
       <Button fx:id="editCollectionsB" layoutX="22.0" layoutY="8.0" mnemonicParsing="false" onAction="#editCollections" styleClass="midground" stylesheets="@../css/style.css" text="Edit Collections " />
       <Text layoutX="759.0" layoutY="44.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Collection" />
+      <Button fx:id="showShortcutsB" layoutX="135.0" layoutY="8.0" mnemonicParsing="false" onAction="#showShortcuts" styleClass="midground" stylesheets="@../css/style.css" text="Show Shortcuts" />
    </children>
 </Pane>
