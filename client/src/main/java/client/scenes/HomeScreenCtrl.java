@@ -18,23 +18,14 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.Parent;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.text.Text;
 import javafx.scene.web.WebView;
-import javafx.stage.Stage;
-import javafx.util.Callback;
-import javafx.util.Pair;
 import javafx.util.StringConverter;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -45,27 +36,6 @@ import commons.Server;
 public class HomeScreenCtrl {
     //todo - for all methods, change strings title and body to getting them from the note instead
     private final ScreenCtrl sc;
-    private Stage primaryStage;
-    private javafx.scene.Scene homeScene;
-    private javafx.scene.Scene editCollectionScene;
-
-    public void init(Stage primaryStage, Pair<HomeScreenCtrl, Parent> home, Pair<EditCollectionsViewCtrl, Parent> editCollection) {
-        this.primaryStage = primaryStage;
-        this.homeScene = new javafx.scene.Scene(home.getValue());
-        this.editCollectionScene = new javafx.scene.Scene(editCollection.getValue());
-        showHome();
-        primaryStage.show();
-    }
-
-    public void showHome() {
-        if(primaryStage == null) {throw new IllegalStateException("Primary stage is not initialized");}
-        primaryStage.setScene(homeScene);
-    }
-
-    public void showEditCollection() {
-        if(primaryStage == null) {throw new IllegalStateException("Primary stage is not initialized");}
-        primaryStage.setScene(editCollectionScene);
-    }
 
     @Inject
     public HomeScreenCtrl(ScreenCtrl sc) {this.sc = sc;}
@@ -80,12 +50,7 @@ public class HomeScreenCtrl {
 
     public Button refreshB;
     public Button editCollectionsB;
-    public Text collection_text;
-    public Text language_text;
-
-    ResourceBundle bundle;
-    Locale locale;
-    public ComboBox<Language> selectLangBox = new ComboBox<Language>();
+    public ChoiceBox<Language> selectLangBox = new ChoiceBox<Language>();
     public TextField noteTitleF;
     public TextArea noteBodyF;
     public TextField searchCollectionF;
@@ -554,10 +519,9 @@ public class HomeScreenCtrl {
     public void searchNote() {
         String search_text = searchNoteF.textProperty().getValue();
         note_match_indices = current_note.getMatchIndices(search_text);
-        if (search_text.isEmpty()) {
-            current_search_index = 0;
+        if (search_text.isEmpty()){
+            current_search_index=0;
         }
-        ArrayList<Long> match_indices = current_note.getMatchIndices(search_text);
         String titleHighlighted = current_note.getTitle();
         String bodyHighlighted = current_note.getBody();
         if (!note_match_indices.isEmpty()){
@@ -608,7 +572,7 @@ public class HomeScreenCtrl {
     /**
      * Searches through collection and displays notes that match search
      */
-    public void searchCollection(){
+    public void searchCollection(){//todo - finish
         String search_text = searchCollectionF.textProperty().getValue();
         ArrayList<ArrayList<Long>> collection_match_indices = current_collection.getSearch(search_text); //todo -check if collection gets updated, or only fetchedNotes
         ObservableList<Note> display_notes = FXCollections.observableArrayList();
@@ -634,55 +598,6 @@ public class HomeScreenCtrl {
     public void setUpLanguages(){ //todo - check if there is a way to store user language preference
         selectLangBox.getItems().setAll(LanguageOptions.getInstance().getLanguages());
         selectLangBox.setValue(selectLangBox.getItems().getFirst());
-        // How to do this gotten from stack overflow (https://stackoverflow.com/questions/32334137/javafx-choicebox-with-image-and-text)
-        selectLangBox.setCellFactory(new Callback<ListView<Language>, ListCell<Language>>() {
-            @Override
-            public ListCell<Language> call(ListView<Language> listView) {
-                return new ListCell<Language>() {
-                    @Override
-                    protected void updateItem(Language item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (empty || item == null) {
-                            setText(null);
-                            setGraphic(null);
-                        } else {
-                            String iconPath = item.getImg_path();
-                            Image icon = new Image(getClass().getClassLoader().getResourceAsStream(iconPath));
-                            ImageView iconImageView = new ImageView(icon);
-                            double height = 15;
-                            double width = 30;
-                            iconImageView.setFitHeight(height);
-                            iconImageView.setFitWidth(width);
-                            iconImageView.setPreserveRatio(false);
-                            setGraphic(iconImageView);
-
-                        }
-                    }
-                };
-            }
-        });
-
-        selectLangBox.setButtonCell(new ListCell<Language>() {
-            @Override
-            protected void updateItem(Language item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setGraphic(null);
-                } else {
-                    String iconPath = item.getImg_path(); //path described from client location
-                    Image icon = new Image(getClass().getClassLoader().getResourceAsStream(iconPath));
-                    ImageView iconImageView = new ImageView(icon);
-                    double height = 15;
-                    double width = 30;
-                    iconImageView.setFitHeight(height);
-                    iconImageView.setFitWidth(width);
-                    iconImageView.setPreserveRatio(false);
-                    setGraphic(iconImageView); // only shows the flag
-                }
-            }
-        });
-
         selectLangBox.setConverter(new StringConverter<>() {
             @Override
             public String toString(Language language) {
@@ -691,36 +606,13 @@ public class HomeScreenCtrl {
 
             @Override
             public Language fromString(String s) {
-                Language lang;
-                for (int i=0; i<selectLangBox.getItems().size();i++){
-                    if (selectLangBox.getItems().get(i).getAbbr().equals(s)){
-                        lang =selectLangBox.getItems().get(i);
-                        return lang;
-                    }
-                }
-                return selectLangBox.getItems().getFirst();
+                return null; //todo - implement (make for loop until the right option is found in the options list)
             }
         });
 
         selectLangBox.getSelectionModel().selectedItemProperty().addListener((obs, oldLang, newLang) -> {
             if (!newLang.equals(oldLang)) {
                 System.out.println(selectLangBox.getValue().getAbbr());
-                locale = switch (selectLangBox.getValue().getAbbr()){
-                    case "ES" -> new Locale("es", "ES");
-                    case "NL" -> new Locale("nl", "NL");
-                    default -> new Locale("en", "US");
-                };
-                bundle = ResourceBundle.getBundle("MyBundle", locale);
-
-                editCollectionsB.setText(bundle.getString("edit_collection"));
-                searchCollectionF.setPromptText(bundle.getString("Search"));
-                collection_text.setText(bundle.getString("Collection"));
-                language_text.setText(bundle.getString("Language"));
-                noteTitleF.setPromptText(bundle.getString("Untitled"));
-                noteBodyF.setPromptText(bundle.getString("Text_Area"));
-                undoB.setText(bundle.getString("Undo"));
-                refreshB.setText(bundle.getString("Refresh"));
-
             }});
 
     }
