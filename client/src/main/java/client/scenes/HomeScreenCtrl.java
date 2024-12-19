@@ -425,7 +425,7 @@ public class HomeScreenCtrl {
     /**
      * Searches for a note based on text field input
      */
-    public void search() {
+    public void search() {//this need the title changed.
         String search_text = searchF.textProperty().getValue();
         ArrayList<Long> match_indices = current_note.getMatchIndices(search_text);
         String titleHighlighted = current_note.getTitle();
