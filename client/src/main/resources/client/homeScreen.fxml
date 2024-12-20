@@ -43,7 +43,11 @@
             </VBox>
             <Pane prefHeight="496.0" prefWidth="241.0" styleClass="midground" stylesheets="@../css/style.css">
                <children>
-                  <WebView fx:id="markDownOutput" prefHeight="496.0" prefWidth="241.0" />
+                  <WebView fx:id="markDownOutput" layoutY="33.0" onMouseClicked="#nextMatchB" prefHeight="463.0" prefWidth="241.0" />
+                  <TextField fx:id="searchNoteF" layoutX="1.0" layoutY="3.0" onKeyReleased="#searchNote" prefHeight="29.0" prefWidth="142.0" promptText="%Search" styleClass="searchNote" stylesheets="@../css/style.css" />
+                  <Button fx:id="dropDownSearchNoteB" blendMode="SCREEN" layoutX="144.0" layoutY="4.0" minWidth="32.0" mnemonicParsing="false" prefHeight="27.0" prefWidth="32.0" text="∨" />
+                  <Button fx:id="nextMatchB" blendMode="SCREEN" layoutX="209.0" layoutY="4.0" mnemonicParsing="false" onMouseClicked="#nextMatchB" prefHeight="27.0" prefWidth="29.0" text="→" textAlignment="CENTER" wrapText="true" />
+                  <Button fx:id="prevMatchB" blendMode="SCREEN" layoutX="178.0" layoutY="4.0" mnemonicParsing="false" onMouseClicked="#prevMatchB" prefHeight="27.0" prefWidth="29.0" text="←" textAlignment="CENTER" wrapText="true" />
                </children>
             </Pane>
          </children>
@@ -53,7 +57,7 @@
             <Font size="28.0" />
          </font>
       </Text>
-      <TextField fx:id="searchF" layoutX="22.0" layoutY="47.0" onAction="#search" prefHeight="29.0" prefWidth="727.0" promptText="%Search" styleClass="searchField" stylesheets="@../css/style.css" />
+      <TextField fx:id="searchCollectionF" layoutX="22.0" layoutY="47.0" onAction="#searchCollection" prefHeight="29.0" prefWidth="727.0" promptText="%Search" styleClass="searchField" stylesheets="@../css/style.css" />
       <ChoiceBox fx:id="selectCollectionBox" layoutX="759.0" layoutY="49.0" prefWidth="150.0" />
       <Text fx:id="language_text" layoutX="925.0" layoutY="44.0" strokeType="OUTSIDE" strokeWidth="0.0" text="%Language" />
       <Button fx:id="editCollectionsB" layoutX="22.0" layoutY="8.0" mnemonicParsing="false" onAction="#editCollections" styleClass="midground" stylesheets="@../css/style.css" text="%edit_collection" />
