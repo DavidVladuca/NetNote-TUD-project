@@ -788,7 +788,7 @@ public class HomeScreenCtrl {
                 Language lang;
                 for (int i=0; i<selectLangBox.getItems().size();i++){
                     if (selectLangBox.getItems().get(i).getAbbr().equals(s)){
-                        lang =selectLangBox.getItems().get(i);
+                        lang = selectLangBox.getItems().get(i);
                         return lang;
                     }
                 }
