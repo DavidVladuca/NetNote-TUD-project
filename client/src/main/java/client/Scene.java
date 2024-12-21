@@ -27,7 +27,7 @@ public class Scene extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        locale = Locale.ENGLISH;
+        locale = new Locale("en", "US");
         bundle = ResourceBundle.getBundle("MyBundle", locale);
 
         FXMLLoader homeLoader = new FXMLLoader(HomeScreenCtrl.class.getResource("/client/homeScreen.fxml"), bundle);
