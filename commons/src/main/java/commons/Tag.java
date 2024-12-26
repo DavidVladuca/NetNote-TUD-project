@@ -1,11 +1,20 @@
 package commons;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
-
 @Entity
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "tagId",
+        scope = Tag.class
+)
 public class Tag {
 
     @Id
@@ -15,9 +24,8 @@ public class Tag {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @ManyToMany(mappedBy = "tags")
+    @ManyToMany(mappedBy = "tags", fetch = FetchType.LAZY)
     private Set<Note> notes = new HashSet<>();
-
 
     public Tag() {}
 
@@ -86,12 +94,10 @@ public class Tag {
      */
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null || getClass() != obj.getClass())
-            return false;
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
         Tag tag = (Tag) obj;
-        return tagId == tag.tagId;
+        return Objects.equals(name, tag.name);
     }
 
     /**
@@ -100,7 +106,7 @@ public class Tag {
      */
     @Override
     public int hashCode() {
-        return Long.hashCode(tagId);
+        return Objects.hash(name);
     }
 
     /**

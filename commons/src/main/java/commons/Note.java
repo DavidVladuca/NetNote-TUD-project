@@ -8,6 +8,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "noteId",
+        scope = Note.class // Ensure scope is explicitly set
+)
 public class Note {
 
     @Id
@@ -25,7 +30,7 @@ public class Note {
     @Column(nullable = false) // Ensure that the title is mandatory in the database
     private String body;
 
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "note_tag",
             joinColumns = @JoinColumn(name = "note_id"),

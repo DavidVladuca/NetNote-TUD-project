@@ -4,10 +4,9 @@ package client.scenes;
 import client.HomeScreen;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
-import commons.Language;
-import commons.LanguageOptions;
+import commons.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import commons.Note;
+import commons.Collection;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MediaType;
@@ -20,19 +19,18 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.VBox;
 import javafx.scene.web.WebView;
 import javafx.util.StringConverter;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.io.IOException;
-import commons.Collection;
-import commons.Server;
+import java.util.stream.Collectors;
 
 public class HomeScreenCtrl {
     //todo - for all methods, change strings title and body to getting them from the note instead
@@ -64,6 +62,12 @@ public class HomeScreenCtrl {
     public WebView markDownOutput;
     public ChoiceBox<Collection> selectCollectionBox = new ChoiceBox<>();
     private Note lastDeletedNote = null;
+    public Button tagsButton;
+
+    // List of all available tags (replace with actual fetching logic)
+    private final ObservableList<Tag> availableTags = FXCollections.observableArrayList(
+            new Tag("#Tag1"), new Tag("#Tag2"), new Tag("#Tag3")
+    );
 
     /*
     todo - change the 3 below (current_server, current_collection, current_note) -
@@ -101,7 +105,191 @@ public class HomeScreenCtrl {
         markDownContent();
         loadNotesFromServer();
         setupNotesListView();
+        loadTagsFromServer();
     }
+
+    private void loadTagsFromServer() {
+        try {
+            var response = ClientBuilder.newClient()
+                    .target("http://localhost:8080/api/tags")
+                    .request(MediaType.APPLICATION_JSON)
+                    .get();
+
+            if (response.getStatus() == 200) {
+                String json = response.readEntity(String.class);
+                ObjectMapper mapper = new ObjectMapper();
+                List<Tag> fetchedTags = mapper.readValue(json, mapper.getTypeFactory().constructCollectionType(List.class, Tag.class));
+                availableTags.clear();
+                availableTags.addAll(fetchedTags);
+            } else {
+                System.err.println("Failed to fetch tags. Status: " + response.getStatus());
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading tags: " + e.getMessage());
+        }
+    }
+
+    // todo edit and delete button for the tags
+    @FXML
+    public void handleTagsButtonAction() {
+        if (current_note == null) {
+            System.err.println("No note selected. Cannot assign tags.");
+            return;
+        }
+
+        // Log current tags
+        System.out.println("Current tags for note '" + current_note.getTitle() + "':");
+        current_note.getTags().forEach(tag -> System.out.println("- " + tag.getName()));
+
+        // Create the dialog
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Manage Tags");
+        dialog.setHeaderText("Select or create tags for the note:");
+
+        // Container for tag checkboxes
+        VBox tagListContainer = new VBox(10);
+        List<CheckBox> tagCheckBoxes = new ArrayList<>();
+
+        // Populate the tag list with checkboxes
+        for (Tag tag : availableTags) {
+            CheckBox checkBox = new CheckBox(tag.getName());
+            checkBox.setSelected(current_note.getTags().contains(tag));
+            tagCheckBoxes.add(checkBox);
+            tagListContainer.getChildren().add(checkBox);
+        }
+
+        // ScrollPane for tag list
+        ScrollPane scrollPane = new ScrollPane(tagListContainer);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setPrefHeight(100); // Limit to approx. 4 tags visible
+
+        // Add Tag Button
+        Button addTagButton = new Button("Add a Tag");
+        addTagButton.setOnAction(event -> {
+            TextInputDialog inputDialog = new TextInputDialog();
+            inputDialog.setTitle("Add Tag");
+            inputDialog.setHeaderText("Enter the name of the new tag:");
+            inputDialog.setContentText("Tag name:");
+
+            Optional<String> result = inputDialog.showAndWait();
+            result.ifPresent(tagName -> {
+                if (tagName.trim().isEmpty()) {
+                    showErrorDialog("Invalid Tag Name", "The tag name cannot be empty.");
+                    return;
+                }
+
+                if (availableTags.stream().anyMatch(tag -> tag.getName().equals(tagName.trim()))) {
+                    showErrorDialog("Duplicate Tag", "A tag with the name '" + tagName.trim() + "' already exists.");
+                    return;
+                }
+
+                Tag newTag = new Tag(tagName.trim());
+                availableTags.add(newTag);
+
+                CheckBox newCheckBox = new CheckBox(newTag.getName());
+                tagCheckBoxes.add(newCheckBox);
+                tagListContainer.getChildren().add(newCheckBox);
+
+                try {
+                    saveTagToServer(newTag);
+                    System.out.println("New tag saved to server: " + newTag.getName());
+                } catch (Exception e) {
+                    System.err.println("Failed to save the new tag: " + e.getMessage());
+                }
+            });
+        });
+
+        // Layout for the dialog content
+        VBox dialogContent = new VBox(15, scrollPane, addTagButton);
+        dialog.getDialogPane().setContent(dialogContent);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        // Handle dialog result
+        dialog.setResultConverter(button -> {
+            if (button == ButtonType.OK) {
+                Set<Tag> selectedTags = new HashSet<>();
+                for (int i = 0; i < tagCheckBoxes.size(); i++) {
+                    if (tagCheckBoxes.get(i).isSelected()) {
+                        selectedTags.add(availableTags.get(i));
+                    }
+                }
+                updateNoteTags(selectedTags);
+            }
+            return null;
+        });
+
+        dialog.showAndWait();
+    }
+
+    private void showErrorDialog(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+
+    private void updateNoteTags(Set<Tag> selectedTags) {
+        Set<Tag> currentTags = new HashSet<>(current_note.getTags());
+        boolean tagsUpdated = false;
+
+        // Add new tags
+        for (Tag tag : selectedTags) {
+            if (!currentTags.contains(tag)) {
+                currentTags.add(tag);
+                System.out.println("Tag added to note: " + tag.getName());
+                tagsUpdated = true;
+            }
+        }
+
+        // Remove unselected tags
+        for (Tag tag : new HashSet<>(currentTags)) {
+            if (!selectedTags.contains(tag)) {
+                currentTags.remove(tag);
+                System.out.println("Tag removed from note: " + tag.getName());
+                tagsUpdated = true;
+            }
+        }
+
+        if (tagsUpdated) {
+            current_note.setTags(currentTags);
+            syncNoteTagsWithServer(current_note);
+        }
+    }
+
+    private void saveTagToServer(Tag tag) throws IOException {
+        String json = new ObjectMapper().writeValueAsString(tag);
+        var response = ClientBuilder.newClient()
+                .target("http://localhost:8080/api/tags/create")
+                .request(MediaType.APPLICATION_JSON)
+                .post(Entity.entity(json, MediaType.APPLICATION_JSON));
+
+        if (response.getStatus() != 201) {
+            throw new IOException("Failed to save tag. Status: " + response.getStatus());
+        }
+    }
+
+
+    private void syncNoteTagsWithServer(Note note) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            Set<String> tagNames = note.getTags().stream().map(Tag::getName).collect(Collectors.toSet());
+            String json = mapper.writeValueAsString(tagNames);
+
+            Response response = ClientBuilder.newClient()
+                    .target("http://localhost:8080/api/notes/" + note.getNoteId() + "/tags")
+                    .request(MediaType.APPLICATION_JSON)
+                    .put(Entity.entity(json, MediaType.APPLICATION_JSON));
+
+            if (response.getStatus() != 200) {
+                System.err.println("Failed to sync tags with server. Status: " + response.getStatus());
+            }
+        } catch (Exception e) {
+            System.err.println("Error syncing tags: " + e.getMessage());
+        }
+    }
+
 
     /**
      * This method sets up the keyboard shortcuts specified here

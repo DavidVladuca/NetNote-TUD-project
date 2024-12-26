@@ -2,18 +2,24 @@ package server.api;
 import commons.Collection;
 import commons.Note;
 import commons.Server;
+import commons.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import server.database.CollectionRepository;
 import server.database.NoteRepository;
 import server.database.ServerRepository;
+import server.database.TagRepository;
+
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/notes")
 public class NoteController {
-
+    private final TagRepository tagRepository;
     private final NoteRepository noteRepository;
     private final CollectionRepository collectionRepository;
     private final ServerRepository serverRepository;
@@ -25,10 +31,11 @@ public class NoteController {
      * @param serverRepository - ServerRepository
      */
     public NoteController(NoteRepository noteRepository, CollectionRepository collectionRepository
-            , ServerRepository serverRepository) {
+            , ServerRepository serverRepository, TagRepository tagRepository) {
         this.noteRepository = noteRepository;
         this.collectionRepository = collectionRepository;
         this.serverRepository = serverRepository;
+        this.tagRepository = tagRepository;
     }
 
     /**
@@ -57,6 +64,10 @@ public class NoteController {
         });
         // Set the existing collection in the note (ensure relationship consistency)
         note.setCollection(collection);
+
+        // Handle tags
+        handleTags(note);
+
         // Save the note
         Note savedNote = noteRepository.save(note);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedNote);
@@ -69,28 +80,6 @@ public class NoteController {
      */
     @PutMapping("/update")
     public ResponseEntity<Note> updateNote(@RequestBody Note note) {
-        // todo - Server and collection should not be manually added here
-        //  but serialized and deserialized in json automatically
-        Server server = serverRepository.findById(0L)
-                .orElseGet(() -> {
-                    Server newServer = new Server();
-                    newServer.setServerId(0);
-                    return serverRepository.save(newServer);
-                });
-
-        Collection collection = collectionRepository.findById(0L).orElseGet(() -> {
-            Collection defaultCollection = new Collection();
-            defaultCollection.setCollectionId(0);
-            defaultCollection.setCollectionTitle("Default Collection");
-            defaultCollection.setServer(server);
-            return collectionRepository.save(defaultCollection);
-        });
-
-        // Set the existing collection in the note (ensure relationship consistency)
-        note.setCollection(collection);
-
-        System.out.println("Received update request for note: " + note);
-
         if (note.getNoteId() <= 0) {
             System.err.println("Invalid note ID: " + note.getNoteId());
             return ResponseEntity.badRequest().build();
@@ -100,13 +89,16 @@ public class NoteController {
         Note existingNote = noteRepository.findById(note.getNoteId())
                 .orElseThrow(() -> new IllegalArgumentException("Note not found for ID: " + note.getNoteId()));
 
-        // Handle null or missing collection
+        // Use the existing collection if not provided in the request
         if (note.getCollection() == null) {
-            note.setCollection(existingNote.getCollection()); // Use the existing collection if not provided
+            note.setCollection(existingNote.getCollection());
         }
 
+        // Handle tags
+        handleTags(note);
+
         try {
-            // Save the updated note
+            // Save the updated note with new tags
             Note updatedNote = noteRepository.save(note);
             return ResponseEntity.ok(updatedNote);
         } catch (Exception e) {
@@ -115,6 +107,52 @@ public class NoteController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    private void handleTags(@RequestBody Note note) {
+        Set<Tag> managedTags = new HashSet<>();
+        for (Tag tag : note.getTags()) {
+            // Find existing tags or create new ones
+            Tag existingTag = tagRepository.findByName(tag.getName());
+            managedTags.add(Objects.requireNonNullElseGet(existingTag, () -> tagRepository.save(new Tag(tag.getName()))));
+        }
+        note.setTags(managedTags);
+    }
+
+    @GetMapping("/{id}/tags")
+    public ResponseEntity<Set<Tag>> getTagsForNote(@PathVariable Long id) {
+        return noteRepository.findById(id)
+                .map(note -> ResponseEntity.ok(note.getTags()))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}/tags")
+    public ResponseEntity<Note> updateTagsForNote(@PathVariable Long id, @RequestBody Set<String> tagNames) {
+        Note note = noteRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Note not found for ID: " + id));
+
+        Set<Tag> managedTags = new HashSet<>();
+        for (String tagName : tagNames) {
+            Tag existingTag = tagRepository.findByName(tagName);
+            if (existingTag == null) {
+                // Create and save the new tag if it doesn't exist
+                existingTag = tagRepository.save(new Tag(tagName));
+            }
+            managedTags.add(existingTag);
+        }
+
+        // Update the note's tags
+        note.setTags(managedTags);
+
+        try {
+            Note updatedNote = noteRepository.save(note);
+            return ResponseEntity.ok(updatedNote);
+        } catch (Exception e) {
+            System.err.println("Error updating tags: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+
 
 
 
@@ -134,7 +172,7 @@ public class NoteController {
 
     /**
      * Endpoint for fetching all notes
-     * @return List<Note> containing all notes from the databasee
+     * @return List<Note> containing all notes from the database
      */
     @GetMapping("/fetch")
     public List<Note> getAllNotes() {
@@ -151,7 +189,7 @@ public class NoteController {
     @GetMapping("/{id}")
     public ResponseEntity<Note> getNoteById(@PathVariable Long id) {
         return noteRepository.findById(id)
-                .map(note -> ResponseEntity.ok(note)) // Maps to found entity
+                .map(ResponseEntity::ok) // Maps to found entity
                 .orElseGet(() -> ResponseEntity.notFound().build()); // Else returns not found
     }
 
