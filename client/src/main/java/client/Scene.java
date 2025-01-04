@@ -2,13 +2,11 @@ package client;
 
 import client.scenes.EditCollectionsViewCtrl;
 import client.scenes.HomeScreenCtrl;
-import client.scenes.ScreenCtrl;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
-import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Pair;
 
