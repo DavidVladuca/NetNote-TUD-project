@@ -18,28 +18,66 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.text.Text;
 import javafx.scene.input.KeyCode;
 import javafx.scene.web.WebView;
+import javafx.stage.Stage;
+import javafx.util.Callback;
+import javafx.util.Pair;
 import javafx.util.StringConverter;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.io.IOException;
 import commons.Collection;
 import commons.Server;
 
 public class HomeScreenCtrl {
     //todo - for all methods, change strings title and body to getting them from the note instead
     private final ScreenCtrl sc;
+    private Stage primaryStage;
+    private javafx.scene.Scene homeScene;
+    private javafx.scene.Scene editCollectionScene;
+
+    public void init(Stage primaryStage,
+                     Pair<HomeScreenCtrl, Parent> home,
+                     Pair<EditCollectionsViewCtrl, Parent> editCollection) {
+        this.primaryStage = primaryStage;
+        this.homeScene = new javafx.scene.Scene(home.getValue());
+        this.editCollectionScene = new javafx.scene.Scene(editCollection.getValue());
+        showHome();
+        primaryStage.show();
+    }
+
+    public void showHome() {
+        if (primaryStage == null) {
+            throw new IllegalStateException("Primary stage is not initialized");
+        }
+        primaryStage.setScene(homeScene);
+    }
+
+    public void showEditCollection() {
+        if (primaryStage == null) {
+            throw new IllegalStateException("Primary stage is not initialized");
+        }
+        primaryStage.setScene(editCollectionScene);
+    }
 
     @Inject
-    public HomeScreenCtrl(ScreenCtrl sc) {this.sc = sc;}
+    public HomeScreenCtrl(ScreenCtrl sc) {
+        this.sc = sc;
+    }
 
     @FXML
     public Button addB;
@@ -48,12 +86,18 @@ public class HomeScreenCtrl {
     public Button dropDownSearchNoteB;
     public Button prevMatchB;
     public Button nextMatchB;
-
     public Button refreshB;
     public Button editCollectionsB;
-    public ChoiceBox<Language> selectLangBox = new ChoiceBox<Language>();
+
+    public Text collection_text;
+    public Text language_text;
+
+    ResourceBundle bundle;
+    Locale locale;
+    public ComboBox<Language> selectLangBox = new ComboBox<Language>();
     public TextField noteTitleF;
     public TextArea noteBodyF;
+
     public TextField searchCollectionF;
     public TextField searchNoteF;
     private int current_search_index = 0;
@@ -303,7 +347,7 @@ public class HomeScreenCtrl {
                 noteTitleF.setText(newNote.getTitle());
                 noteBodyF.setText(newNote.getBody());
 
-                Platform.runLater(() -> notesListView.getSelectionModel());
+                Platform.runLater(() -> notesListView.getSelectionModel().clearSelection());
             }
         });
     }
@@ -345,6 +389,7 @@ public class HomeScreenCtrl {
             }
         });
     }
+
 
     /**
      * Utility function used to locate resources within applications filepath
@@ -474,7 +519,7 @@ public class HomeScreenCtrl {
      * Sends request to the server to delete a note by a provided ID
      * @param noteId
      */
-    public static void deleteRequest(long noteId){
+    public static void deleteRequest(long noteId) {
         Response response = ClientBuilder.newClient()
                 .target("http://localhost:8080/api/notes/delete/" + noteId) // Endpoint for deletion
                 .request()
@@ -493,7 +538,7 @@ public class HomeScreenCtrl {
      * Restores the last deleted note
      */
     public void undo() throws JsonProcessingException {
-        System.out.println("Undo");//Temporary for testing
+        System.out.println("Undo"); //Temporary for testing
         if (lastDeletedNote != null) {
             // Add the deleted note back to the list and the server
             notes.add(lastDeletedNote); // Adds note to the client
@@ -515,9 +560,8 @@ public class HomeScreenCtrl {
         }
     }
 
-
     /**
-     * Edits the title of currently selected note
+     * Edits the title of the currently selected note
      */
     public void titleEdit() {
 
@@ -529,19 +573,19 @@ public class HomeScreenCtrl {
             Collection selectedCollection = selectedNote.getCollection();
 
             // Searching for title duplicates in the respective collection
-            int ok=1;
-            for(int i=0; i<selectedCollection.getNotes().size(); i++) {
-                if(selectedCollection.getNotes().get(i).getTitle().equals(noteTitleF.getText())
+            int ok = 1;
+            for (int i = 0; i < selectedCollection.getNotes().size(); i++) {
+                if (selectedCollection.getNotes().get(i).getTitle().equals(noteTitleF.getText())
                         && !selectedCollection.getNotes().get(i).equals(selectedNote)) {
-                    ok=0;
+                    ok = 0;
                 }
             }
 
-            if(ok==1) {
+            if (ok == 1) {
                 //saving the title
                 selectedNote.setTitle(noteTitleF.getText());
                 syncIfChanged();
-            }else{
+            } else {
                 //found a duplicate of the title
                 Alert alert = new Alert(Alert.AlertType.WARNING);
 
@@ -608,18 +652,18 @@ public class HomeScreenCtrl {
     public void searchNote() { //make sure this remains like this after merge.
         String search_text = searchNoteF.textProperty().getValue();
         note_match_indices = current_note.getMatchIndices(search_text);
-        if (search_text.isEmpty()){
-            current_search_index=0;
+        if (search_text.isEmpty()) {
+            current_search_index = 0;
         }
         String titleHighlighted = current_note.getTitle();
         String bodyHighlighted = current_note.getBody();
         if (!note_match_indices.isEmpty()){
             if (note_match_indices.getFirst()==-1L && note_match_indices.size()==1L){
                 System.out.println("Not found in \""+current_note.getTitle()+"\"");
-            } else{ //parse in special way such that the found results are highlighted
-                for (int i=note_match_indices.size()-1; i>=0; i--){//iterating from the back to not have to consider changes in index due to additions
-                    if (note_match_indices.get(i)<titleHighlighted.length()){
-                        if (i==current_search_index) {
+            } else { //parse in special way such that the found results are highlighted
+                for (int i = note_match_indices.size() - 1;  i >= 0; i--){//iterating from the back to not have to consider changes in index due to additions
+                    if (note_match_indices.get(i) < titleHighlighted.length()){
+                        if (i == current_search_index) {
                             titleHighlighted = titleHighlighted.substring(0, Math.toIntExact(note_match_indices.get(i)))
                                     + "<mark style=\"background: #E1C16E\">"
                                     + search_text
@@ -633,7 +677,7 @@ public class HomeScreenCtrl {
                                     + titleHighlighted.substring((int) (note_match_indices.get(i) + search_text.length()));
                         }
                     } else {
-                        if (i==current_search_index){
+                        if (i == current_search_index){
                             bodyHighlighted = bodyHighlighted.substring(0, (int) (note_match_indices.get(i) - titleHighlighted.length()))
                                     + "<mark style=\"background: #E1C16E\">"
                                     + search_text
@@ -670,7 +714,7 @@ public class HomeScreenCtrl {
                 System.out.println("There are no matches for " + search_text);
                 display_notes.clear(); //gives an empty display
             } else{
-                for (int i=0; i< collection_match_indices.size();i++) {
+                for (int i = 0; i< collection_match_indices.size();i++) {
                     display_notes.add(current_collection.getNotes().get(Math.toIntExact(collection_match_indices.get(i).getFirst())));
                 }
             }
@@ -680,13 +724,59 @@ public class HomeScreenCtrl {
         notesListView.setItems(display_notes);
     }
 
-    /**
-     * Sets up the languages - from all languages available, sets English as Default
-     * Listens for changes in language.
-     */
-    public void setUpLanguages(){ //todo - check if there is a way to store user language preference
+
+    public void setUpLanguages() {
         selectLangBox.getItems().setAll(LanguageOptions.getInstance().getLanguages());
         selectLangBox.setValue(selectLangBox.getItems().getFirst());
+        // How to do this gotten from stack overflow (https://stackoverflow.com/questions/32334137/javafx-choicebox-with-image-and-text)
+        selectLangBox.setCellFactory(new Callback<ListView<Language>, ListCell<Language>>() {
+            @Override
+            public ListCell<Language> call(ListView<Language> listView) {
+                return new ListCell<Language>() {
+                    @Override
+                    protected void updateItem(Language item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || item == null) {
+                            setText(null);
+                            setGraphic(null);
+                        } else {
+                            String iconPath = item.getImg_path();
+                            Image icon = new Image(getClass().getClassLoader().getResourceAsStream(iconPath));
+                            ImageView iconImageView = new ImageView(icon);
+                            double height = 15;
+                            double width = 30;
+                            iconImageView.setFitHeight(height);
+                            iconImageView.setFitWidth(width);
+                            iconImageView.setPreserveRatio(false);
+                            setGraphic(iconImageView);
+
+                        }
+                    }
+                };
+            }
+        });
+
+        selectLangBox.setButtonCell(new ListCell<Language>() {
+            @Override
+            protected void updateItem(Language item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    String iconPath = item.getImg_path(); //path described from client location
+                    Image icon = new Image(getClass().getClassLoader().getResourceAsStream(iconPath));
+                    ImageView iconImageView = new ImageView(icon);
+                    double height = 15;
+                    double width = 30;
+                    iconImageView.setFitHeight(height);
+                    iconImageView.setFitWidth(width);
+                    iconImageView.setPreserveRatio(false);
+                    setGraphic(iconImageView); // only shows the flag
+                }
+            }
+        });
+
         selectLangBox.setConverter(new StringConverter<>() {
             @Override
             public String toString(Language language) {
@@ -695,14 +785,39 @@ public class HomeScreenCtrl {
 
             @Override
             public Language fromString(String s) {
-                return null; //todo - implement (make for loop until the right option is found in the options list)
+                Language lang;
+                for (int i=0; i<selectLangBox.getItems().size();i++){
+                    if (selectLangBox.getItems().get(i).getAbbr().equals(s)){
+                        lang = selectLangBox.getItems().get(i);
+                        return lang;
+                    }
+                }
+                return selectLangBox.getItems().getFirst();
             }
         });
 
         selectLangBox.getSelectionModel().selectedItemProperty().addListener((obs, oldLang, newLang) -> {
             if (!newLang.equals(oldLang)) {
                 System.out.println(selectLangBox.getValue().getAbbr());
-            }});
+                locale = switch (selectLangBox.getValue().getAbbr()) {
+                    case "ES" -> new Locale("es", "ES");
+                    case "NL" -> new Locale("nl", "NL");
+                    default -> new Locale("en", "US");
+                };
+                bundle = ResourceBundle.getBundle("MyBundle", locale);
+
+                editCollectionsB.setText(bundle.getString("edit_collection"));
+                searchCollectionF.setPromptText(bundle.getString("Search"));
+                searchNoteF.setPromptText(bundle.getString("Search"));
+                collection_text.setText(bundle.getString("Collection"));
+                language_text.setText(bundle.getString("Language"));
+                noteTitleF.setPromptText(bundle.getString("Untitled"));
+                noteBodyF.setPromptText(bundle.getString("Text_Area"));
+                undoB.setText(bundle.getString("Undo"));
+                refreshB.setText(bundle.getString("Refresh"));
+
+            }
+        });
 
     }
 
@@ -715,7 +830,9 @@ public class HomeScreenCtrl {
         selectCollectionBox.setValue(selectCollectionBox.getItems().getFirst());
         selectCollectionBox.setConverter(new StringConverter<>() {
             @Override
-            public String toString(Collection collection) {return collection.getCollectionTitle();}
+            public String toString(Collection collection) {
+                return collection.getCollectionTitle();
+            }
 
             @Override
             public Collection fromString(String s) {
@@ -730,30 +847,30 @@ public class HomeScreenCtrl {
         });
     }
 
-    public void prevMatchB(){
-        if (note_match_indices == null || note_match_indices.isEmpty()){
+    public void prevMatchB() {
+        if (note_match_indices == null || note_match_indices.isEmpty()) {
             System.out.println("No text been searched");
-        }else if (note_match_indices.getFirst()==-1){
+        } else if (note_match_indices.getFirst() == -1) {
             System.out.println("No matches; no previous instance");
-        }else if(current_search_index>0){
+        } else if (current_search_index > 0) {
             current_search_index--;
             searchNote();
-        }else{
-            current_search_index= Math.toIntExact(note_match_indices.size()-1);
+        } else {
+            current_search_index = Math.toIntExact(note_match_indices.size()-1);
             searchNote();
         }
     }
-    public void nextMatchB(){
+    public void nextMatchB() {
         System.out.println("");
-        if (note_match_indices ==null || note_match_indices.isEmpty()){
+        if (note_match_indices == null || note_match_indices.isEmpty()) {
             System.out.println("No text been searched");
-        }else if (note_match_indices.getFirst()==-1){
+        } else if (note_match_indices.getFirst() == -1) {
             System.out.println("No matches; no next instance");
-        }else if(current_search_index<note_match_indices.size()-1){
+        } else if (current_search_index < note_match_indices.size() - 1) {
             current_search_index++;
             searchNote();
-        }else{
-            current_search_index=0;
+        } else {
+            current_search_index = 0;
             searchNote();
         }
     }
