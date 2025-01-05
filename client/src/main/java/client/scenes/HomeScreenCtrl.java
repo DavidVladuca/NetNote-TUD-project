@@ -545,7 +545,7 @@ public class HomeScreenCtrl {
                 noteTitleF.setText(newNote.getTitle());
                 noteBodyF.setText(newNote.getBody());
 
-                Platform.runLater(() -> notesListView.getSelectionModel().clearSelection());
+                Platform.runLater(() -> notesListView.getSelectionModel());
             }
         });
     }
