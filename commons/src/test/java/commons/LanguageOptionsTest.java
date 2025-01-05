@@ -18,14 +18,18 @@ public class LanguageOptionsTest {
     @Test
     public void addLanguageTest() {
         var lo = new LanguageOptions();
-        var polish = new Language(2, "Polish", "PL",
+        var polish = new Language(4, "Polish", "PL",
                 "Flags/Polish_flag.png");
         var english = new Language(0, "English", "EN", "Flags/English_flag.png"); //make default
         var spanish = new Language(1, "Spanish", "ES", "Flags/Spanish_flag.png");
+        var dutch = new Language(2, "Dutch", "NL", "Flags/Dutch_flag.png");
+        var gibberish = new Language(3, "Gibberish", "ZZ", "Flags/Gibberish_flag.png");
         lo.addLanguage(polish);
         ArrayList<Language> languages = new ArrayList<>();
         languages.add(english);
         languages.add(spanish);
+        languages.add(dutch);
+        languages.add(gibberish);
         languages.add(polish);
 
         assertEquals(languages.toString(), lo.getLanguages().toString());

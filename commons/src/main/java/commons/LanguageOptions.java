@@ -7,6 +7,8 @@ public class LanguageOptions {
     ArrayList<Language> lang_options;
     Language english = new Language(0, "English", "EN", "Flags/English_flag.png"); //note image path is from client
     Language spanish = new Language(1, "Spanish", "ES", "Flags/Spanish_flag.png");
+    Language dutch = new Language(2, "Dutch", "NL", "Flags/Dutch_flag.png");
+    Language gibberish = new Language(3, "Gibberish", "ZZ", "Flags/Gibberish_flag.png");
     int current_index;
 
     private static LanguageOptions single_instance = null;
@@ -18,6 +20,8 @@ public class LanguageOptions {
         lang_options = new ArrayList<>();
         lang_options.add(english); //default language
         lang_options.add(spanish);
+        lang_options.add(dutch);
+        lang_options.add(gibberish);
         current_index = 0;
     }
 
@@ -51,7 +55,7 @@ public class LanguageOptions {
     public ArrayList<Language> getAllAbbreviations() {
         ArrayList<Language> languages_abbrs = new ArrayList<Language>();
         for (int i = 0; i < lang_options.size(); i++) {
-            languages_abbrs.set(i, lang_options.get(i));
+            languages_abbrs.add(i, lang_options.get(i));
         }
         return languages_abbrs;
     }
