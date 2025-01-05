@@ -3,7 +3,6 @@ package client.scenes;
 import client.utils.Command;
 import javafx.scene.control.Alert;
 
-import java.sql.SQLOutput;
 import java.util.Stack;
 
 public class CommandInvoker {

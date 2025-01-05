@@ -30,14 +30,12 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.Pair;
 import javafx.util.StringConverter;
-import org.checkerframework.checker.units.qual.A;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Stack;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
@@ -94,6 +92,7 @@ public class HomeScreenCtrl {
     public Button dropDownSearchNoteB;
     public Button prevMatchB;
     public Button nextMatchB;
+
     public Button refreshB;
     public Button editCollectionsB;
 
