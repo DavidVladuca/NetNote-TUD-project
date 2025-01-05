@@ -37,8 +37,9 @@
             </VBox>
             <VBox prefHeight="510.0" prefWidth="531.0" styleClass="bordered" stylesheets="@../css/style.css">
                <children>
-                  <TextField fx:id="noteTitleF" onAction="#titleEdit" promptText="%Untitled" />
-                  <TextArea fx:id="noteBodyF" prefHeight="487.0" prefWidth="531.0" promptText="%Text_Area" />
+                  <Button fx:id="tagsButton" text="Tags" onAction="#handleTagsButtonAction" />
+                  <TextField fx:id="noteTitleF" onAction="#titleEdit" promptText="Untitled" />
+                  <TextArea fx:id="noteBodyF" prefHeight="487.0" prefWidth="531.0" promptText="Text Area" />
                </children>
             </VBox>
             <Pane prefHeight="496.0" prefWidth="241.0" styleClass="midground" stylesheets="@../css/style.css">

@@ -17,6 +17,7 @@ import server.database.ServerRepository;
 import commons.Collection;
 import commons.Note;
 import commons.Server;
+import server.database.TagRepository;
 
 import static org.mockito.Mockito.when;
 
@@ -35,6 +36,9 @@ public class NoteControllerTest {
 
     @MockBean
     private ServerRepository serverRepository;
+
+    @MockBean
+    private TagRepository tagRepository;
 
     private Note note;
     private Collection collection;
@@ -68,6 +72,7 @@ public class NoteControllerTest {
         when(serverRepository.findById(0L)).thenReturn(java.util.Optional.of(server));
         when(collectionRepository.findById(0L)).thenReturn(java.util.Optional.of(collection));
         when(noteRepository.save(Mockito.any(Note.class))).thenReturn(note);
+        when(tagRepository.findByName(Mockito.anyString())).thenReturn(null);
 
         //Create a JSON string for the note
         var json = new ObjectMapper().writeValueAsString(note);
