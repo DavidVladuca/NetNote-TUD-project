@@ -948,6 +948,7 @@ public class HomeScreenCtrl {
 
 
     public void setUpLanguages() {
+        selectLangBox.getItems().forEach(lang -> System.out.println("Language: " + lang.getAbbr()));
         selectLangBox.getItems().setAll(LanguageOptions.getInstance().getLanguages());
         selectLangBox.setValue(selectLangBox.getItems().getFirst());
         // How to do this gotten from stack overflow (https://stackoverflow.com/questions/32334137/javafx-choicebox-with-image-and-text)
@@ -1024,6 +1025,7 @@ public class HomeScreenCtrl {
                 locale = switch (selectLangBox.getValue().getAbbr()) {
                     case "ES" -> new Locale("es", "ES");
                     case "NL" -> new Locale("nl", "NL");
+                    case "ZZ" -> new Locale("zz", "ZZ");
                     default -> new Locale("en", "US");
                 };
                 bundle = ResourceBundle.getBundle("MyBundle", locale);
