@@ -78,6 +78,7 @@
 			<version>${version.jfx}</version>
 		</dependency>
 
+
 		<!-- test -->
 		<dependency>
 			<groupId>org.testfx</groupId>

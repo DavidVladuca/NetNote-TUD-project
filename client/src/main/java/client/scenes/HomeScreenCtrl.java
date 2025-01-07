@@ -83,7 +83,7 @@ public class HomeScreenCtrl {
     }
 
     @FXML
-    public Button addB;
+    Button addB;
     public Button deleteB;
     public Button undoB;
     public Button dropDownSearchNoteB;
@@ -539,8 +539,6 @@ public class HomeScreenCtrl {
                 //change the output in the front-end for title and body
                 noteTitleF.setText(newNote.getTitle());
                 noteBodyF.setText(newNote.getBody());
-
-                Platform.runLater(() -> notesListView.getSelectionModel().clearSelection());
             }
         });
     }
@@ -1008,8 +1006,6 @@ public class HomeScreenCtrl {
                 language_text.setText(bundle.getString("Language"));
                 noteTitleF.setPromptText(bundle.getString("Untitled"));
                 noteBodyF.setPromptText(bundle.getString("Text_Area"));
-                undoB.setText(bundle.getString("Undo"));
-                refreshB.setText(bundle.getString("Refresh"));
 
             }
         });
