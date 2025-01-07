@@ -2,6 +2,7 @@ package client.scenes;
 
 
 import client.HomeScreen;
+import client.utils.Command;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import commons.*;
@@ -44,6 +45,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.stream.Collectors;
+import java.io.IOException;
+import commons.Collection;
 import commons.Server;
 
 public class HomeScreenCtrl {
@@ -89,6 +92,7 @@ public class HomeScreenCtrl {
     public Button dropDownSearchNoteB;
     public Button prevMatchB;
     public Button nextMatchB;
+
     public Button refreshB;
     public Button editCollectionsB;
 
@@ -110,6 +114,7 @@ public class HomeScreenCtrl {
     public Button getPreviousMatch;
     public WebView markDownOutput;
     public ChoiceBox<Collection> selectCollectionBox = new ChoiceBox<>();
+    private CommandInvoker invoker = new CommandInvoker(); // Invoker for keeping history of commands and executing them
     private Note lastDeletedNote = null;
     public Button tagsButton;
 
@@ -539,6 +544,8 @@ public class HomeScreenCtrl {
                 //change the output in the front-end for title and body
                 noteTitleF.setText(newNote.getTitle());
                 noteBodyF.setText(newNote.getBody());
+
+                Platform.runLater(() -> notesListView.getSelectionModel());
             }
         });
     }
@@ -609,26 +616,43 @@ public class HomeScreenCtrl {
 
         // Create the new note
         Note newNote = new Note(newTitle, "", current_collection);
-        // Immediately send the new note to the server to get a valid noteID that is NOT 0
-        try {
-            Note savedNote = saveNoteToServer(newNote); // Calls the create endpoint - see the method
+        // Create command for adding new note
+        Command addNoteCommand = new AddNoteCommand(this,newNote);
+        // Use the invoker to execute the command
+        invoker.executeCommand(addNoteCommand);
 
-            // Update the collection and UI with the saved note
-            current_collection.addNote(savedNote);  // Add to the collection
-            notes.add(savedNote);                   // Add to the ObservableList
-
-            // Select the new note in the ListView
-            notesListView.getSelectionModel().select(savedNote);
-
-            // Update UI fields
-            current_note = savedNote;
-            noteTitleF.setText(savedNote.getTitle());
-            noteBodyF.setText(savedNote.getBody());
-
-        } catch (Exception e) {
-            System.err.println("Failed to save the note: " + e.getMessage());
-        }
+//        // Immediately send the new note to the server to get a valid noteID that is NOT 0
+//        try {
+//            Note savedNote = saveNoteToServer(newNote); // Calls the create endpoint - see the method
+//
+//            // Update the collection and UI with the saved note
+//            current_collection.addNote(savedNote);  // Add to the collection
+//            notes.add(savedNote);                   // Add to the ObservableList
+//
+//            // Select the new note in the ListView
+//            notesListView.getSelectionModel().select(savedNote);
+//
+//            // Update UI fields
+//            current_note = savedNote;
+//            noteTitleF.setText(savedNote.getTitle());
+//            noteBodyF.setText(savedNote.getBody());
+//
+//        } catch (Exception e) {
+//            System.err.println("Failed to save the note: " + e.getMessage());
+//        }
     }
+    public void addCommand(Note newNote) throws IOException, InterruptedException {
+        Note savedNote = saveNoteToServer(newNote);
+
+        current_collection.addNote(savedNote);  // Add to the collection
+        notes.add(savedNote);                   // Add to the ObservableList
+        notesListView.getSelectionModel().select(savedNote);
+        // Update UI fields
+        current_note = savedNote;
+        noteTitleF.setText(savedNote.getTitle());
+        noteBodyF.setText(savedNote.getBody());
+    }
+
 
     /**
      * Sends the note to the server via the create endpoint and returns the saved note.
@@ -669,7 +693,7 @@ public class HomeScreenCtrl {
     }
 
     /**
-     * Removes a selected note
+     * Removes a selected note and stores it in a stack for future restoration
      */
     public void delete() {
         Note selectedNote = notesListView.getSelectionModel().getSelectedItem();
@@ -680,11 +704,12 @@ public class HomeScreenCtrl {
             alert.setHeaderText("Are you sure you want to delete this note?");
             alert.setContentText("Note: \"" + selectedNote.getTitle() + "\"");
             var result = alert.showAndWait(); // Waiting for user response
+
             if (result.isPresent() && result.get() == ButtonType.OK) {
-                // Proceed with deletion
-                lastDeletedNote = selectedNote;
-                notes.remove(selectedNote); //Remove from client
-                deleteRequest(selectedNote.getNoteId()); // Remove from server database
+                // Create a delete command and execute it
+                Command deleteCommand = new DeleteNoteCommand(this, selectedNote);
+                invoker.executeCommand(deleteCommand);
+
                 System.out.println("Note deleted: " + selectedNote.getTitle()); // For testing purposes
                 System.out.println("Note deleted: " + selectedNote.getNoteId());
 
@@ -706,11 +731,34 @@ public class HomeScreenCtrl {
         System.out.println("Delete");  //Temporary for testing
     }
 
+    public void deleteCommand(long noteId){
+        // Find the note in the ObservableList by its ID
+        Note noteToDelete = null;
+        for (Note note : notes) {
+            if (note.getNoteId() == noteId) {
+                noteToDelete = note;
+                break;
+            }
+        }
+        // If the note is found, proceed with deletion
+        if (noteToDelete != null) {
+            // Remove the note from the ObservableList (UI)
+            notes.remove(noteToDelete);
+            // Remove the note from the current collection
+            current_collection.getNotes().remove(noteToDelete);
+            // Send a delete request to the server
+            deleteRequest(noteId);
+        } else {
+            // If the note is not found in the ObservableList, log a warning
+            System.err.println("Note not found in the UI. ID: " + noteId);
+        }
+    }
+
     /**
      * Sends request to the server to delete a note by a provided ID
      * @param noteId
      */
-    public static void deleteRequest(long noteId) {
+    public static void deleteRequest(long noteId){
         Response response = ClientBuilder.newClient()
                 .target("http://localhost:8080/api/notes/delete/" + noteId) // Endpoint for deletion
                 .request()
@@ -726,30 +774,13 @@ public class HomeScreenCtrl {
     }
 
     /**
-     * Restores the last deleted note
+     * Undoes the last action
      */
     public void undo() throws JsonProcessingException {
-        System.out.println("Undo"); //Temporary for testing
-        if (lastDeletedNote != null) {
-            // Add the deleted note back to the list and the server
-            notes.add(lastDeletedNote); // Adds note to the client
-            addRequest(lastDeletedNote); // Adds note to the database
-            lastDeletedNote = null; //Reset the lastDeletedNote attribute
-            //Alert informing the user about the restored note - Could be deleted later
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Undo Successful");
-            alert.setHeaderText(null);
-            alert.setContentText("The deleted note has been restored.");
-            alert.showAndWait();
-        } else {
-            // If there is no deleted note show an alert
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Nothing to Undo");
-            alert.setHeaderText("No deleted note to restore");
-            alert.setContentText("Please delete a note first if you want to undo");
-            alert.showAndWait();
-        }
+        System.out.println("Undo");//Temporary for testing
+        invoker.undoLastCommand();
     }
+
 
     /**
      * Edits the title of the currently selected note
@@ -843,18 +874,18 @@ public class HomeScreenCtrl {
     public void searchNote() { //make sure this remains like this after merge.
         String search_text = searchNoteF.textProperty().getValue();
         note_match_indices = current_note.getMatchIndices(search_text);
-        if (search_text.isEmpty()) {
-            current_search_index = 0;
+        if (search_text.isEmpty()){
+            current_search_index=0;
         }
         String titleHighlighted = current_note.getTitle();
         String bodyHighlighted = current_note.getBody();
         if (!note_match_indices.isEmpty()){
             if (note_match_indices.getFirst()==-1L && note_match_indices.size()==1L){
                 System.out.println("Not found in \""+current_note.getTitle()+"\"");
-            } else { //parse in special way such that the found results are highlighted
-                for (int i = note_match_indices.size() - 1;  i >= 0; i--){//iterating from the back to not have to consider changes in index due to additions
-                    if (note_match_indices.get(i) < titleHighlighted.length()){
-                        if (i == current_search_index) {
+            } else{ //parse in special way such that the found results are highlighted
+                for (int i=note_match_indices.size()-1; i>=0; i--){//iterating from the back to not have to consider changes in index due to additions
+                    if (note_match_indices.get(i)<titleHighlighted.length()){
+                        if (i==current_search_index) {
                             titleHighlighted = titleHighlighted.substring(0, Math.toIntExact(note_match_indices.get(i)))
                                     + "<mark style=\"background: #E1C16E\">"
                                     + search_text
@@ -868,7 +899,7 @@ public class HomeScreenCtrl {
                                     + titleHighlighted.substring((int) (note_match_indices.get(i) + search_text.length()));
                         }
                     } else {
-                        if (i == current_search_index){
+                        if (i==current_search_index){
                             bodyHighlighted = bodyHighlighted.substring(0, (int) (note_match_indices.get(i) - titleHighlighted.length()))
                                     + "<mark style=\"background: #E1C16E\">"
                                     + search_text
