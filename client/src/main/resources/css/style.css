@@ -1,3 +1,5 @@
+
+
 .searchField {
     -fx-background-radius: 15;
     -fx-border-radius: 15;
@@ -9,27 +11,19 @@
 
 .background {
     -fx-background-color: #696969;
-    -fx-border-color: black;
-    -fx-border-width: 2;
     -fx-padding: 5;
 }
 
 .midground {
     -fx-background-color: #a9a9a9;
-    -fx-border-color: black;
-    -fx-border-width: 2;
     -fx-padding: 5;
 }
 
 .bordered {
-    -fx-background-color: #FFFFFF;
-    -fx-border-color: black;
-    -fx-border-width: 2;
     -fx-padding: 5;
 }
 
 .list-cell:hover {
-    -fx-background-color: lightgray;
     -fx-cursor: hand;
 }
 
@@ -37,7 +31,84 @@
     -fx-cursor: hand;
 }
 
-.choice-box {
+.selection {
     -fx-cursor: hand;
+    -fx-mark-color: white;
+}
+
+.selection .label {
+    -fx-text-fill: white;
+}
+
+.selection .list-view {
+    -fx-background-color: #262626;
+}
+
+.selection .list-cell {
+    -fx-background-color: #262626;
+}
+
+.selection .list-cell:hover {
+    -fx-background-color: #333;
+}
+
+.down-button {
+    -fx-shape: "M 50,0 A 50,50 0 1,1 49.999,-0.001 Z";
+    -fx-padding: 10;
+    -fx-background-radius: 50;
+    -fx-background-color: #333;
+    -fx-text-fill: white;
+    -fx-font-family: "FontAwesome";
+}
+
+#notesListView {
+    -fx-background-color: #1e1e1e;
+    -fx-border-color: transparent;
+    -fx-control-inner-background: #1e1e1e;
+    -fx-padding: 4px;
+}
+
+#notesListView .list-cell {
+    -fx-text-fill: white;
+    -fx-background-color: transparent;
+    -fx-padding: 7px 11px;
+    -fx-spacing: 10px;
+    -fx-border-width: 0 0 10px 0;
+}
+
+#notesListView .list-cell:selected  {
+    -fx-background-color: #e0e0e0;
+    -fx-text-fill: #e43e38;
+    -fx-background-radius: 20px;
+}
+
+#notesListView .list-cell:hover {
+    -fx-background-color: #333333;
+    -fx-background-radius: 20px;
+}
+
+#notesListView .list-cell:selected:hover  {
+    -fx-background-color: #e0e0e0;
+    -fx-text-fill: #e43e38;
+}
+
+#addB {
+    -fx-background-color: transparent;
+    -fx-graphic: url('../icons/add.png');
+}
+
+#deleteB {
+    -fx-background-color: transparent;
+    -fx-graphic: url('../icons/delete.png');
+}
+
+#undoB {
+    -fx-background-color: transparent;
+    -fx-graphic: url('../icons/undo.png');
+}
+
+#refreshB {
+    -fx-background-color: transparent;
+    -fx-graphic: url('../icons/refresh.png');
 }
 

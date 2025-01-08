@@ -7,6 +7,8 @@
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
@@ -14,37 +16,39 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.web.WebView?>
 
-<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="607.0" prefWidth="1000.0" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="607.0" prefWidth="1000.0" style="-fx-background-color: #1E1E1E;" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
    <children>
-      <HBox layoutY="98.0" prefHeight="510.0" prefWidth="1000.0" styleClass="bordered" stylesheets="@../css/style.css">
+      <HBox layoutY="62.0" prefHeight="546.0" prefWidth="1000.0" style="-fx-background-color: #1E1E1E;" styleClass="bordered" stylesheets="@../css/style.css">
          <children>
-            <VBox prefHeight="517.0" prefWidth="215.0" styleClass="midground" stylesheets="@../css/style.css">
+            <VBox prefHeight="517.0" prefWidth="215.0" style="-fx-background-color: #1E1E1E;" styleClass="midground" stylesheets="@../css/style.css">
                <children>
-                  <ScrollPane prefHeight="488.0" prefWidth="216.0">
+                  <ScrollPane prefHeight="488.0" prefWidth="200.0" style="-fx-background-color: #1E1E1E;">
                      <content>
-                        <ListView fx:id="notesListView" prefHeight="433.0" prefWidth="200.0" />
+                        <ListView fx:id="notesListView" prefHeight="454.0" prefWidth="208.0" style="-fx-background-color: #1E1E1E;" />
                      </content>
                   </ScrollPane>
-                  <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
+                  <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="10.0" style="-fx-background-color: #1E1E1E;">
                      <children>
-                        <Button fx:id="addB" mnemonicParsing="false" onAction="#add" styleClass="background" stylesheets="@../css/style.css" text="+" />
-                        <Button fx:id="deleteB" mnemonicParsing="false" onAction="#delete" styleClass="background" stylesheets="@../css/style.css" text="-" />
-                        <Button fx:id="undoB" mnemonicParsing="false" onAction="#undo" styleClass="background" stylesheets="@../css/style.css" text="%Undo" />
-                        <Button fx:id="refreshB" mnemonicParsing="false" onAction="#refresh" styleClass="background" text="%Refresh" />
+                        <Button id="addB" fx:id="addB" mnemonicParsing="false" onAction="#add" styleClass="down-button" stylesheets="@../css/style.css" />
+                        <Button id="deleteB" fx:id="deleteB" mnemonicParsing="false" onAction="#delete" styleClass="down-button" stylesheets="@../css/style.css" />
+                        <Button id="undoB" fx:id="undoB" mnemonicParsing="false" onAction="#undo" styleClass="down-button" stylesheets="@../css/style.css" />
+                        <Button id="refreshB" fx:id="refreshB" mnemonicParsing="false" onAction="#refresh" styleClass="down-button" />
                      </children>
                   </HBox>
                </children>
             </VBox>
             <VBox prefHeight="510.0" prefWidth="531.0" styleClass="bordered" stylesheets="@../css/style.css">
                <children>
-                  <Button fx:id="tagsButton" text="Tags" onAction="#handleTagsButtonAction" />
-                  <TextField fx:id="noteTitleF" onAction="#titleEdit" promptText="Untitled" />
-                  <TextArea fx:id="noteBodyF" prefHeight="487.0" prefWidth="531.0" promptText="Text Area" />
+                  <TextField fx:id="noteTitleF" onAction="#titleEdit" promptText="%Untitled">
+                     <font>
+                        <Font name="Plus Jakarta Sans Regular" size="12.0" />
+                     </font></TextField>
+                  <TextArea fx:id="noteBodyF" prefHeight="500.0" prefWidth="522.0" promptText="%Text_Area" stylesheets="@../css/style.css" />
                </children>
             </VBox>
-            <Pane prefHeight="496.0" prefWidth="241.0" styleClass="midground" stylesheets="@../css/style.css">
+            <Pane prefHeight="496.0" prefWidth="241.0" style="-fx-background-color: #1E1E1E;" stylesheets="@../css/style.css">
                <children>
-                  <WebView fx:id="markDownOutput" layoutY="33.0" onMouseClicked="#nextMatchB" prefHeight="463.0" prefWidth="241.0" />
+                  <WebView fx:id="markDownOutput" layoutY="33.0" onMouseClicked="#nextMatchB" prefHeight="498.0" prefWidth="241.0" />
                   <TextField fx:id="searchNoteF" layoutX="1.0" layoutY="3.0" onKeyReleased="#searchNote" prefHeight="29.0" prefWidth="142.0" promptText="%Search" styleClass="searchNote" stylesheets="@../css/style.css" />
                   <Button fx:id="dropDownSearchNoteB" blendMode="SCREEN" layoutX="144.0" layoutY="4.0" minWidth="32.0" mnemonicParsing="false" prefHeight="27.0" prefWidth="32.0" text="∨" />
                   <Button fx:id="nextMatchB" blendMode="SCREEN" layoutX="209.0" layoutY="4.0" mnemonicParsing="false" onMouseClicked="#nextMatchB" prefHeight="27.0" prefWidth="29.0" text="→" textAlignment="CENTER" wrapText="true" />
@@ -53,17 +57,26 @@
             </Pane>
          </children>
       </HBox>
-      <Text layoutX="450.0" layoutY="34.0" strokeType="OUTSIDE" strokeWidth="0.0" text="NetNote">
+      <Text fill="#e43e38" layoutX="85.0" layoutY="37.0" strokeType="OUTSIDE" strokeWidth="0.0" text="NetNote">
          <font>
-            <Font size="28.0" />
+            <Font name="Plus Jakarta Sans Bold" size="18.0" />
          </font>
       </Text>
-      <TextField fx:id="searchCollectionF" layoutX="22.0" layoutY="47.0" onAction="#searchCollection" prefHeight="29.0" prefWidth="727.0" promptText="%Search" styleClass="searchField" stylesheets="@../css/style.css" />
-      <ChoiceBox fx:id="selectCollectionBox" layoutX="759.0" layoutY="49.0" prefWidth="150.0" />
-      <Text fx:id="language_text" layoutX="925.0" layoutY="44.0" strokeType="OUTSIDE" strokeWidth="0.0" text="%Language" />
-      <Button fx:id="editCollectionsB" layoutX="22.0" layoutY="8.0" mnemonicParsing="false" onAction="#editCollections" styleClass="midground" stylesheets="@../css/style.css" text="%edit_collection" />
-      <Text fx:id="collection_text" layoutX="759.0" layoutY="44.0" strokeType="OUTSIDE" strokeWidth="0.0" text="%Collection" />
-      <ComboBox fx:id="selectLangBox" layoutX="922.0" layoutY="49.0" prefHeight="25.0" prefWidth="70.0" />
-      <Button fx:id="showShortcutsB" layoutX="135.0" layoutY="8.0" mnemonicParsing="false" onAction="#showShortcuts" styleClass="midground" stylesheets="@../css/style.css" text="Show Shortcuts" />
+      <TextField fx:id="searchCollectionF" layoutX="226.0" layoutY="16.0" onAction="#searchCollection" prefHeight="30.0" prefWidth="343.0" promptText="%Search" style="-fx-background-color: #262626;" styleClass="searchField" stylesheets="@../css/style.css" />
+      <ChoiceBox fx:id="selectCollectionBox" layoutX="761.0" layoutY="27.0" prefWidth="150.0" style="-fx-background-color: #262626;" styleClass="selection" stylesheets="@../css/style.css" />
+      <Text fx:id="language_text" fill="#e43e38" layoutX="922.0" layoutY="18.0" strokeType="OUTSIDE" strokeWidth="0.0" text="%Language" />
+      <Button fx:id="editCollectionsB" layoutX="584.0" layoutY="15.0" mnemonicParsing="false" onAction="#editCollections" prefHeight="32.0" prefWidth="157.0" style="-fx-background-color: #e43e38; -fx-background-radius: 10;" stylesheets="@../css/style.css" text="%edit_collection" textFill="WHITE" />
+      <Text fx:id="collection_text" fill="#e43e38" layoutX="761.0" layoutY="19.0" strokeType="OUTSIDE" strokeWidth="0.0" text="%Collection" />
+      <ComboBox fx:id="selectLangBox" layoutX="922.0" layoutY="27.0" prefHeight="25.0" prefWidth="70.0" style="-fx-background-color: #262626;" styleClass="selection" stylesheets="@../css/style.css" />
+      <Button fx:id="showShortcutsB" layoutX="14.0" layoutY="15.0" mnemonicParsing="false" onAction="#showShortcuts" prefHeight="31.0" prefWidth="29.0" style="-fx-background-radius: 25%; -fx-background-color: #262626;" stylesheets="@../css/style.css" text="?" textFill="#e43e38">
+         <font>
+            <Font name="Plus Jakarta Sans Bold" size="12.0" />
+         </font></Button>
+      <Button fx:id="tagsButton" layoutX="176.0" layoutY="19.0" onAction="#handleTagsButtonAction" text="Tags" />
+      <ImageView fitHeight="19.0" fitWidth="19.0" layoutX="58.0" layoutY="20.0">
+         <image>
+            <Image url="@../icons/logo1.png" />
+         </image>
+      </ImageView>
    </children>
 </Pane>
