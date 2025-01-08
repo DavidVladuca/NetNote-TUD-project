@@ -39,7 +39,7 @@
             </VBox>
             <VBox prefHeight="510.0" prefWidth="531.0" styleClass="bordered" stylesheets="@../css/style.css">
                <children>
-                  <TextField fx:id="noteTitleF" onAction="#titleEdit" promptText="%Untitled">
+                  <TextField fx:id="noteTitleF" promptText="%Untitled">
                      <font>
                         <Font name="Plus Jakarta Sans Regular" size="12.0" />
                      </font></TextField>
