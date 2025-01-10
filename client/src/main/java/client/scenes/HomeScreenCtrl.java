@@ -532,6 +532,9 @@ public class HomeScreenCtrl {
                 // Add the fetched notes to the ObservableList
                 notes.clear(); // Clear existing notes
                 notes.addAll(fetchedNotes);
+                for (Note note:fetchedNotes) {
+                    current_collection.addNote(note);
+                }
             } else {
                 System.err.println("Failed to fetch notes. Error code " + response.getStatus());
             }
@@ -942,19 +945,22 @@ public class HomeScreenCtrl {
      */
     public void searchCollection(){//todo - finish
         String search_text = searchCollectionF.textProperty().getValue();
-        ArrayList<ArrayList<Long>> collection_match_indices = current_collection.getSearch(search_text); //todo -check if collection gets updated, or only fetchedNotes
+        ArrayList<ArrayList<Long>> collection_match_indices = current_collection.getSearch(search_text); //todo -check if collection gets updated, or only fetchedNoted
+
         ObservableList<Note> display_notes = FXCollections.observableArrayList();
         if (!collection_match_indices.isEmpty()){
-            if (collection_match_indices.getFirst().getFirst()==-1) {
+            if (collection_match_indices.getFirst().getFirst() == -1) {
                 System.out.println("There are no matches for " + search_text);
                 display_notes.clear(); //gives an empty display
-            } else{
-                for (int i = 0; i< collection_match_indices.size();i++) {
-                    display_notes.add(current_collection.getNotes().get(Math.toIntExact(collection_match_indices.get(i).getFirst())));
+            } else {
+                System.out.println("The match indices are " + collection_match_indices.toString());
+                System.out.println("The notes are currently " + current_collection.getNotes().toString());
+                for (int i = 0; i < collection_match_indices.size(); i++) {
+                    display_notes.add(current_collection.getNotes().get(Math.toIntExact(collection_match_indices.get(i).getFirst() - 1 )));
                 }
             }
-        } else{
-            display_notes=notes;
+        } else {
+            display_notes = notes;
         }
         notesListView.setItems(display_notes);
     }
