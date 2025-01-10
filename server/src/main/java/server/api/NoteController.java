@@ -194,6 +194,20 @@ public class NoteController {
                 .orElseGet(() -> ResponseEntity.notFound().build()); // Else returns not found
     }
 
+    /**
+     * Validates if a title already exists within the given collection.
+     * @param title - Title to check for duplicates
+     * @return - HTTP 409 Conflict if duplicate, 200 OK otherwise
+     */
+    @GetMapping("/validate-title")
+    public ResponseEntity<Void> validateTitle(@RequestParam String title) {
+        // Checks if there is the same title - even when there is a space at the end, that is ensured by trim()
+        boolean isDuplicate = noteRepository.existsByCollectionCollectionIdAndTitle(0L, title.trim());
+        if (isDuplicate) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build(); // returns 409 Conflict Code
+        }
+        return ResponseEntity.ok().build(); // Returns 200 OK Code
+    }
 }
 
 

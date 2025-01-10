@@ -1,8 +1,8 @@
 package client.scenes;
 
-
 import client.HomeScreen;
 import client.utils.Command;
+import client.utils.ServerUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import commons.*;
@@ -45,13 +45,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.stream.Collectors;
-import java.io.IOException;
-import commons.Collection;
 import commons.Server;
 
 public class HomeScreenCtrl {
     //todo - for all methods, change strings title and body to getting them from the note instead
     private final ScreenCtrl sc;
+    private final ServerUtils serverUtils;
     private Stage primaryStage;
     private javafx.scene.Scene homeScene;
     private javafx.scene.Scene editCollectionScene;
@@ -81,8 +80,9 @@ public class HomeScreenCtrl {
     }
 
     @Inject
-    public HomeScreenCtrl(ScreenCtrl sc) {
+    public HomeScreenCtrl(ScreenCtrl sc, ServerUtils serverUtils) {
         this.sc = sc;
+        this.serverUtils = serverUtils;
     }
 
     @FXML
@@ -144,6 +144,10 @@ public class HomeScreenCtrl {
     public final Parser parser = Parser.builder().build();
     public final HtmlRenderer renderer = HtmlRenderer.builder().build();
 
+    private String originalTitle;
+    private boolean isTitleEditInProgress = false;
+
+
     /**
      * This method initializes the controller
      * and sets up the listener for the text area that the user types in. - based on other methods it calls
@@ -160,7 +164,31 @@ public class HomeScreenCtrl {
         loadNotesFromServer();
         setupNotesListView();
         loadTagsFromServer();
+        handleTitleEdits();
     }
+
+    private void handleTitleEdits() {
+        notesListView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                originalTitle = newValue.getTitle();
+                noteTitleF.setText(originalTitle);
+                isTitleEditInProgress = false; // Reset the flag when use selects a note
+            }
+        });
+
+        noteTitleF.focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue && isTitleEditInProgress) { // Only call if title was edited
+                titleEdit();
+            }
+        });
+
+        noteTitleF.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.equals(originalTitle)) {
+                isTitleEditInProgress = true; // Title is being edited
+            }
+        });
+    }
+
 
     private void loadTagsFromServer() {
         try {
@@ -424,8 +452,7 @@ public class HomeScreenCtrl {
         Platform.runLater(() -> {
             // Check if the note content has changed since the last sync
             if (current_note != null &&
-                    (!current_note.getTitle().equals(lastSyncedTitle) ||
-                            !current_note.getBody().equals(lastSyncedBody))) {
+                    (!current_note.getBody().equals(lastSyncedBody))) {
 
                 // Sync with the server if change
                 syncNoteWithServer(current_note);
@@ -620,26 +647,6 @@ public class HomeScreenCtrl {
         Command addNoteCommand = new AddNoteCommand(this,newNote);
         // Use the invoker to execute the command
         invoker.executeCommand(addNoteCommand);
-
-//        // Immediately send the new note to the server to get a valid noteID that is NOT 0
-//        try {
-//            Note savedNote = saveNoteToServer(newNote); // Calls the create endpoint - see the method
-//
-//            // Update the collection and UI with the saved note
-//            current_collection.addNote(savedNote);  // Add to the collection
-//            notes.add(savedNote);                   // Add to the ObservableList
-//
-//            // Select the new note in the ListView
-//            notesListView.getSelectionModel().select(savedNote);
-//
-//            // Update UI fields
-//            current_note = savedNote;
-//            noteTitleF.setText(savedNote.getTitle());
-//            noteBodyF.setText(savedNote.getBody());
-//
-//        } catch (Exception e) {
-//            System.err.println("Failed to save the note: " + e.getMessage());
-//        }
     }
     public void addCommand(Note newNote) throws IOException, InterruptedException {
         Note savedNote = saveNoteToServer(newNote);
@@ -786,44 +793,50 @@ public class HomeScreenCtrl {
      * Edits the title of the currently selected note
      */
     public void titleEdit() {
-
-        System.out.println("Title Edit");  //Temporary for testing
+        if (!isTitleEditInProgress) return;
 
         Note selectedNote = notesListView.getSelectionModel().getSelectedItem();
-
         if (selectedNote != null) {
-            Collection selectedCollection = selectedNote.getCollection();
+            String newTitle = noteTitleF.getText().trim();
 
-            // Searching for title duplicates in the respective collection
-            int ok = 1;
-            for (int i = 0; i < selectedCollection.getNotes().size(); i++) {
-                if (selectedCollection.getNotes().get(i).getTitle().equals(noteTitleF.getText())
-                        && !selectedCollection.getNotes().get(i).equals(selectedNote)) {
-                    ok = 0;
+            if (!newTitle.equals(originalTitle)) {
+                try {
+                    boolean isDuplicate = validateTitleWithServer(current_collection.getCollectionId(), newTitle);
+                    // Show and alert if the title is duplicate
+                    if (isDuplicate) {
+                        Alert alert = new Alert(Alert.AlertType.WARNING);
+                        alert.setTitle("Duplicate Title");
+                        alert.setHeaderText("Title Already Exists");
+                        alert.setContentText("The title \"" + newTitle + "\" already exists in this collection. Please choose a different one.");
+                        alert.showAndWait();
+
+                        // Revert to the original title
+                        Platform.runLater(() -> noteTitleF.setText(originalTitle));
+                    } else {
+                        // If not duplicate, update title and sync with the server
+                        selectedNote.setTitle(newTitle);
+                        originalTitle = newTitle;
+                        syncNoteWithServer(selectedNote);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.err.println("Error validating title with server: " + e.getMessage());
                 }
             }
-
-            if (ok == 1) {
-                //saving the title
-                selectedNote.setTitle(noteTitleF.getText());
-                syncIfChanged();
-            } else {
-                //found a duplicate of the title
-                Alert alert = new Alert(Alert.AlertType.WARNING);
-
-                alert.setTitle("Duplicate Title");
-                alert.setHeaderText("Title Already Exists");
-                alert.setContentText("The title you have chosen already exists in this collection. Please choose a different one.");
-
-                alert.showAndWait(); // Wait for the user to dismiss the alert
-
-                noteTitleF.requestFocus(); // Set focus back to the title field for convenience
-
-                System.out.println("Note title already exists"); // Temporary for testing
-            }
         }
-
     }
+
+    /**
+     * This method calls the noteValidator class and validates the title with server
+     * @param collectionId - id of the collection that is the note associated with
+     * @param newTitle - the title to be checked
+     * @return true if it is a duplicate, false if it is not
+     * @throws IOException when it returns something else then 200/409 code
+     */
+    public boolean validateTitleWithServer(Long collectionId, String newTitle) throws IOException {
+        return serverUtils.validateTitleWithServer(collectionId, newTitle);
+    }
+
 
     /**
      * Refreshes the notes list by re-fetching the notes from the server.

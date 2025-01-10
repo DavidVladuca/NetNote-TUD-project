@@ -64,6 +64,7 @@ public class NoteControllerTest {
 
     /**
      * Tests the createNote endpoint, mocking the database behaviour
+     *
      * @throws Exception
      */
     @Test
@@ -84,5 +85,21 @@ public class NoteControllerTest {
                 .andExpect(MockMvcResultMatchers.status().isCreated())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.title").value("Test Note"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.body").value("Test Note"));
+    }
+
+    @Test
+    public void testValidateTitleDuplicate() throws Exception {
+        when(noteRepository.existsByCollectionCollectionIdAndTitle(0L, "Test Note")).thenReturn(true);
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/notes/validate-title")
+                        .param("title", "Test Note"))
+                .andExpect(MockMvcResultMatchers.status().isConflict());
+    }
+
+    @Test
+    public void testValidateTitleDifferent() throws Exception {
+        when(noteRepository.existsByCollectionCollectionIdAndTitle(0L, "Test Note")).thenReturn(true);
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/notes/validate-title")
+                        .param("title", "Test Note 2"))
+                .andExpect(MockMvcResultMatchers.status().isOk());
     }
 }
