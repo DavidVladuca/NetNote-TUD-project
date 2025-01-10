@@ -163,6 +163,14 @@ public class Collection {
     //todo - add tests
 
 
+    public Note getNoteByID(int ID){
+        for (int i=0; i < notes.size(); i++){
+            if (notes.get(i).getNoteId()==ID)
+                return notes.get(i);
+        }
+        return null;
+    }
+
     public void removeNote(Note note){notes.remove(note);
     }
 
