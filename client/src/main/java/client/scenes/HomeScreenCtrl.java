@@ -2,7 +2,7 @@ package client.scenes;
 
 import client.HomeScreen;
 import client.utils.Command;
-import client.utils.NoteValidator;
+import client.utils.ServerUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import commons.*;
@@ -50,7 +50,7 @@ import commons.Server;
 public class HomeScreenCtrl {
     //todo - for all methods, change strings title and body to getting them from the note instead
     private final ScreenCtrl sc;
-    private final NoteValidator noteValidator;
+    private final ServerUtils serverUtils;
     private Stage primaryStage;
     private javafx.scene.Scene homeScene;
     private javafx.scene.Scene editCollectionScene;
@@ -80,9 +80,9 @@ public class HomeScreenCtrl {
     }
 
     @Inject
-    public HomeScreenCtrl(ScreenCtrl sc, NoteValidator noteValidator) {
+    public HomeScreenCtrl(ScreenCtrl sc, ServerUtils serverUtils) {
         this.sc = sc;
-        this.noteValidator = noteValidator;
+        this.serverUtils = serverUtils;
     }
 
     @FXML
@@ -834,7 +834,7 @@ public class HomeScreenCtrl {
      * @throws IOException when it returns something else then 200/409 code
      */
     public boolean validateTitleWithServer(Long collectionId, String newTitle) throws IOException {
-        return noteValidator.validateTitleWithServer(collectionId, newTitle);
+        return serverUtils.validateTitleWithServer(collectionId, newTitle);
     }
 
 
