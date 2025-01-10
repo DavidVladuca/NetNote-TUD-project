@@ -953,10 +953,8 @@ public class HomeScreenCtrl {
                 System.out.println("There are no matches for " + search_text);
                 display_notes.clear(); //gives an empty display
             } else {
-                System.out.println("The match indices are " + collection_match_indices.toString());
-                System.out.println("The notes are currently " + current_collection.getNotes().toString());
                 for (int i = 0; i < collection_match_indices.size(); i++) {
-                    display_notes.add(current_collection.getNotes().get(Math.toIntExact(collection_match_indices.get(i).getFirst() - 1 )));
+                    display_notes.add(current_collection.getNotes().get(Math.toIntExact(collection_match_indices.get(i).getFirst() - 1 ))); //todo - fix the indexing so that we do not have the minus 1 here
                 }
             }
         } else {
