@@ -971,12 +971,16 @@ public class HomeScreenCtrl {
      * converts the content to a heading of type h1, because it is a title
      */
     public void markDownTitle() {
-        noteTitleF.textProperty().addListener((observable, oldValue, newValue) -> {
+        noteTitleF.textProperty().addListener((observable, oldValue, newValue)
+                -> {
             currentNote.setTitle(newValue);
 
             // Convert the title and body to HTML
-            String showTitle = "<h1>" + renderer.render(parser.parse(newValue)) + "</h1>";
-            String showContent = renderer.render(parser.parse(noteBodyF.getText()));
+            String showTitle = "<h1>"
+                    + renderer.render(parser.parse(newValue))
+                    + "</h1>";
+            String showContent = renderer.render(
+                    parser.parse(noteBodyF.getText()));
 
             // Load the combined title and content into the WebView
             String titleAndContent = showTitle + showContent;
@@ -990,11 +994,14 @@ public class HomeScreenCtrl {
      * It fully supports the Markdown syntax based on the commonmark library.
      */
     public void markDownContent() {
-        noteBodyF.textProperty().addListener((observable, oldValue, newValue) -> {
+        noteBodyF.textProperty().addListener((observable, oldValue, newValue)
+                -> {
             currentNote.setBody(newValue);
 
             // Convert the title and body to HTML
-            String showTitle = "<h1>" + renderer.render(parser.parse(noteTitleF.getText())) + "</h1>";
+            String showTitle = "<h1>"
+                    + renderer.render(parser.parse(noteTitleF.getText()))
+                    + "</h1>";
             String showContent = renderer.render(parser.parse(newValue));
 
             // Load the combined title and content into the WebView
