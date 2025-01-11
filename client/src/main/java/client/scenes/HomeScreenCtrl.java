@@ -954,7 +954,7 @@ public class HomeScreenCtrl {
                 display_notes.clear(); //gives an empty display
             } else {
                 for (int i = 0; i < collection_match_indices.size(); i++) {
-                    display_notes.add(current_collection.getNotes().get(Math.toIntExact(collection_match_indices.get(i).getFirst() - 1 ))); //todo - fix the indexing so that we do not have the minus 1 here
+                    display_notes.add(current_collection.getNoteByID(Math.toIntExact(collection_match_indices.get(i).getFirst()))); //todo - fix the indexing so that we do not have the minus 1 here
                 }
             }
         } else {
