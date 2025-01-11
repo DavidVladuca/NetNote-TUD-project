@@ -1,8 +1,7 @@
 package client.scenes;
 
 import client.HomeScreen;
-import client.utils.Command;
-import client.utils.ServerUtils;
+import client.utils.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import commons.*;
@@ -470,7 +469,7 @@ public class HomeScreenCtrl {
      * This method ensures the syncing with the server (database)
      * @param note - note provided - in syncIfChanged method to be specific
      */
-    private void syncNoteWithServer(Note note) {
+    public void syncNoteWithServer(Note note) {
         try {
             String json = new ObjectMapper().writeValueAsString(note);
             System.out.println("Serialized JSON: " + json);  // for testing
@@ -583,18 +582,24 @@ public class HomeScreenCtrl {
     /**
      * This method adds the listener to the title field. It automatically converts the content to
      * a heading of type h1, because it is a title
+     * Changes are only saved when ENTER key is pressed
      */
     public void markDownTitle() {
-        noteTitleF.textProperty().addListener(new ChangeListener<String>() {
-            @Override
-            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-                current_note.setTitle(newValue);
-                // MD -> HTML
-                title = "<h1>" + renderer.render(parser.parse(newValue)) + "</h1>";
-                // Adds title and content together so it's not overridden
-                String titleAndContent = title + content;
-                // WebView is updated based on the HTML file
-                markDownOutput.getEngine().loadContent(titleAndContent);
+        noteTitleF.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) { // Check if the Enter key was pressed
+                String newValue = noteTitleF.getText();
+                if (!newValue.equals(current_note.getTitle())) {
+                    // Create and execute the EditTitleCommand
+                    Command editTitleCommand = new EditTitleCommand( current_note, newValue,HomeScreenCtrl.this);
+                    invoker.executeCommand(editTitleCommand);
+                    // MD -> HTML
+                    title = "<h1>" + renderer.render(parser.parse(newValue)) + "</h1>";
+                    content = renderer.render(parser.parse(current_note.getBody()));
+                    // Adds title and content together so it's not overridden
+                    String titleAndContent = title + content;
+                    // WebView is updated based on the HTML file
+                    markDownOutput.getEngine().loadContent(titleAndContent);
+                }
             }
         });
     }
@@ -602,18 +607,25 @@ public class HomeScreenCtrl {
     /**
      * This method adds the listener to the content/body field.
      * It fully supports the Markdown syntax based on the commonmark library.
+     * Changes are only saved when ENTER key is pressed
      */
     public void markDownContent() {
-        noteBodyF.textProperty().addListener(new ChangeListener<String>() {
-            @Override
-            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-                // MD -> HTML
-                current_note.setBody(newValue);
-                content = renderer.render(parser.parse(newValue));
-                // Adds title and content together so it's not overridden
-                String titleAndContent = title + content;
-                // WebView is updated based on the HTML file
-                markDownOutput.getEngine().loadContent(titleAndContent);
+        noteBodyF.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) { // Check if the Enter key was pressed
+                String newValue = noteBodyF.getText();
+
+                if (!newValue.equals(current_note.getBody())) { // Only update if the body has changed
+                    // Create and execute the EditBodyCommand
+                    Command editBodyCommand = new EditBodyCommand(current_note, newValue, HomeScreenCtrl.this);
+                    invoker.executeCommand(editBodyCommand);
+                    // MD -> HTML
+                    content = renderer.render(parser.parse(newValue));
+                    title = "<h1>" + renderer.render(parser.parse(current_note.getTitle())) + "</h1>";
+                    // Adds title and content together so it's not overridden
+                    String titleAndContent = title + content;
+                    // WebView is updated based on the HTML file
+                    markDownOutput.getEngine().loadContent(titleAndContent);
+                }
             }
         });
     }
@@ -789,6 +801,15 @@ public class HomeScreenCtrl {
     public void undo() throws JsonProcessingException {
         System.out.println("Undo");//Temporary for testing
         invoker.undoLastCommand();
+
+        // Refresh UI fields to reflect the reverted state of the note
+        if (current_note != null) {
+            noteTitleF.setText(current_note.getTitle()); // Update title field
+            noteBodyF.setText(current_note.getBody());// Update body field
+            String title = "<h1>" + renderer.render(parser.parse(current_note.getTitle())) + "</h1>";
+            String titleAndContent = title + current_note.getBody();
+            markDownOutput.getEngine().loadContent(titleAndContent);
+        }
     }
 
 

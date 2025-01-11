@@ -1,6 +1,5 @@
-package client.scenes;
+package client.utils;
 
-import client.utils.Command;
 import javafx.scene.control.Alert;
 
 import java.util.Stack;
@@ -9,7 +8,7 @@ public class CommandInvoker {
     private static CommandInvoker instance;
     private final Stack<Command> commandHistory = new Stack<>();
 
-    CommandInvoker() {}
+    public CommandInvoker() {}
 
     /**
      * Ensures that only one instance of the class is created (Singleton)
@@ -41,12 +40,15 @@ public class CommandInvoker {
             command.undo();
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Undo Successful");
+            alert.setHeaderText("Last operation has been undone!");
+            alert.setContentText(command.toString());
             alert.showAndWait();
         }else {
             Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Nothing to Undo");
+            alert.setTitle("Undo Unsuccessful");
+            alert.setHeaderText("No operation to be undone!");
+            alert.setContentText("Please try again!");
             alert.showAndWait();
-            System.err.println("No commands to undo.");
         }
     }
 }

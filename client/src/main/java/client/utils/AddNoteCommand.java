@@ -1,6 +1,6 @@
-package client.scenes;
+package client.utils;
 
-import client.utils.Command;
+import client.scenes.HomeScreenCtrl;
 import commons.Note;
 
 public class AddNoteCommand implements Command {
