@@ -1,3 +1,4 @@
+
 /*
  * Copyright 2021 Delft University of Technology
  *
@@ -31,7 +32,6 @@ import org.glassfish.jersey.client.ClientConfig;
 import commons.Quote;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.GenericType;
 
 public class ServerUtils {
@@ -39,13 +39,17 @@ public class ServerUtils {
 	private static final String SERVER = "http://localhost:8080/";
 
 	/**
-	 * This method validates the title with server if it is or is not duplicate
-	 * @param collectionId - id of the collection that is the note associated with
+	 * This method validates the title with server if it is or
+	 * is not duplicate.
+	 * @param collectionId - id of the collection that is the note
+	 *                        associated with
 	 * @param newTitle - the title to be checked
 	 * @return true if it is a duplicate, false if it is not
 	 * @throws IOException when it returns something else then 200/409 code
 	 */
-	public boolean validateTitleWithServer(Long collectionId, String newTitle) throws IOException {
+	public boolean validateTitleWithServer(
+			final Long collectionId, final String newTitle)
+			throws IOException {
 		String endpoint = "api/notes/validate-title";
 
 		Response response = ClientBuilder.newClient()
@@ -62,30 +66,6 @@ public class ServerUtils {
 		} else {
 			throw new IOException("Error: " + response.getStatus());
 		}
-	}
-
-	public void getQuotesTheHardWay() throws IOException, URISyntaxException {
-		var url = new URI("http://localhost:8080/api/quotes").toURL();
-		var is = url.openConnection().getInputStream();
-		var br = new BufferedReader(new InputStreamReader(is));
-		String line;
-		while ((line = br.readLine()) != null) {
-			System.out.println(line);
-		}
-	}
-
-	public List<Quote> getQuotes() {
-		return ClientBuilder.newClient(new ClientConfig()) //
-				.target(SERVER).path("api/quotes") //
-				.request(APPLICATION_JSON) //
-				.get(new GenericType<List<Quote>>() {});
-	}
-
-	public Quote addQuote(Quote quote) {
-		return ClientBuilder.newClient(new ClientConfig()) //
-				.target(SERVER).path("api/quotes") //
-				.request(APPLICATION_JSON) //
-				.post(Entity.entity(quote, APPLICATION_JSON), Quote.class);
 	}
 
 	public boolean isServerAvailable() {

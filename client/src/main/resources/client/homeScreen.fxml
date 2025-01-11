@@ -48,11 +48,11 @@
             </VBox>
             <Pane prefHeight="496.0" prefWidth="241.0" style="-fx-background-color: #1E1E1E;" stylesheets="@../css/style.css">
                <children>
-                  <WebView fx:id="markDownOutput" layoutY="33.0" onMouseClicked="#nextMatchB" prefHeight="498.0" prefWidth="241.0" />
+                  <WebView fx:id="markDownOutput" layoutY="33.0" onMouseClicked="#nextMatch" prefHeight="498.0" prefWidth="241.0" />
                   <TextField fx:id="searchNoteF" layoutX="1.0" layoutY="3.0" onKeyReleased="#searchNote" prefHeight="29.0" prefWidth="142.0" promptText="%Search" styleClass="searchNote" stylesheets="@../css/style.css" />
                   <Button fx:id="dropDownSearchNoteB" blendMode="SCREEN" layoutX="144.0" layoutY="4.0" minWidth="32.0" mnemonicParsing="false" prefHeight="27.0" prefWidth="32.0" text="∨" />
-                  <Button fx:id="nextMatchB" blendMode="SCREEN" layoutX="209.0" layoutY="4.0" mnemonicParsing="false" onMouseClicked="#nextMatchB" prefHeight="27.0" prefWidth="29.0" text="→" textAlignment="CENTER" wrapText="true" />
-                  <Button fx:id="prevMatchB" blendMode="SCREEN" layoutX="178.0" layoutY="4.0" mnemonicParsing="false" onMouseClicked="#prevMatchB" prefHeight="27.0" prefWidth="29.0" text="←" textAlignment="CENTER" wrapText="true" />
+                  <Button fx:id="nextMatchB" blendMode="SCREEN" layoutX="209.0" layoutY="4.0" mnemonicParsing="false" onMouseClicked="#nextMatch" prefHeight="27.0" prefWidth="29.0" text="→" textAlignment="CENTER" wrapText="true" />
+                  <Button fx:id="prevMatchB" blendMode="SCREEN" layoutX="178.0" layoutY="4.0" mnemonicParsing="false" onMouseClicked="#prevMatch" prefHeight="27.0" prefWidth="29.0" text="←" textAlignment="CENTER" wrapText="true" />
                </children>
             </Pane>
          </children>
@@ -64,9 +64,9 @@
       </Text>
       <TextField fx:id="searchCollectionF" layoutX="226.0" layoutY="16.0" onAction="#searchCollection" prefHeight="30.0" prefWidth="343.0" promptText="%Search" style="-fx-background-color: #262626;" styleClass="searchField" stylesheets="@../css/style.css" />
       <ChoiceBox fx:id="selectCollectionBox" layoutX="761.0" layoutY="27.0" prefWidth="150.0" style="-fx-background-color: #262626;" styleClass="selection" stylesheets="@../css/style.css" />
-      <Text fx:id="language_text" fill="#e43e38" layoutX="922.0" layoutY="18.0" strokeType="OUTSIDE" strokeWidth="0.0" text="%Language" />
+      <Text fx:id="languageText" fill="#e43e38" layoutX="922.0" layoutY="18.0" strokeType="OUTSIDE" strokeWidth="0.0" text="%Language" />
       <Button fx:id="editCollectionsB" layoutX="584.0" layoutY="15.0" mnemonicParsing="false" onAction="#editCollections" prefHeight="32.0" prefWidth="157.0" style="-fx-background-color: #e43e38; -fx-background-radius: 10;" stylesheets="@../css/style.css" text="%edit_collection" textFill="WHITE" />
-      <Text fx:id="collection_text" fill="#e43e38" layoutX="761.0" layoutY="19.0" strokeType="OUTSIDE" strokeWidth="0.0" text="%Collection" />
+      <Text fx:id="collectionText" fill="#e43e38" layoutX="761.0" layoutY="19.0" strokeType="OUTSIDE" strokeWidth="0.0" text="%Collection" />
       <ComboBox fx:id="selectLangBox" layoutX="922.0" layoutY="27.0" prefHeight="25.0" prefWidth="70.0" style="-fx-background-color: #262626;" styleClass="selection" stylesheets="@../css/style.css" />
       <Button fx:id="showShortcutsB" layoutX="14.0" layoutY="15.0" mnemonicParsing="false" onAction="#showShortcuts" prefHeight="31.0" prefWidth="29.0" style="-fx-background-radius: 25%; -fx-background-color: #262626;" stylesheets="@../css/style.css" text="?" textFill="#e43e38">
          <font>

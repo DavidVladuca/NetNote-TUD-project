@@ -16,8 +16,7 @@ import java.util.ResourceBundle;
 
 public class Scene extends Application {
     private static final Injector INJECTOR = Guice.createInjector(new MyModule());
-    private static final MyFXML FXML = new MyFXML(INJECTOR);
-    private ResourceBundle bundle;
+
     Locale locale;
 
 
@@ -25,8 +24,8 @@ public class Scene extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        locale = new Locale("en", "US");
-        bundle = ResourceBundle.getBundle("MyBundle", locale);
+        locale = Locale.of("en", "US");
+        ResourceBundle bundle = ResourceBundle.getBundle("MyBundle", locale);
 
         FXMLLoader homeLoader = new FXMLLoader(HomeScreenCtrl.class.getResource("/client/homeScreen.fxml"), bundle);
         HomeScreenCtrl sc = INJECTOR.getInstance(HomeScreenCtrl.class);

@@ -11,7 +11,7 @@ public class EditCollectionsView extends Application {
     private static final MyFXML FXML = new MyFXML(INJECTOR);
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void start(Stage primaryStage) {
         var editCollectionsView = FXML.load(EditCollectionsView.class, "client", "editCollectionsScreen.fxml");
         var scene = new Scene(editCollectionsView.getValue());
         primaryStage.setScene(scene);
