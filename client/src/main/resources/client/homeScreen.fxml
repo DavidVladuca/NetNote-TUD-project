@@ -48,11 +48,11 @@
             </VBox>
             <Pane prefHeight="496.0" prefWidth="241.0" style="-fx-background-color: #1E1E1E;" stylesheets="@../css/style.css">
                <children>
-                  <WebView fx:id="markDownOutput" layoutY="33.0" onMouseClicked="#nextMatchB" prefHeight="498.0" prefWidth="241.0" />
+                  <WebView fx:id="markDownOutput" layoutY="33.0" onMouseClicked="#nextMatch" prefHeight="498.0" prefWidth="241.0" />
                   <TextField fx:id="searchNoteF" layoutX="1.0" layoutY="3.0" onKeyReleased="#searchNote" prefHeight="29.0" prefWidth="142.0" promptText="%Search" styleClass="searchNote" stylesheets="@../css/style.css" />
                   <Button fx:id="dropDownSearchNoteB" blendMode="SCREEN" layoutX="144.0" layoutY="4.0" minWidth="32.0" mnemonicParsing="false" prefHeight="27.0" prefWidth="32.0" text="∨" />
-                  <Button fx:id="nextMatchB" blendMode="SCREEN" layoutX="209.0" layoutY="4.0" mnemonicParsing="false" onMouseClicked="#nextMatchB" prefHeight="27.0" prefWidth="29.0" text="→" textAlignment="CENTER" wrapText="true" />
-                  <Button fx:id="prevMatchB" blendMode="SCREEN" layoutX="178.0" layoutY="4.0" mnemonicParsing="false" onMouseClicked="#prevMatchB" prefHeight="27.0" prefWidth="29.0" text="←" textAlignment="CENTER" wrapText="true" />
+                  <Button fx:id="nextMatchB" blendMode="SCREEN" layoutX="209.0" layoutY="4.0" mnemonicParsing="false" onMouseClicked="#nextMatch" prefHeight="27.0" prefWidth="29.0" text="→" textAlignment="CENTER" wrapText="true" />
+                  <Button fx:id="prevMatchB" blendMode="SCREEN" layoutX="178.0" layoutY="4.0" mnemonicParsing="false" onMouseClicked="#prevMatch" prefHeight="27.0" prefWidth="29.0" text="←" textAlignment="CENTER" wrapText="true" />
                </children>
             </Pane>
          </children>
