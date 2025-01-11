@@ -31,7 +31,7 @@ import javafx.util.Pair;
 
 public class MyFXML {
 
-    private Injector injector;
+    private final Injector injector;
 
     public MyFXML(Injector injector) {
         this.injector = injector;
@@ -42,6 +42,7 @@ public class MyFXML {
             var loader = new FXMLLoader(getLocation(parts), null, null, new MyFactory(), StandardCharsets.UTF_8);
             Parent parent = loader.load();
             T ctrl = loader.getController();
+            c.getClassLoader();
             return new Pair<>(ctrl, parent);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -58,12 +59,7 @@ public class MyFXML {
         @Override
         @SuppressWarnings("rawtypes")
         public Builder<?> getBuilder(Class<?> type) {
-            return new Builder() {
-                @Override
-                public Object build() {
-                    return injector.getInstance(type);
-                }
-            };
+            return (Builder) () -> injector.getInstance(type);
         }
 
         @Override
