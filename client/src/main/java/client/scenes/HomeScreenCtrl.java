@@ -865,19 +865,23 @@ public class HomeScreenCtrl {
      * converts the content to a heading of type h1, because it is a title
      */
     public void markDownTitle() {
-        noteTitleF.textProperty().addListener(
-                (observable, oldValue, newValue) -> {
-                    currentNote.setTitle(newValue);
-                    // MD -> HTML
-                    String showTitle = "<h1>"
-                            + renderer.render(parser.parse(newValue))
-                            + "</h1>";
-                    // Adds title and content together so it's not overridden
-                    String titleAndContent = showTitle + currentNote.getTitle();
-                    // WebView is updated based on the HTML file
-                    markDownOutput.getEngine().loadContent(titleAndContent);
-                });
+        noteTitleF.textProperty().addListener((observable, oldValue, newValue)
+                -> {
+            currentNote.setTitle(newValue);
+
+            // Convert the title and body to HTML
+            String showTitle = "<h1>"
+                    + renderer.render(parser.parse(newValue))
+                    + "</h1>";
+            String showContent = renderer.render(
+                    parser.parse(noteBodyF.getText()));
+
+            // Load the combined title and content into the WebView
+            String titleAndContent = showTitle + showContent;
+            markDownOutput.getEngine().loadContent(titleAndContent);
+        });
     }
+
 
     /**
      * This method adds the listener to the content/body field.
@@ -886,12 +890,16 @@ public class HomeScreenCtrl {
     public void markDownContent() {
         noteBodyF.textProperty().addListener((observable, oldValue, newValue)
                 -> {
-            // MD -> HTML
             currentNote.setBody(newValue);
-            String content = renderer.render(parser.parse(newValue));
-            // Adds title and content together so it's not overridden
-            String titleAndContent = currentNote.getTitle() + content;
-            // WebView is updated based on the HTML file
+
+            // Convert the title and body to HTML
+            String showTitle = "<h1>"
+                    + renderer.render(parser.parse(noteTitleF.getText()))
+                    + "</h1>";
+            String showContent = renderer.render(parser.parse(newValue));
+
+            // Load the combined title and content into the WebView
+            String titleAndContent = showTitle + showContent;
             markDownOutput.getEngine().loadContent(titleAndContent);
         });
     }
