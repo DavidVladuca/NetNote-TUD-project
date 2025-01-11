@@ -21,6 +21,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -36,6 +37,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.text.Text;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
@@ -623,32 +625,88 @@ public class HomeScreenCtrl {
 
 
     /**
-     * This method sets up the keyboard shortcuts specified here.
-     * For add - the user needs to click 'Shift + A'
-     * For delete - the user needs to click 'Control + Shift + A'
+     * This method calls the keyboard shortcuts, separately when noteListView is
+     * in focus because it did not work normally
      */
     public void keyboardShortcuts() {
-        Platform.runLater(() -> addB.getScene().setOnKeyPressed(event -> {
-            // When clicking 'Shift + A' add method will be called
-            if (event.isShiftDown() && event.getCode() == KeyCode.A) {
-                try {
-                    add();
-                } catch (IOException | InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+        Platform.runLater(() -> {
+            Scene currentScene = addB.getScene();
+            if (currentScene == null) {
+                System.out.println("Scene is not set!");
+                return;
             }
-            // When clicking 'Shift + D' delete method will be called
-            if (event.isShiftDown()
-                    && event.getCode() == KeyCode.D) {
-                delete();
+            // Normal shortcuts
+            currentScene.setOnKeyPressed(event -> handleKeyboardShortcuts(event));
+            // Special case if focus is on the notes list view
+            notesListView.setOnKeyPressed(event -> handleKeyboardShortcuts(event));
+        });
+    }
+
+    /**
+     * This method is calling the keyboard shortcuts and specifies them.
+     * @param event - the key being pressed
+     */
+    private void handleKeyboardShortcuts(KeyEvent event) {
+        // When clicking 'Shift + A' add method will be called
+        if (event.isShiftDown() && event.getCode() == KeyCode.A) {
+            try {
+                add();
+                event.consume();
+            } catch (IOException | InterruptedException e) {
+                throw new RuntimeException(e);
             }
-            // When clicking 'Shift + Tab' the show shortcuts alert will
-            // pop up
-            if (event.isShiftDown()
-                    && event.getCode() == KeyCode.TAB) {
-                showShortcuts();
+        }
+        // When clicking 'Shift + D' delete method will be called
+        if (event.getCode() == KeyCode.DELETE) {
+            delete();
+            event.consume();
+        }
+        // When clicking 'Shift + S' the show shortcuts alert will
+        // pop up
+        if (event.isShiftDown()
+                && event.getCode() == KeyCode.S) {
+            showShortcuts();
+            event.consume();
+        }
+        // ESC sets the focus to collection search
+        if(event.getCode() == KeyCode.ESCAPE) {
+            if(searchCollectionF.isFocused()) {
+                notesListView.requestFocus();
+                event.consume();
+            } else {
+                searchCollectionF.requestFocus();
+                event.consume();
             }
-        }));
+        }
+        // Ctrl + Z for undo
+        if(event.isControlDown()
+                && event.getCode() == KeyCode.Z) {
+            undo();
+            event.consume();
+        }
+        // F5 for refresh
+        if(event.getCode() == KeyCode.F5) {
+            refresh();
+            event.consume();
+        }
+        // Shift + L to open up language combo box
+        if(event.isShiftDown()
+                && event.getCode() == KeyCode.L) {
+            selectLangBox.requestFocus();
+            event.consume();
+        }
+        // Shift + C to open up collection choice box
+        if(event.isShiftDown()
+                && event.getCode() == KeyCode.C) {
+            selectCollectionBox.requestFocus();
+            event.consume();
+        }
+        // Ctrl + F to search in a note
+        if(event.isControlDown()
+                && event.getCode() == KeyCode.F) {
+            searchNoteF.requestFocus();
+            event.consume();
+        }
     }
 
     /**
@@ -660,12 +718,7 @@ public class HomeScreenCtrl {
         noteTitleF.setOnKeyPressed(event -> {
             //When clicking 'Shift + Right Arrow' the focus will go to the
             // notes list view
-            if (event.isShiftDown() && event.getCode() == KeyCode.LEFT) {
-                notesListView.requestFocus();
-            }
-            // When clicking 'Shift + Left Arrow' the focus will go to the note
-            // body
-            if (event.isShiftDown() && event.getCode() == KeyCode.RIGHT) {
+            if (event.getCode() == KeyCode.PAGE_DOWN) {
                 noteBodyF.requestFocus();
             }
         });
@@ -673,7 +726,7 @@ public class HomeScreenCtrl {
         noteBodyF.setOnKeyPressed(event -> {
             // When clicking 'Shift + Left Arrow' the focus will go to the note
             // title
-            if (event.isShiftDown() && event.getCode() == KeyCode.LEFT) {
+            if (event.getCode() == KeyCode.PAGE_UP) {
                 noteTitleF.requestFocus();
             }
         });
@@ -865,36 +918,38 @@ public class HomeScreenCtrl {
      * converts the content to a heading of type h1, because it is a title
      */
     public void markDownTitle() {
-        noteTitleF.textProperty().addListener(
-                (observable, oldValue, newValue) -> {
-                    currentNote.setTitle(newValue);
-                    // MD -> HTML
-                    String showTitle = "<h1>"
-                            + renderer.render(parser.parse(newValue))
-                            + "</h1>";
-                    // Adds title and content together so it's not overridden
-                    String titleAndContent = showTitle + currentNote.getTitle();
-                    // WebView is updated based on the HTML file
-                    markDownOutput.getEngine().loadContent(titleAndContent);
-                });
+        noteTitleF.textProperty().addListener((observable, oldValue, newValue) -> {
+            currentNote.setTitle(newValue);
+
+            // Convert the title and body to HTML
+            String showTitle = "<h1>" + renderer.render(parser.parse(newValue)) + "</h1>";
+            String showContent = renderer.render(parser.parse(noteBodyF.getText()));
+
+            // Load the combined title and content into the WebView
+            String titleAndContent = showTitle + showContent;
+            markDownOutput.getEngine().loadContent(titleAndContent);
+        });
     }
+
 
     /**
      * This method adds the listener to the content/body field.
      * It fully supports the Markdown syntax based on the commonmark library.
      */
     public void markDownContent() {
-        noteBodyF.textProperty().addListener((observable, oldValue, newValue)
-                -> {
-            // MD -> HTML
+        noteBodyF.textProperty().addListener((observable, oldValue, newValue) -> {
             currentNote.setBody(newValue);
-            String content = renderer.render(parser.parse(newValue));
-            // Adds title and content together so it's not overridden
-            String titleAndContent = currentNote.getTitle() + content;
-            // WebView is updated based on the HTML file
+
+            // Convert the title and body to HTML
+            String showTitle = "<h1>" + renderer.render(parser.parse(noteTitleF.getText())) + "</h1>";
+            String showContent = renderer.render(parser.parse(newValue));
+
+            // Load the combined title and content into the WebView
+            String titleAndContent = showTitle + showContent;
             markDownOutput.getEngine().loadContent(titleAndContent);
         });
     }
+
 
 
     /**
