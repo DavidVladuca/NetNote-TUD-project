@@ -57,30 +57,53 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class HomeScreenCtrl {
+    /**
+     * controller for the main screen.
+     */
     private final ScreenCtrl sc;
-    private final ServerUtils serverUtils;
-    private Stage primaryStage;
-    private javafx.scene.Scene homeScene;
-    private javafx.scene.Scene editCollectionScene;
 
     /**
-     * Initializes the whole scene
-     * @param primaryStage - main stage to be used
+     * connector for the server.
+     */
+    private final ServerUtils serverUtils;
+
+    /**
+     * main stage.
+     */
+    private Stage primaryStage;
+
+    /**
+     * scene for the home screen.
+     */
+    private javafx.scene.Scene homeScene;
+    /**
+     * scene for the collection editor.
+     */
+    private javafx.scene.Scene editCollectionScene;
+
+
+    /**
+     * Initializes the whole scene.
+     * @param localPrimaryStage - main stage to be used
      * @param home - home screen controller
      * @param editCollection - edit collections controller
      */
 
-    public void init(final Stage primaryStage,
-                     final Pair<HomeScreenCtrl, Parent> home,
-                     final Pair<EditCollectionsViewCtrl, Parent> editCollection) {
-        this.primaryStage = primaryStage;
+    public void init(
+            final Stage localPrimaryStage,
+            final Pair<HomeScreenCtrl, Parent> home,
+            final Pair<EditCollectionsViewCtrl, Parent> editCollection) {
+        this.primaryStage = localPrimaryStage;
         this.homeScene = new javafx.scene.Scene(home.getValue());
         this.editCollectionScene = new javafx.scene.Scene(
                 editCollection.getValue());
         showHome();
-        primaryStage.show();
+        localPrimaryStage.show();
     }
 
+    /**
+     * Sets the scene as the home screen.
+     */
     public void showHome() {
         if (primaryStage == null) {
             throw new IllegalStateException("Primary stage is not initialized");
@@ -88,6 +111,9 @@ public class HomeScreenCtrl {
         primaryStage.setScene(homeScene);
     }
 
+    /**
+     * Triggers the edit collection viewer.
+     */
     public void showEditCollection() {
         if (primaryStage == null) {
             throw new IllegalStateException("Primary stage is not initialized");
@@ -95,66 +121,179 @@ public class HomeScreenCtrl {
         primaryStage.setScene(editCollectionScene);
     }
 
+
+    /**
+     * Constructor for the home screen controller.
+     * @param localScene - scene used
+     * @param localServerUtils - server to be used
+     */
     @Inject
-    public HomeScreenCtrl(final ScreenCtrl sc, final ServerUtils serverUtils) {
-        this.sc = sc;
-        this.serverUtils = serverUtils;
+    public HomeScreenCtrl(
+            final ScreenCtrl localScene, final ServerUtils localServerUtils) {
+        this.sc = localScene;
+        this.serverUtils = localServerUtils;
         availableTags = FXCollections.observableArrayList(
                 new Tag("#Tag1"),
                 new Tag("#Tag2"),
                 new Tag("#Tag3")
         );
     }
-    private final int requestSuccessfulCode = 200;
-    private final int creationSuccessfulCode = 201;
-    @FXML
-    public Button addB;
-//    public Button deleteB;
-//    public Button undoB;
-//    public Button dropDownSearchNoteB;
-//    public Button prevMatchB;
-//    public Button nextMatchB;
-//
-//    public Button refreshB;
 
+    /**
+     * HTTP Successful request code number.
+     */
+    private final int requestSuccessfulCode = 200;
+    /**
+     * HTTP "Successful creation upon request" code number.
+     */
+    private final int creationSuccessfulCode = 201;
+
+
+    /**
+     * Button for adding a new note.
+     */
+    @FXML
+    private Button addB;
+    /**
+     * Button for deleting a note.
+     */
+    private Button deleteB;
+    /**
+     * Button for undo-ing last change.
+     */
+    private Button undoB;
+    /**
+     * TBH IDK - todo.
+     */
+    private Button dropDownSearchNoteB;
+    /**
+     * Go to previous search match in a note.
+     */
+    private Button prevMatchB;
+    /**
+     * Go to next search match in a note.
+     */
+    private Button nextMatchB;
+    /**
+     * Refresh all notes from server.
+     */
+
+    private Button refreshB;
+
+    /**
+     * Button for editing collections.
+     */
     public Button editCollectionsB;
 
+    /**
+     * Collection text item in JavaFX.
+     */
     public Text collectionText;
+    /**
+     * Language text item in JavaFX.
+     */
     public Text languageText;
 
-    ResourceBundle bundle;
-    Locale locale;
+    /**
+     * Bundle containing all languages.
+     */
+    private ResourceBundle bundle;
+    /**
+     * current locale.
+     */
+    private Locale locale;
+    /**
+     * Language selection box in JavaFX.
+     */
     public ComboBox<Language> selectLangBox = new ComboBox<Language>();
+    /**
+     * Title text field in the scene.
+     */
     public TextField noteTitleF;
+    /**
+     * Body text field in the scene.
+     */
     public TextArea noteBodyF;
 
+    /**
+     * Collection search text field in the scene.
+     */
     public TextField searchCollectionF;
+    /**
+     * Note search text field in the scene.
+     */
     public TextField searchNoteF;
-    private int currentSearchIndex = 0;
-    private  ArrayList<Long> noteMatchIndices;
-//    public Button searchMore;
-//    public Button getNextMatch;
-//
-//    public Button getPreviousMatch;
-    public WebView markDownOutput;
-    public ChoiceBox<Collection> selectCollectionBox = new ChoiceBox<>();
-    private final CommandInvoker invoker = new CommandInvoker(); // Invoker for keeping history of commands and executing them
-//    private Note lastDeletedNote = null;
-//    public Button tagsButton;
 
-    // List of all available tags (replace with actual fetching logic)
+    /**
+     * note search index (0 by default).
+     */
+    private int currentSearchIndex = 0;
+    /**
+     * Collection text field in the scene.
+     */
+    private  ArrayList<Long> noteMatchIndices;
+
+    /**
+     * IDK TBH - todo.
+     */
+    private Button searchMore;
+    /**
+     * Output showing actual note.
+     */
+    public WebView markDownOutput;
+    /**
+     * Selection box for the working collection.
+     */
+    public ChoiceBox<Collection> selectCollectionBox = new ChoiceBox<>();
+    /**
+     * Invoker for keeping history of commands and executing them.
+     */
+    private final CommandInvoker invoker = new CommandInvoker();
+    /**
+     * Keeps track of last note deleted.
+     * It is useful for the undo button.
+     */
+    private Note lastDeletedNote = null;
+    /**
+     * Button to show tags scene.
+     */
+    private Button tagsButton;
+
+    /**
+     * List of all available tags (replace with actual fetching logic).
+     */
     private final ObservableList<Tag> availableTags;
 
-    public Server currentServer = new Server();
-    public Collection currentCollection = new Collection(
+    /**
+     * current server being used.
+     */
+    public final Server currentServer = new Server();
+
+    /**
+     * Current collection. If just the program for the first time
+     * makes a default collection.
+     */
+    private Collection currentCollection = new Collection(
             currentServer, "Default");
-    public Note currentNote = new Note("", "", currentCollection);
 
+    /**
+     * Current note. If just the program for the first time
+     * makes a default collection.
+     */
+    private Note currentNote = new Note("", "", currentCollection);
+
+    /**
+     * List of all the notes in the application. Useful for the Observable list.
+     */
     public ListView<Note> notesListView;
-    private ObservableList<Note> notes = FXCollections.observableArrayList();
+    /**
+     * Display of all the notes in the application.
+     */
+    private final ObservableList<Note> notes = FXCollections
+            .observableArrayList();
 
-    public String title = "";
-    public String content = ""; //todo - this should be part of the note - not independent strings
+//    private String title = "";
+//    public String content = ""; //todo - this should be part of the note - not independent strings
 
     private final ScheduledExecutorService scheduler = Executors
             .newScheduledThreadPool(1);
@@ -168,6 +307,9 @@ public class HomeScreenCtrl {
     private boolean isTitleEditInProgress = false;
 
 
+
+
+
     /**
      * This method initializes the controller
      * and sets up the listener for the text area that the user types in. - based on other methods it calls
@@ -176,10 +318,7 @@ public class HomeScreenCtrl {
     public void initialize() {
         keyboardShortcuts();
         arrowKeyShortcuts();
-        scheduler.scheduleAtFixedRate(this::syncIfChanged,
-                0,
-                5,
-                TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::syncIfChanged, 0, 5, TimeUnit.SECONDS);
         setUpLanguages();
         setUpCollections();
         markDownTitle();
@@ -189,34 +328,33 @@ public class HomeScreenCtrl {
         loadTagsFromServer();
         handleTitleEdits();
     }
-
     private void handleTitleEdits() {
         notesListView.getSelectionModel()
                 .selectedItemProperty()
                 .addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-                originalTitle = newValue.getTitle();
-                noteTitleF.setText(originalTitle);
-                // Reset the flag when use selects a note
-                isTitleEditInProgress = false;
-            }
-        });
+                    if (newValue != null) {
+                        originalTitle = newValue.getTitle();
+                        noteTitleF.setText(originalTitle);
+                        // Reset the flag when use selects a note
+                        isTitleEditInProgress = false;
+                    }
+                });
 
         noteTitleF.focusedProperty()
                 .addListener((observable, oldValue, newValue) -> {
-            // Only call if title was edited
-            if (!newValue && isTitleEditInProgress) {
-                titleEdit();
-            }
-        });
+                    // Only call if title was edited
+                    if (!newValue && isTitleEditInProgress) {
+                        titleEdit();
+                    }
+                });
 
         noteTitleF
                 .textProperty()
                 .addListener((observable, oldValue, newValue) -> {
-            if (!newValue.equals(originalTitle)) {
-                isTitleEditInProgress = true; // Title is being edited
-            }
-        });
+                    if (!newValue.equals(originalTitle)) {
+                        isTitleEditInProgress = true; // Title is being edited
+                    }
+                });
     }
 
 
@@ -231,9 +369,9 @@ public class HomeScreenCtrl {
                 ObjectMapper mapper = new ObjectMapper();
                 List<Tag> fetchedTags = mapper
                         .readValue(json, mapper
-                                        .getTypeFactory()
-                                        .constructCollectionType(List.class,
-                                                Tag.class));
+                                .getTypeFactory()
+                                .constructCollectionType(List.class,
+                                        Tag.class));
                 availableTags.clear();
                 availableTags.addAll(fetchedTags);
             } else {
@@ -421,7 +559,7 @@ public class HomeScreenCtrl {
             if (response.getStatus() != requestSuccessfulCode) {
                 System.err.println(
                         "Failed to sync tags with server. Status: "
-                        + response.getStatus()
+                                + response.getStatus()
                 );
             }
         } catch (Exception e) {
@@ -484,6 +622,7 @@ public class HomeScreenCtrl {
         });
     }
 
+
     /**
      * Displays a pop-up with the list of keyboard shortcuts and their descriptions.
      */
@@ -522,8 +661,8 @@ public class HomeScreenCtrl {
                 // for testing
                 System.out.println(
                         "Note synced with the server at: "
-                        + java.time.LocalTime.now()
-                ); 
+                                + java.time.LocalTime.now()
+                );
             }
         });
     }
@@ -554,7 +693,7 @@ public class HomeScreenCtrl {
             if (response.getStatus() != requestSuccessfulCode) {
                 System.err.println(
                         "Failed to update note on server. Status code: "
-                        + response.getStatus()
+                                + response.getStatus()
                 );
             }
         } catch (Exception e) {
@@ -578,12 +717,13 @@ public class HomeScreenCtrl {
     }
 
     /**
-     * Edits the colllections in the scene
+     * Edits the collections in the scene.
      */
     public void editCollections() {
         System.out.println("Edit Collections View Selected");
         sc.showEditCollection();
     }
+
 
     private void loadNotesFromServer() {
         try {
@@ -657,14 +797,14 @@ public class HomeScreenCtrl {
     public void markDownTitle() {
         noteTitleF.textProperty().addListener(
                 (observable, oldValue, newValue) -> {
-            currentNote.setTitle(newValue);
-            // MD -> HTML
-            title = "<h1>" + renderer.render(parser.parse(newValue)) + "</h1>";
-            // Adds title and content together so it's not overridden
-            String titleAndContent = title + content;
-            // WebView is updated based on the HTML file
-            markDownOutput.getEngine().loadContent(titleAndContent);
-        });
+                    currentNote.setTitle(newValue);
+                    // MD -> HTML
+                    String showTitle = "<h1>" + renderer.render(parser.parse(newValue)) + "</h1>";
+                    // Adds title and content together so it's not overridden
+                    String titleAndContent = showTitle + currentNote.getTitle();
+                    // WebView is updated based on the HTML file
+                    markDownOutput.getEngine().loadContent(titleAndContent);
+                });
     }
 
     /**
@@ -680,9 +820,9 @@ public class HomeScreenCtrl {
                     final String newValue) {
                 // MD -> HTML
                 currentNote.setBody(newValue);
-                content = renderer.render(parser.parse(newValue));
+                String content = renderer.render(parser.parse(newValue));
                 // Adds title and content together so it's not overridden
-                String titleAndContent = title + content;
+                String titleAndContent = currentNote.getTitle() + content;
                 // WebView is updated based on the HTML file
                 markDownOutput.getEngine().loadContent(titleAndContent);
             }
@@ -734,7 +874,6 @@ public class HomeScreenCtrl {
         noteTitleF.setText(savedNote.getTitle());
         noteBodyF.setText(savedNote.getBody());
     }
-
 
     /**
      * Sends the note to the server via the create endpoint and returns the saved note.
@@ -797,6 +936,7 @@ public class HomeScreenCtrl {
                 // Create a delete command and execute it
                 Command deleteCommand = new DeleteNoteCommand(
                         this, selectedNote);
+                lastDeletedNote = selectedNote;
                 invoker.executeCommand(deleteCommand);
                 // For testing purposes
                 System.out.println("Note deleted: " + selectedNote.getTitle());
@@ -874,7 +1014,6 @@ public class HomeScreenCtrl {
         invoker.undoLastCommand();
     }
 
-
     /**
      * Edits the title of the currently selected note
      */
@@ -913,7 +1052,7 @@ public class HomeScreenCtrl {
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    System.err.println("Error validating title with server: " 
+                    System.err.println("Error validating title with server: "
                             + e.getMessage());
                 }
             }
@@ -958,7 +1097,8 @@ public class HomeScreenCtrl {
     private Note fetchNoteById(final long noteId) {
         try {
             var response = ClientBuilder.newClient()
-                    .target("http://localhost:8080/api/notes/" + noteId) // Replace with actual API endpoint for fetching a single note
+                    // Replace with actual API endpoint for fetching a single note
+                    .target("http://localhost:8080/api/notes/" + noteId)
                     .request(MediaType.APPLICATION_JSON)
                     .get();
 
@@ -967,11 +1107,21 @@ public class HomeScreenCtrl {
                 ObjectMapper mapper = new ObjectMapper();
                 return mapper.readValue(json, Note.class);
             } else {
-                System.err.println("Failed to fetch note with ID " + noteId + ". Status code: " + response.getStatus());
+                System.err.println(
+                        "Failed to fetch note with ID "
+                                + noteId
+                                + ". Status code: "
+                                + response.getStatus()
+                );
                 return null;
             }
         } catch (Exception e) {
-            System.err.println("Error fetching note with ID " + noteId + ": " + e.getMessage());
+            System.err.println(
+                    "Error fetching note with ID "
+                            + noteId
+                            + ": "
+                            + e.getMessage()
+            );
             return null;
         }
     }
@@ -989,7 +1139,8 @@ public class HomeScreenCtrl {
         String bodyHighlighted = currentNote.getBody();
         if (!noteMatchIndices.isEmpty()) {
             if (noteMatchIndices.getFirst() == -1L && noteMatchIndices.size() == 1L) {
-                System.out.println("Not found in \"" + currentNote.getTitle() + "\"");
+                System.out.println(
+                        "Not found in \"" + currentNote.getTitle() + "\"");
             } else {
                 //parse in special way such that the found results are highlighted
                 for (int i = noteMatchIndices.size() - 1; i >= 0; i--) {
@@ -1002,9 +1153,10 @@ public class HomeScreenCtrl {
                                     + searchText
                                     + "</mark>"
                                     + titleHighlighted
-                                    .substring(
-                                            Math.toIntExact(noteMatchIndices.get(i)) + searchText.length()
+                                    .substring(Math.toIntExact(noteMatchIndices
+                                            .get(i)) + searchText.length()
                                     );
+
                         } else {
                             titleHighlighted = titleHighlighted.substring(
                                     0, Math.toIntExact(noteMatchIndices.get(i)))
@@ -1012,7 +1164,8 @@ public class HomeScreenCtrl {
                                     + searchText
                                     + "</mark>"
                                     + titleHighlighted
-                                    .substring(Math.toIntExact(noteMatchIndices.get(i)) + searchText.length()
+                                    .substring(Math.toIntExact(noteMatchIndices
+                                            .get(i)) + searchText.length()
                                     );
                         }
                     } else {
@@ -1031,17 +1184,27 @@ public class HomeScreenCtrl {
                                             .length())
                                             + searchText.length());
                         } else {
-                            bodyHighlighted = bodyHighlighted.substring(0, (int) (noteMatchIndices.get(i) - titleHighlighted.length()))
+                            bodyHighlighted = bodyHighlighted
+                                    .substring(
+                                            0, Math.toIntExact(noteMatchIndices
+                                                    .get(i))
+                                                    - titleHighlighted.length())
                                     + "<mark>"
                                     + searchText
                                     + "</mark>"
-                                    + bodyHighlighted.substring((int) (noteMatchIndices.get(i) - titleHighlighted.length() + searchText.length()));
+                                    + bodyHighlighted.substring(
+                                    Math.toIntExact(noteMatchIndices
+                                            .get(i))
+                                            - titleHighlighted.length()
+                                            + searchText.length());
                         }
                     }
                 }
             }
         }
-        titleHighlighted  = "<h1>" + renderer.render(parser.parse(titleHighlighted)) + "</h1>";
+        titleHighlighted  = "<h1>"
+                + renderer.render(parser.parse(titleHighlighted))
+                + "</h1>";
         bodyHighlighted = renderer.render(parser.parse(bodyHighlighted));
         String totalContent = titleHighlighted + bodyHighlighted;
         markDownOutput.getEngine().loadContent(totalContent);
@@ -1063,6 +1226,7 @@ public class HomeScreenCtrl {
                 System.out.println("There are no matches for " + searchText);
                 displayNotes.clear(); //gives an empty display
             } else {
+
                 for (ArrayList<Long> collectionMatchIndex : collectionMatchIndices) {
                     displayNotes.add(currentCollection
                             .getNoteByID(Math
@@ -1083,38 +1247,41 @@ public class HomeScreenCtrl {
         selectLangBox.getItems()
                 .setAll(LanguageOptions.getInstance().getLanguages());
         selectLangBox.setValue(selectLangBox.getItems().getFirst());
-        // How to do this gotten from stack overflow (https://stackoverflow.com/questions/32334137/javafx-choicebox-with-image-and-text)
+        /* How to do this gotten from stack overflow
+        (https://stackoverflow.com/questions/32334
+        137/javafx-choicebox-with-image-and-text)
+         */
         selectLangBox.setCellFactory(
                 new Callback<ListView<Language>, ListCell<Language>>() {
-            @Override
-            public ListCell<Language> call(final ListView<Language> listView) {
-                return new ListCell<Language>() {
                     @Override
-                    protected void updateItem(
-                            final Language item, final boolean empty) {
-                        super.updateItem(item, empty);
-                        if (empty || item == null) {
-                            setText(null);
-                            setGraphic(null);
-                        } else {
-                            String iconPath = item.getImg_path();
-                            Image icon = new Image(Objects
-                                    .requireNonNull(getClass()
-                                            .getClassLoader()
-                                            .getResourceAsStream(iconPath)));
-                            ImageView iconImageView = new ImageView(icon);
-                            double height = 15;
-                            double width = 30;
-                            iconImageView.setFitHeight(height);
-                            iconImageView.setFitWidth(width);
-                            iconImageView.setPreserveRatio(false);
-                            setGraphic(iconImageView);
+                    public ListCell<Language> call(final ListView<Language> listView) {
+                        return new ListCell<Language>() {
+                            @Override
+                            protected void updateItem(
+                                    final Language item, final boolean empty) {
+                                super.updateItem(item, empty);
+                                if (empty || item == null) {
+                                    setText(null);
+                                    setGraphic(null);
+                                } else {
+                                    String iconPath = item.getImg_path();
+                                    Image icon = new Image(Objects
+                                            .requireNonNull(getClass()
+                                                    .getClassLoader()
+                                                    .getResourceAsStream(iconPath)));
+                                    ImageView iconImageView = new ImageView(icon);
+                                    double height = 15;
+                                    double width = 30;
+                                    iconImageView.setFitHeight(height);
+                                    iconImageView.setFitWidth(width);
+                                    iconImageView.setPreserveRatio(false);
+                                    setGraphic(iconImageView);
 
-                        }
+                                }
+                            }
+                        };
                     }
-                };
-            }
-        });
+                });
 
         selectLangBox.setButtonCell(new ListCell<Language>() {
             @Override
@@ -1164,28 +1331,29 @@ public class HomeScreenCtrl {
         selectLangBox.getSelectionModel()
                 .selectedItemProperty()
                 .addListener((obs, oldLang, newLang) -> {
-            if (!newLang.equals(oldLang)) {
-                System.out.println(selectLangBox.getValue().getAbbr());
-                locale = switch (selectLangBox.getValue().getAbbr()) {
-                    case "ES" -> Locale.of("es", "ES");
-                    case "NL" -> Locale.of("nl", "NL");
-                    case "ZZ" -> Locale.of("zz", "ZZ");
-                    default -> Locale.of("en", "US");
-                };
-                bundle = ResourceBundle.getBundle("MyBundle", locale);
+                    if (!newLang.equals(oldLang)) {
+                        System.out.println(selectLangBox.getValue().getAbbr());
+                        locale = switch (selectLangBox.getValue().getAbbr()) {
+                            case "ES" -> Locale.of("es", "ES");
+                            case "NL" -> Locale.of("nl", "NL");
+                            case "ZZ" -> Locale.of("zz", "ZZ");
+                            default -> Locale.of("en", "US");
+                        };
+                        bundle = ResourceBundle.getBundle("MyBundle", locale);
 
-                editCollectionsB.setText(bundle.getString("edit_collection"));
-                searchCollectionF.setPromptText(bundle.getString("Search"));
-                searchNoteF.setPromptText(bundle.getString("Search"));
-                collectionText.setText(bundle.getString("Collection"));
-                languageText.setText(bundle.getString("Language"));
-                noteTitleF.setPromptText(bundle.getString("Untitled"));
-                noteBodyF.setPromptText(bundle.getString("Text_Area"));
+                        editCollectionsB.setText(bundle.getString("edit_collection"));
+                        searchCollectionF.setPromptText(bundle.getString("Search"));
+                        searchNoteF.setPromptText(bundle.getString("Search"));
+                        collectionText.setText(bundle.getString("Collection"));
+                        languageText.setText(bundle.getString("Language"));
+                        noteTitleF.setPromptText(bundle.getString("Untitled"));
+                        noteBodyF.setPromptText(bundle.getString("Text_Area"));
 
-            }
-        });
+                    }
+                });
 
     }
+
 
     public void setUpCollections() {
         selectCollectionBox.getItems().setAll(
@@ -1208,12 +1376,12 @@ public class HomeScreenCtrl {
 
         selectCollectionBox.getSelectionModel().selectedItemProperty()
                 .addListener((obs, oldCollection, newCollection) -> {
-            if (!newCollection.equals(oldCollection)) {
-                System.out.println(selectCollectionBox
-                        .getValue()
-                        .getCollectionTitle());
-            }
-        });
+                    if (!newCollection.equals(oldCollection)) {
+                        System.out.println(selectCollectionBox
+                                .getValue()
+                                .getCollectionTitle());
+                    }
+                });
     }
 
     public void prevMatchB() {
@@ -1243,3 +1411,5 @@ public class HomeScreenCtrl {
         }
     }
 }
+
+
