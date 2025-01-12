@@ -21,6 +21,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -36,6 +37,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.text.Text;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
@@ -623,57 +625,154 @@ public class HomeScreenCtrl {
 
 
     /**
-     * This method sets up the keyboard shortcuts specified here.
-     * For add - the user needs to click 'Shift + A'
-     * For delete - the user needs to click 'Control + Shift + A'
+     * This method calls the keyboard shortcuts, separately when noteListView is
+     * in focus because it did not work normally
      */
     public void keyboardShortcuts() {
-        Platform.runLater(() -> addB.getScene().setOnKeyPressed(event -> {
-            // When clicking 'Shift + A' add method will be called
-            if (event.isShiftDown() && event.getCode() == KeyCode.A) {
-                try {
-                    add();
-                } catch (IOException | InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+        Platform.runLater(() -> {
+            Scene currentScene = addB.getScene();
+            if (currentScene == null) {
+                System.out.println("Scene is not set!");
+                return;
             }
-            // When clicking 'Shift + D' delete method will be called
-            if (event.isShiftDown()
-                    && event.getCode() == KeyCode.D) {
-                delete();
+            // Normal shortcuts
+            currentScene.setOnKeyPressed(event -> handleKeyboardShortcuts(event));
+            // Special case if focus is on the notes list view
+            notesListView.setOnKeyPressed(event -> handleKeyboardShortcuts(event));
+        });
+    }
+
+    /**
+     * This method is calling the keyboard shortcuts
+     * @param event - the key being pressed
+     */
+    private void handleKeyboardShortcuts(KeyEvent event) {
+        handleAddDeleteShortcuts(event);
+        handleNavigationShortcuts(event);
+        handleUtilityShortcuts(event);
+        handleChoiceShortcuts(event);
+    }
+
+    /**
+     * This method is calling the keyboard shortcuts for add and delete and specifies them
+     * @param event - the key being pressed
+     */
+    private void handleAddDeleteShortcuts(KeyEvent event) {
+        // When clicking 'Shift + A' add method will be called
+        if (event.isShiftDown() && event.getCode() == KeyCode.A) {
+            try {
+                add();
+                event.consume();
+            } catch (IOException | InterruptedException e) {
+                throw new RuntimeException(e);
             }
-            // When clicking 'Shift + Tab' the show shortcuts alert will
-            // pop up
-            if (event.isShiftDown()
-                    && event.getCode() == KeyCode.TAB) {
-                showShortcuts();
+        }
+        // When clicking 'Delete' delete method will be called
+        if (event.getCode() == KeyCode.DELETE) {
+            delete();
+            event.consume();
+        }
+    }
+
+    /**
+     * This method is calling the keyboard shortcuts for navigation such as ESC to search,
+     * note search, show shortcuts, etc.
+     * @param event - the key being pressed
+     */
+    private void handleNavigationShortcuts(KeyEvent event) {
+        // When clicking 'Shift + S' the show shortcuts alert will
+        // pop up
+        if (event.isShiftDown()
+                && event.getCode() == KeyCode.S) {
+            showShortcuts();
+            event.consume();
+        }
+        // ESC sets the focus to collection search
+        if(event.getCode() == KeyCode.ESCAPE) {
+            if(searchCollectionF.isFocused()) {
+                notesListView.requestFocus();
+                event.consume();
+            } else {
+                searchCollectionF.requestFocus();
+                event.consume();
             }
-        }));
+        }
+        // Ctrl + F to search in a note
+        if(event.isControlDown()
+                && event.getCode() == KeyCode.F) {
+            searchNoteF.requestFocus();
+            event.consume();
+        }
+    }
+
+    /**
+     * This method is calling the keyboard shortcuts for utilities,
+     * such as undo, refresh, tags, etc.
+     * @param event - the key being pressed
+     */
+    private void handleUtilityShortcuts(KeyEvent event) {
+        // Ctrl + Z for undo
+        if(event.isControlDown()
+                && event.getCode() == KeyCode.Z) {
+            undo();
+            event.consume();
+        }
+        // F5 for refresh
+        if(event.getCode() == KeyCode.F5) {
+            refresh();
+            event.consume();
+        }
+        // Shift + T to open up the tags edit
+        if(event.isShiftDown()
+                && event.getCode() == KeyCode.T) {
+            handleTagsButtonAction();
+            event.consume();
+        }
+        // Shift + E to open up edit collections
+        if(event.isShiftDown() && event.getCode() == KeyCode.E) {
+            editCollections();
+            event.consume();
+        }
+    }
+
+    /**
+     * This method is calling the keyboard shortcuts for focus,
+     * so to open collection choice box and language combo box
+     * @param event - the key being pressed
+     */
+    private void handleChoiceShortcuts(KeyEvent event) {
+        // Shift + L to open up language combo box
+        if(event.isShiftDown()
+                && event.getCode() == KeyCode.L) {
+            selectLangBox.requestFocus();
+            selectLangBox.show();
+            event.consume();
+        }
+        // Shift + C to open up collection choice box
+        if(event.isShiftDown()
+                && event.getCode() == KeyCode.C) {
+            selectCollectionBox.requestFocus();
+            selectCollectionBox.show();
+            event.consume();
+        }
     }
 
     /**
      * This method sets up the arrow key shortcuts in the TextField for custom
      * navigation with shift.
      */
-    public void arrowKeyShortcuts() {
+    private void arrowKeyShortcuts() {
         // For note title
         noteTitleF.setOnKeyPressed(event -> {
-            //When clicking 'Shift + Right Arrow' the focus will go to the
-            // notes list view
-            if (event.isShiftDown() && event.getCode() == KeyCode.LEFT) {
-                notesListView.requestFocus();
-            }
-            // When clicking 'Shift + Left Arrow' the focus will go to the note
-            // body
-            if (event.isShiftDown() && event.getCode() == KeyCode.RIGHT) {
+            // Page down - go from note title to note body
+            if (event.getCode() == KeyCode.PAGE_DOWN) {
                 noteBodyF.requestFocus();
             }
         });
         // For note body
         noteBodyF.setOnKeyPressed(event -> {
-            // When clicking 'Shift + Left Arrow' the focus will go to the note
-            // title
-            if (event.isShiftDown() && event.getCode() == KeyCode.LEFT) {
+            // Page up - go from note body to note title
+            if (event.getCode() == KeyCode.PAGE_UP) {
                 noteTitleF.requestFocus();
             }
         });
@@ -691,10 +790,17 @@ public class HomeScreenCtrl {
         shortcuts.setContentText(
                 """
                         Shift + A: Add a new note
-                        Shift + D: Delete the selected note
-                        Shift + Arrow Left/Right: Navigate between fields
-                        \t\twhen in the text field
-                        Shift + Tab: Show shortcuts pop-up"""
+                        Delete: Delete the selected note
+                        Page Up/Down: Navigate between note title and content
+                        Shift + S: Show shortcuts pop-up
+                        Shift + L: Show available languages
+                        Shift + C: Show available collections
+                        Shift + E: Edit collections
+                        Shift + T: Edit Tags
+                        F5: \t\tRefresh
+                        Ctrl + F: Search within a note
+                        ESC: Set/reset focus to the collection search
+                        """
         );
         shortcuts.showAndWait();
     }
@@ -903,6 +1009,7 @@ public class HomeScreenCtrl {
             markDownOutput.getEngine().loadContent(titleAndContent);
         });
     }
+
 
 
     /**
