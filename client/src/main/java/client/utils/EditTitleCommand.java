@@ -10,10 +10,10 @@ public class EditTitleCommand implements Command {
     private final String newTitle;
     private final HomeScreenCtrl controller;
 
-    public EditTitleCommand(Note note, String newTitle, HomeScreenCtrl controller) {
+    public EditTitleCommand(Note note,String oldTitle, String newTitle, HomeScreenCtrl controller) {
         this.note = note;
-        this.oldTitle = note.getTitle(); // Store the old title
-        this.newTitle = newTitle;       // Store the new title
+        this.oldTitle = oldTitle;
+        this.newTitle = newTitle;
         this.controller = controller;
     }
 
@@ -23,6 +23,7 @@ public class EditTitleCommand implements Command {
     @Override
     public void execute() {
         note.setTitle(newTitle);
+        controller.syncNoteWithServer(note);
     }
 
     /**
@@ -32,6 +33,6 @@ public class EditTitleCommand implements Command {
     public void undo() {
         note.setTitle(oldTitle);
         controller.syncNoteWithServer(note);
-        System.out.println("------------------- " + oldTitle + " ------------------");
+
     }
 }

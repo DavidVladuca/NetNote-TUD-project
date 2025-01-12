@@ -585,21 +585,16 @@ public class HomeScreenCtrl {
      * Changes are only saved when ENTER key is pressed
      */
     public void markDownTitle() {
-        noteTitleF.setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.ENTER) { // Check if the Enter key was pressed
-                String newValue = noteTitleF.getText();
-                if (!newValue.equals(current_note.getTitle())) {
-                    // Create and execute the EditTitleCommand
-                    Command editTitleCommand = new EditTitleCommand( current_note, newValue,HomeScreenCtrl.this);
-                    invoker.executeCommand(editTitleCommand);
-                    // MD -> HTML
-                    title = "<h1>" + renderer.render(parser.parse(newValue)) + "</h1>";
-                    content = renderer.render(parser.parse(current_note.getBody()));
-                    // Adds title and content together so it's not overridden
-                    String titleAndContent = title + content;
-                    // WebView is updated based on the HTML file
-                    markDownOutput.getEngine().loadContent(titleAndContent);
-                }
+        noteTitleF.textProperty().addListener(new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                current_note.setTitle(newValue);
+                // MD -> HTML
+                title = "<h1>" + renderer.render(parser.parse(newValue)) + "</h1>";
+                // Adds title and content together so it's not overridden
+                String titleAndContent = title + content;
+                // WebView is updated based on the HTML file
+                markDownOutput.getEngine().loadContent(titleAndContent);
             }
         });
     }
@@ -607,28 +602,22 @@ public class HomeScreenCtrl {
     /**
      * This method adds the listener to the content/body field.
      * It fully supports the Markdown syntax based on the commonmark library.
-     * Changes are only saved when ENTER key is pressed
      */
     public void markDownContent() {
-        noteBodyF.setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.ENTER) { // Check if the Enter key was pressed
-                String newValue = noteBodyF.getText();
-
-                if (!newValue.equals(current_note.getBody())) { // Only update if the body has changed
-                    // Create and execute the EditBodyCommand
-                    Command editBodyCommand = new EditBodyCommand(current_note, newValue, HomeScreenCtrl.this);
-                    invoker.executeCommand(editBodyCommand);
-                    // MD -> HTML
-                    content = renderer.render(parser.parse(newValue));
-                    title = "<h1>" + renderer.render(parser.parse(current_note.getTitle())) + "</h1>";
-                    // Adds title and content together so it's not overridden
-                    String titleAndContent = title + content;
-                    // WebView is updated based on the HTML file
-                    markDownOutput.getEngine().loadContent(titleAndContent);
-                }
+        noteBodyF.textProperty().addListener(new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                // MD -> HTML
+                current_note.setBody(newValue);
+                content = renderer.render(parser.parse(newValue));
+                // Adds title and content together so it's not overridden
+                String titleAndContent = title + content;
+                // WebView is updated based on the HTML file
+                markDownOutput.getEngine().loadContent(titleAndContent);
             }
         });
     }
+
 
 
     /**
@@ -836,11 +825,22 @@ public class HomeScreenCtrl {
 
                         // Revert to the original title
                         Platform.runLater(() -> noteTitleF.setText(originalTitle));
-                    } else {
-                        // If not duplicate, update title and sync with the server
-                        selectedNote.setTitle(newTitle);
+                    }
+                    else if (newTitle.isEmpty()) {
+                        Alert alert = new Alert(Alert.AlertType.WARNING);
+                        alert.setTitle("Empty Title");
+                        alert.setHeaderText("Title Cannot be Empty!");
+                        alert.setContentText("Please enter a valid title!");
+                        alert.showAndWait();
+
+                        // Revert to the original title
+                        Platform.runLater(() -> noteTitleF.setText(originalTitle));
+                    }
+                    else {
+                        // If not duplicate, update title and sync with the server (Invoke command for editing title)
+                        Command editTitleCommand = new EditTitleCommand( current_note,originalTitle, newTitle,HomeScreenCtrl.this);
+                        invoker.executeCommand(editTitleCommand);
                         originalTitle = newTitle;
-                        syncNoteWithServer(selectedNote);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
