@@ -1705,7 +1705,7 @@ public class HomeScreenCtrl {
     /**
      * Saves images to the server
      * @param image
-     * @return
+     * @return Images object
      * @throws IOException
      */
     public Images saveImageToServer(final Images image) throws IOException {
