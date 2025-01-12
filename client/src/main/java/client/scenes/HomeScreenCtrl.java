@@ -305,8 +305,10 @@ public class HomeScreenCtrl {
      * Current collection. If just the program for the first time
      * makes a default collection.
      */
-    private Collection currentCollection = new Collection(
+    public Collection default_collection = new Collection(
             currentServer, "Default");
+    public Collection currentCollection = default_collection;
+
 
     /**
      * Current note. If just the program for the first time
@@ -440,6 +442,146 @@ public class HomeScreenCtrl {
                         isTitleEditInProgress = true; // Title is being edited
                     }
                 });
+    }
+
+    /**
+     * Obtains the current collection. In case there is none, it creates one.
+     */
+    public void setUpCollections() {
+        ObservableList<Collection> collectionOptions = FXCollections.observableArrayList();
+        collectionOptions.add(default_collection);
+        collectionOptions.add(new Collection(currentServer, "All"));
+        collectionOptions.addAll(currentServer.getCollections());
+
+        selectCollectionBox.setItems(collectionOptions);
+
+        selectCollectionBox.setValue(collectionOptions.get(0));
+
+        // Setting up the converter for displaying collection titles
+        selectCollectionBox.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(Collection collection){
+                return collection.getCollectionTitle();
+            }
+
+            @Override
+            public Collection fromString(String s) {
+                return null;
+            }
+        });
+
+        selectCollectionBox.getSelectionModel().selectedItemProperty().addListener((obs, oldCollection, newCollection) -> {
+            if (!newCollection.equals(oldCollection)) {
+                updateNotesList(newCollection);
+                System.out.println("\nShow " + selectCollectionBox.getValue().getCollectionTitle());
+
+                // Update current collection based on selection
+                if (newCollection.getCollectionTitle().equals("All")) {
+                    currentCollection = default_collection; // Resetting to Default
+                } else {
+                    currentCollection = newCollection; // Setting to the selected collection
+                }
+
+                System.out.println("\nCurrent collection: " + currentCollection.getCollectionTitle());
+            }
+        });
+
+    }
+
+    /**
+     * Syncs all collections with the server to ensure consistency
+     */
+    private void syncCollectionWithServer(Collection collection) {
+        try {
+            // Serializing the collection to JSON
+            String json = new ObjectMapper().writeValueAsString(collection);
+            System.out.println("Serialized JSON for collection: " + json); // For testing
+
+            // Creating a PUT request to update the specific collection
+            var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
+            var response = ClientBuilder.newClient()
+                    .target("http://localhost:8080/api/collections/update/" + collection.getCollectionId())
+                    .request(MediaType.APPLICATION_JSON)
+                    .put(requestBody);
+
+            System.out.println("Response Status: " + response.getStatus()); // For testing
+
+            if (response.getStatus() == 200) {
+                // Parsing the server's response into a Collection object
+                String updatedCollectionJson = response.readEntity(String.class);
+                System.out.println("Updated collection received from server: " + updatedCollectionJson); // For testing
+
+                ObjectMapper mapper = new ObjectMapper();
+                Collection updatedCollection = mapper.readValue(updatedCollectionJson, Collection.class);
+
+                // Replacing the collection in place to maintain order
+                for (int i = 0; i < currentServer.getCollections().size(); i++) {
+                    if (currentServer.getCollections().get(i).getCollectionId() == updatedCollection.getCollectionId()) {
+                        currentServer.getCollections().set(i, updatedCollection);
+                        break;
+                    }
+                }
+
+                // Refreshing the UI collections
+                Platform.runLater(() -> {
+                    setUpCollections();
+                });
+
+            } else {
+                System.err.println("Failed to sync collection. Status code: " + response.getStatus());
+            }
+        } catch (Exception e) {
+            System.err.println("Error syncing collection with the server: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Updates "notes" based on the chosen collection in selectCollectionBox
+     * @param selectedCollection (chosen collection)
+     */
+    private void updateNotesList(Collection selectedCollection) {
+        if (selectedCollection.getCollectionTitle().equals("All")) {
+            notes.setAll(currentServer.getCollections().stream()
+                    .flatMap(collection -> collection.getNotes().stream())
+                    .toList());
+        } else {
+            notes.setAll(selectedCollection.getNotes());
+        }
+    }
+
+
+
+    /**
+     * Fetches collections from the server and stores them locally
+     */
+    private void loadCollectionsFromServer() {
+        try {
+            // Fetch collections from the server
+            var response = ClientBuilder.newClient()
+                    .target("http://localhost:8080/api/collections/fetch")
+                    .request(MediaType.APPLICATION_JSON)
+                    .get();
+
+            if (response.getStatus() == 200) {
+                // Parse the JSON response into a List of Collection objects
+                String json = response.readEntity(String.class);
+                ObjectMapper mapper = new ObjectMapper();
+                List<Collection> fetchedCollections = mapper.readValue(json,
+                        mapper.getTypeFactory().constructCollectionType(List.class, Collection.class));
+
+                // Update the current server's collections
+                currentServer.getCollections().clear(); // Clear existing collections
+                currentServer.getCollections().addAll(fetchedCollections);
+
+                System.out.println("Collections loaded successfully from the server.");
+            } else {
+                System.err.println("Failed to fetch collections. Error code: " + response.getStatus());
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading the collections: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
 
@@ -1504,6 +1646,7 @@ public class HomeScreenCtrl {
                 // Re-fetches all notes from the server
                 // and updates the ObservableList
                 loadNotesFromServer();
+                loadCollectionsFromServer(); //Re-fetches all collections from the server
                 System.out.println("All notes refreshed successfully!");
             } catch (Exception e) {
                 errorLogger.log(
@@ -1789,38 +1932,6 @@ public class HomeScreenCtrl {
                     }
                 });
 
-    }
-
-    /**
-     * Obtains the current collection. In case there is none, it creates one.
-     */
-    public void setUpCollections() {
-        selectCollectionBox.getItems().setAll(
-                new Collection(currentServer, "Default")
-                //todo - add all collections
-        );
-
-        selectCollectionBox.setValue(selectCollectionBox.getItems().getFirst());
-        selectCollectionBox.setConverter(new StringConverter<>() {
-            @Override
-            public String toString(final Collection collection) {
-                return collection.getCollectionTitle();
-            }
-
-            @Override
-            public Collection fromString(final String s) {
-                return null;
-            }
-        });
-
-        selectCollectionBox.getSelectionModel().selectedItemProperty()
-                .addListener((obs, oldCollection, newCollection) -> {
-                    if (!newCollection.equals(oldCollection)) {
-                        System.out.println(selectCollectionBox
-                                .getValue()
-                                .getCollectionTitle());
-                    }
-                });
     }
 
     /**

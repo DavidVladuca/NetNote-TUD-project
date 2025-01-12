@@ -10,7 +10,7 @@ import java.util.List;
 public class Collection {
 
     @Id
-    //@GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private long collectionId;
     private long latestNoteId = -1;
     @ManyToOne(fetch = FetchType.LAZY)
