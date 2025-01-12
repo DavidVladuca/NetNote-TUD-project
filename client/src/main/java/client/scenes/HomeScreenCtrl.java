@@ -1,8 +1,7 @@
 package client.scenes;
 
 import client.HomeScreen;
-import client.utils.Command;
-import client.utils.ServerUtils;
+import client.utils.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -844,7 +843,7 @@ public class HomeScreenCtrl {
      * This method ensures the syncing with the server (database).
      * @param note - note provided - in syncIfChanged method to be specific
      */
-    private void syncNoteWithServer(final Note note) {
+    public void syncNoteWithServer(final Note note) {
         try {
             String json = new ObjectMapper().writeValueAsString(note);
             System.out.println("Serialized JSON: " + json);  // for testing
@@ -1224,6 +1223,16 @@ public class HomeScreenCtrl {
         //Temporary for testing
         System.out.println("Undo");
         invoker.undoLastCommand();
+
+        // Refresh UI fields to reflect the reverted state of the note
+        // Currently for testing
+        if (currentNote != null) {
+            noteTitleF.setText(currentNote.getTitle()); // Update title field
+            noteBodyF.setText(currentNote.getBody());// Update body field
+            String title = "<h1>" + renderer.render(parser.parse(currentNote.getTitle())) + "</h1>";
+            String titleAndContent = title + currentNote.getBody();
+            markDownOutput.getEngine().loadContent(titleAndContent);
+        }
     }
 
     /**
@@ -1254,14 +1263,23 @@ public class HomeScreenCtrl {
                         alert.showAndWait();
 
                         // Revert to the original title
-                        Platform.runLater(() -> noteTitleF
-                                .setText(originalTitle));
-                    } else {
-                        // If not duplicate, update title and sync with
-                        // the server
-                        selectedNote.setTitle(newTitle);
+                        Platform.runLater(() -> noteTitleF.setText(originalTitle));
+                    }
+                    else if (newTitle.isEmpty()) {
+                        Alert alert = new Alert(Alert.AlertType.WARNING);
+                        alert.setTitle("Empty Title");
+                        alert.setHeaderText("Title Cannot be Empty!");
+                        alert.setContentText("Please enter a valid title!");
+                        alert.showAndWait();
+
+                        // Revert to the original title
+                        Platform.runLater(() -> noteTitleF.setText(originalTitle));
+                    }
+                    else {
+                        // If not duplicate, update title and sync with the server (Invoke command for editing title)
+                        Command editTitleCommand = new EditTitleCommand( currentNote,originalTitle, newTitle,HomeScreenCtrl.this);
+                        invoker.executeCommand(editTitleCommand);
                         originalTitle = newTitle;
-                        syncNoteWithServer(selectedNote);
                     }
                 } catch (Exception e) {
                     errorLogger.log(
