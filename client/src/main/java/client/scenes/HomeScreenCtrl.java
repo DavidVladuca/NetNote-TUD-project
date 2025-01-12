@@ -1702,6 +1702,12 @@ public class HomeScreenCtrl {
         }
     }
 
+    /**
+     * Saves images to the server
+     * @param image
+     * @return
+     * @throws IOException
+     */
     public Images saveImageToServer(final Images image) throws IOException {
         if (currentNote == null) {
             throw new IllegalStateException("Current note or note ID is not set");
@@ -1731,6 +1737,10 @@ public class HomeScreenCtrl {
         }
     }
 
+    /**
+     * Fetches the notes images from the server
+     * @return List of image names
+     */
     public List<Images> fetchImagesForNote() {
         if (currentNote == null) {
             throw new IllegalStateException("Current note or note ID is not set");
@@ -1761,6 +1771,9 @@ public class HomeScreenCtrl {
         }
     }
 
+    /**
+     * Loads the images from the server onto the note's listview
+     */
     @FXML
     public void loadImagesForCurrentNote() {
         if (currentNote == null) {
