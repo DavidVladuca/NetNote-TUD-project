@@ -1,6 +1,5 @@
 package client.utils;
 
-import client.HomeScreen;
 import client.scenes.HomeScreenCtrl;
 import commons.Note;
 
