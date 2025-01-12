@@ -15,7 +15,7 @@ public class AddNoteCommand implements Command {
     }
 
     /**
-     * Executes the addCommand from HpmeScreenCtrl
+     * Executes the addCommand from HomeScreenCtrl
      */
     @Override
     public void execute() {
