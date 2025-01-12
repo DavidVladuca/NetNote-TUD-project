@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/api/notes")
@@ -95,12 +96,22 @@ public class NoteController {
             note.setCollection(existingNote.getCollection());
         }
 
+        // Check for title change
+        String oldTitle = existingNote.getTitle();
+        String newTitle = note.getTitle();
+
         // Handle tags
         handleTags(note);
 
         try {
             // Save the updated note with new tags
             Note updatedNote = noteRepository.save(note);
+
+            // If the title has changed, update references in other notes
+            if (!oldTitle.equals(newTitle)) {
+                updateReferences(oldTitle, newTitle);
+            }
+
             return ResponseEntity.ok(updatedNote);
         } catch (Exception e) {
             System.err.println("Error updating note: " + e.getMessage());
@@ -108,6 +119,37 @@ public class NoteController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    private void updateReferences(String oldTitle, String newTitle) {
+        System.out.println("Starting reference update: [" + oldTitle + "] -> [" + newTitle + "]");
+        List<Note> allNotes = noteRepository.findAll();
+
+        for (Note note : allNotes) {
+            String body = note.getBody();
+
+            // Log the body before changes
+            System.out.println("Processing note: " + note.getTitle());
+            System.out.println("Original body: " + body);
+
+            // Update references
+            String updatedBody = body.replaceAll("\\[\\[" + Pattern.quote(oldTitle) + "\\]\\]", "[[" + newTitle + "]]");
+
+            if (!updatedBody.equals(body)) {
+                System.out.println("Updated body for note: " + note.getTitle());
+                System.out.println("Updated body: " + updatedBody);
+                note.setBody(updatedBody);
+
+                // Save the updated note
+                noteRepository.save(note);
+            } else {
+                System.out.println("No references to update for note: " + note.getTitle());
+            }
+        }
+        System.out.println("Reference update completed.");
+    }
+
+
+
 
     private void handleTags(@RequestBody Note note) {
         Set<Tag> managedTags = new HashSet<>();
@@ -152,9 +194,6 @@ public class NoteController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
-
-
 
 
     /**

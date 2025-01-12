@@ -19,6 +19,7 @@ import jakarta.ws.rs.core.Response;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -46,6 +47,7 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.Pair;
 import javafx.util.StringConverter;
+import netscape.javascript.JSObject;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import java.io.IOException;
@@ -63,6 +65,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class HomeScreenCtrl {
@@ -367,7 +371,24 @@ public class HomeScreenCtrl {
         handleTitleEdits();
         prevMatch();
         nextMatch();
+        enableJavaScript();
     }
+
+    private void enableJavaScript() {
+        // Enable JavaScript in the WebView
+        markDownOutput.getEngine().setJavaScriptEnabled(true);
+
+        // Bind Java methods to JavaScript
+        markDownOutput.getEngine().getLoadWorker().stateProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == Worker.State.SUCCEEDED) {
+                // Rebind `javaApp` after the WebView finishes loading
+                JSObject window = (JSObject) markDownOutput.getEngine().executeScript("window");
+                window.setMember("javaApp", this);
+            }
+        });
+    }
+
+
 
     /**
      * Method to handle title edits.
@@ -994,21 +1015,90 @@ public class HomeScreenCtrl {
      * It fully supports the Markdown syntax based on the commonmark library.
      */
     public void markDownContent() {
-        noteBodyF.textProperty().addListener((observable, oldValue, newValue)
-                -> {
+        noteBodyF.textProperty().addListener((observable, oldValue, newValue) -> {
             currentNote.setBody(newValue);
+
+            // Process #tags
+            String processedContent = newValue.replaceAll("#(\\w+)",
+                    "<span style=\"background-color: #e43e38; color: white; padding: 2px 6px; border-radius: 4px;\">$1</span>");
+
+            // Process [[Note]] references
+            Matcher matcher = Pattern.compile("\\[\\[(.*?)\\]\\]").matcher(processedContent);
+            StringBuffer result = new StringBuffer();
+
+            while (matcher.find()) {
+                String title = matcher.group(1);
+
+                // Check if the note exists
+                boolean noteExists = notes.stream().anyMatch(note -> note.getTitle().equals(title));
+                String replacement;
+
+                if (noteExists) {
+                    // JavaScript handler for clicking the link
+                    replacement = "<a href=\"#\" style=\"color: blue; text-decoration: none;\" onclick=\"javaApp.openNoteByTitle('" + title.replace("'", "\\'") + "')\">" + title + "</a>";
+                } else {
+                    // Red italic text for broken links
+                    replacement = "<span style=\"color: red; font-style: italic;\">" + title + "</span>";
+                }
+
+                matcher.appendReplacement(result, replacement);
+            }
+            matcher.appendTail(result);
 
             // Convert the title and body to HTML
             String showTitle = "<h1>"
                     + renderer.render(parser.parse(noteTitleF.getText()))
                     + "</h1>";
-            String showContent = renderer.render(parser.parse(newValue));
+            String showContent = renderer.render(parser.parse(result.toString()));
 
             // Load the combined title and content into the WebView
             String titleAndContent = showTitle + showContent;
             markDownOutput.getEngine().loadContent(titleAndContent);
         });
     }
+
+    @FXML
+    public void openNoteByTitle(String title) {
+        // Find the target note by its title
+        Note targetNote = notes.stream()
+                .filter(note -> note.getTitle().equals(title))
+                .findFirst()
+                .orElse(null);
+
+        if (targetNote != null) {
+            // Update the current note
+            currentNote = targetNote;
+
+            // Update the UI fields
+            Platform.runLater(() -> {
+                noteTitleF.setText(targetNote.getTitle());
+                noteBodyF.setText(targetNote.getBody());
+                notesListView.getSelectionModel().select(targetNote);
+            });
+
+            System.out.println("Switched to note: " + targetNote.getTitle());
+        } else {
+            System.err.println("Note with title '" + title + "' not found.");
+        }
+    }
+
+    private void updateReferencesInNotes(String oldTitle, String newTitle) {
+        for (Note note : notes) {
+            if (!note.equals(currentNote)) { // Skip the note being renamed
+                String updatedBody = note.getBody().replaceAll(
+                        "\\[\\[" + Pattern.quote(oldTitle) + "\\]\\]",
+                        "[[" + newTitle + "]]"
+                );
+                if (!updatedBody.equals(note.getBody())) {
+                    note.setBody(updatedBody);
+                    syncNoteWithServer(note);
+                    refreshNotesInListView(note); // Update the ListView display
+                }
+            }
+        }
+    }
+
+
 
 
 
@@ -1253,6 +1343,8 @@ public class HomeScreenCtrl {
                         // If not duplicate, update title and sync with
                         // the server
                         selectedNote.setTitle(newTitle);
+                        // Update references in other notes
+                        updateReferencesInNotes(originalTitle, newTitle);
                         originalTitle = newTitle;
                         syncNoteWithServer(selectedNote);
                     }
