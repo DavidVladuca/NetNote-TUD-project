@@ -1,8 +1,7 @@
 package client.scenes;
 
 import client.HomeScreen;
-import client.utils.Command;
-import client.utils.ServerUtils;
+import client.utils.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,6 +43,7 @@ import javafx.scene.text.Text;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.WebView;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.Pair;
@@ -51,6 +51,8 @@ import javafx.util.StringConverter;
 import netscape.javascript.JSObject;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
+
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -321,7 +323,14 @@ public class HomeScreenCtrl {
      */
     private final ObservableList<Note> notes = FXCollections
             .observableArrayList();
-
+    /**
+     * Button that allows for selection of images
+     */
+    public Button uploadImageB;
+    /**
+     * Provides list of uploaded images on bottom of the screen
+     */
+    public ListView<String> imageListView;
     /**
      * Scheduler for the executor.
      */
@@ -845,31 +854,28 @@ public class HomeScreenCtrl {
      */
     private void syncIfChanged() {
         Platform.runLater(() -> {
-            // Check if the note content has changed since the last sync
-            if (currentNote != null
-                    && (!currentNote.getBody().equals(lastSyncedBody)
-            || !currentNote.getTitle().equals(lastSyncedTitle))) {
+            if (currentNote != null &&
+                    !isTitleEditInProgress && // Prevent syncing if title is being edited
+                    (!currentNote.getBody().equals(lastSyncedBody) ||
+                            !currentNote.getTitle().equals(lastSyncedTitle))) {
 
-                // Sync with the server if change
+                // Sync with the server if there is a change in title or body
                 syncNoteWithServer(currentNote);
 
-                // Update the last synced title and body to current title
-                // and body
+                // Update the last synced title and body
                 lastSyncedTitle = currentNote.getTitle();
                 lastSyncedBody = currentNote.getBody();
 
-                System.out.println("Note synced with the server at: "
-                        + java.time.LocalTime.now()); // for testing
+                System.out.println("Note synced with the server at: " + java.time.LocalTime.now());
             }
         });
-
     }
 
     /**
      * This method ensures the syncing with the server (database).
      * @param note - note provided - in syncIfChanged method to be specific
      */
-    private void syncNoteWithServer(final Note note) {
+    public void syncNoteWithServer(final Note note) {
         try {
             String json = new ObjectMapper().writeValueAsString(note);
             System.out.println("Serialized JSON: " + json);  // for testing
@@ -1405,6 +1411,16 @@ public class HomeScreenCtrl {
         //Temporary for testing
         System.out.println("Undo");
         invoker.undoLastCommand();
+
+        // Refresh UI fields to reflect the reverted state of the note
+        // Currently for testing
+        if (currentNote != null) {
+            noteTitleF.setText(currentNote.getTitle()); // Update title field
+            noteBodyF.setText(currentNote.getBody());// Update body field
+            String title = "<h1>" + renderer.render(parser.parse(currentNote.getTitle())) + "</h1>";
+            String titleAndContent = title + currentNote.getBody();
+            markDownOutput.getEngine().loadContent(titleAndContent);
+        }
     }
 
     /**
@@ -1435,16 +1451,23 @@ public class HomeScreenCtrl {
                         alert.showAndWait();
 
                         // Revert to the original title
-                        Platform.runLater(() -> noteTitleF
-                                .setText(originalTitle));
-                    } else {
-                        // If not duplicate, update title and sync with
-                        // the server
-                        selectedNote.setTitle(newTitle);
-                        // Update references in other notes
-                        updateReferencesInNotes(originalTitle, newTitle);
+                        Platform.runLater(() -> noteTitleF.setText(originalTitle));
+                    }
+                    else if (newTitle.isEmpty()) {
+                        Alert alert = new Alert(Alert.AlertType.WARNING);
+                        alert.setTitle("Empty Title");
+                        alert.setHeaderText("Title Cannot be Empty!");
+                        alert.setContentText("Please enter a valid title!");
+                        alert.showAndWait();
+
+                        // Revert to the original title
+                        Platform.runLater(() -> noteTitleF.setText(originalTitle));
+                    }
+                    else {
+                        // If not duplicate, update title and sync with the server (Invoke command for editing title)
+                        Command editTitleCommand = new EditTitleCommand( currentNote,originalTitle, newTitle,HomeScreenCtrl.this);
+                        invoker.executeCommand(editTitleCommand);
                         originalTitle = newTitle;
-                        syncNoteWithServer(selectedNote);
                     }
                 } catch (Exception e) {
                     errorLogger.log(
@@ -1830,6 +1853,25 @@ public class HomeScreenCtrl {
         } else {
             currentSearchIndex = 0;
             searchNote();
+        }
+    }
+
+    /**
+     * Allows for the selection of a file, and displays the name in a list view
+     */
+    @FXML
+    public void uploadImage() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select file");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("All Files", "*.*"),
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
+        );
+
+        File file = fileChooser.showOpenDialog(uploadImageB.getScene().getWindow());
+
+        if (file != null) {
+            imageListView.getItems().add(file.getName());
         }
     }
 }
