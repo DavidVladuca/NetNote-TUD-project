@@ -4,15 +4,17 @@ import client.HomeScreen;
 import client.scenes.HomeScreenCtrl;
 import commons.Note;
 
+import java.util.Stack;
+
 public class EditTitleCommand implements Command {
     private final Note note;
-    private final String oldTitle;
+    private final Stack<String> oldTitles = new Stack<>();
     private final String newTitle;
     private final HomeScreenCtrl controller;
 
     public EditTitleCommand(Note note,String oldTitle, String newTitle, HomeScreenCtrl controller) {
         this.note = note;
-        this.oldTitle = oldTitle;
+        this.oldTitles.push(oldTitle);
         this.newTitle = newTitle;
         this.controller = controller;
     }
@@ -31,7 +33,7 @@ public class EditTitleCommand implements Command {
      */
     @Override
     public void undo() {
-        note.setTitle(oldTitle);
+        note.setTitle(oldTitles.pop());
         controller.syncNoteWithServer(note);
 
     }

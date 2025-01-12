@@ -792,6 +792,7 @@ public class HomeScreenCtrl {
         invoker.undoLastCommand();
 
         // Refresh UI fields to reflect the reverted state of the note
+        // Currently for testing
         if (current_note != null) {
             noteTitleF.setText(current_note.getTitle()); // Update title field
             noteBodyF.setText(current_note.getBody());// Update body field
