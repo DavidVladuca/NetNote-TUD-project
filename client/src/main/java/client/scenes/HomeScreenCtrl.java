@@ -843,7 +843,7 @@ public class HomeScreenCtrl {
      * This method ensures the syncing with the server (database).
      * @param note - note provided - in syncIfChanged method to be specific
      */
-    private void syncNoteWithServer(final Note note) {
+    public void syncNoteWithServer(final Note note) {
         try {
             String json = new ObjectMapper().writeValueAsString(note);
             System.out.println("Serialized JSON: " + json);  // for testing
@@ -1226,11 +1226,11 @@ public class HomeScreenCtrl {
 
         // Refresh UI fields to reflect the reverted state of the note
         // Currently for testing
-        if (current_note != null) {
-            noteTitleF.setText(current_note.getTitle()); // Update title field
-            noteBodyF.setText(current_note.getBody());// Update body field
-            String title = "<h1>" + renderer.render(parser.parse(current_note.getTitle())) + "</h1>";
-            String titleAndContent = title + current_note.getBody();
+        if (currentNote != null) {
+            noteTitleF.setText(currentNote.getTitle()); // Update title field
+            noteBodyF.setText(currentNote.getBody());// Update body field
+            String title = "<h1>" + renderer.render(parser.parse(currentNote.getTitle())) + "</h1>";
+            String titleAndContent = title + currentNote.getBody();
             markDownOutput.getEngine().loadContent(titleAndContent);
         }
     }
@@ -1277,7 +1277,7 @@ public class HomeScreenCtrl {
                     }
                     else {
                         // If not duplicate, update title and sync with the server (Invoke command for editing title)
-                        Command editTitleCommand = new EditTitleCommand( current_note,originalTitle, newTitle,HomeScreenCtrl.this);
+                        Command editTitleCommand = new EditTitleCommand( currentNote,originalTitle, newTitle,HomeScreenCtrl.this);
                         invoker.executeCommand(editTitleCommand);
                         originalTitle = newTitle;
                     }
