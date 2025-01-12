@@ -6,16 +6,16 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-public class ImageTest {
-    private Image image1;
-    private Image image2;
+public class ImagesTest {
+    private Images image1;
+    private Images image2;
     private Note note;
 
     @BeforeEach
     public void setUp() {
         note = new Note("Title 2", "Test Content 2", new Collection());
-        image1 = new Image(0L, "name", new byte[]{0, 0, 0}, note);
-        image2 = new Image(0L, "name", new byte[]{0, 0, 0}, note);
+        image1 = new Images(0L, "name", new byte[]{0, 0, 0}, note);
+        image2 = new Images(0L, "name", new byte[]{0, 0, 0}, note);
     }
 
     @Test

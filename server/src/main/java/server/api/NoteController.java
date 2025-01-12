@@ -6,10 +6,7 @@ import commons.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import server.database.CollectionRepository;
-import server.database.NoteRepository;
-import server.database.ServerRepository;
-import server.database.TagRepository;
+import server.database.*;
 
 import java.util.HashSet;
 import java.util.List;

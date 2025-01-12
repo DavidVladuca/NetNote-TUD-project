@@ -12,6 +12,7 @@ import commons.LanguageOptions;
 import commons.Note;
 import commons.Server;
 import commons.Tag;
+import commons.Images;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MediaType;
@@ -53,6 +54,7 @@ import org.commonmark.renderer.html.HtmlRenderer;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -1668,9 +1670,55 @@ public class HomeScreenCtrl {
         File file = fileChooser.showOpenDialog(uploadImageB.getScene().getWindow());
 
         if (file != null) {
-            imageListView.getItems().add(file.getName());
+            try {
+                byte[] imageData = Files.readAllBytes(file.toPath());
+
+                Images image = new Images(
+                        null,
+                        file.getName(),
+                        imageData,
+                        currentNote
+                );
+
+                imageListView.getItems().add(file.getName());
+
+                saveImageToServer(image);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
         }
     }
+
+    public Images saveImageToServer(final Images image) throws IOException {
+        if (currentNote == null) {
+            throw new IllegalStateException("Current note or note ID is not set");
+        }
+
+        // Convert the image object to JSON
+        var json = new ObjectMapper().writeValueAsString(image);
+        var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
+
+        // Construct the URL with the noteId
+        String url = "http://localhost:8080/api/images/" + currentNote.getNoteId() + "/addImage";
+
+        // Send a POST request to the server
+        try (var response = ClientBuilder.newClient()
+                .target(url)
+                .request(MediaType.APPLICATION_JSON)
+                .post(requestBody)) {
+
+            if (response.getStatus() == Response.Status.CREATED.getStatusCode()) {
+                System.out.println("Image saved successfully");
+                return response.readEntity(Images.class);
+            } else if (response.getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
+                throw new IOException("Server returned 404: Note not found");
+            } else {
+                throw new IOException("Server returned status: " + response.getStatus());
+            }
+        }
+    }
+
 }
 
 

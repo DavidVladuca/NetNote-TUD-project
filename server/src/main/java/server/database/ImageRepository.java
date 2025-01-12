@@ -1,8 +1,13 @@
 package server.database;
 
-import commons.Image;
+import commons.Images;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface ImageRepository extends JpaRepository<Image, Long> {
+import java.util.List;
+
+@Repository
+public interface ImageRepository extends JpaRepository<Images, Long> {
+    List<Images> findAllByNote_NoteId(Long noteId);
     //empty
 }

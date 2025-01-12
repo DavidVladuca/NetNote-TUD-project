@@ -6,7 +6,7 @@ import java.util.Arrays;
 
 
 @Entity
-public class Image {
+public class Images {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -23,7 +23,7 @@ public class Image {
     /**
      * Default Constructor
      */
-    public Image() {};
+    public Images() {};
 
     /**
      * Constructor with parameters
@@ -32,7 +32,7 @@ public class Image {
      * @param data
      * @param note
      */
-    public Image(Long id, String name, byte[] data, Note note) {
+    public Images(Long id, String name, byte[] data, Note note) {
         this.id = id;
         this.name = name;
         this.data = data;
@@ -112,7 +112,7 @@ public class Image {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Image image = (Image) o;
+        Images image = (Images) o;
         return this.id == image.getId();
     }
 
