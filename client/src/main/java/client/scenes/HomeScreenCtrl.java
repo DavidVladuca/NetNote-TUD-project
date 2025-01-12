@@ -42,12 +42,15 @@ import javafx.scene.text.Text;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.WebView;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.Pair;
 import javafx.util.StringConverter;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
+
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -307,7 +310,14 @@ public class HomeScreenCtrl {
      */
     private final ObservableList<Note> notes = FXCollections
             .observableArrayList();
-
+    /**
+     * Button that allows for selection of images
+     */
+    public Button uploadImageB;
+    /**
+     * Provides list of uploaded images on bottom of the screen
+     */
+    public ListView<String> imageListView;
     /**
      * Scheduler for the executor.
      */
@@ -1640,6 +1650,25 @@ public class HomeScreenCtrl {
         } else {
             currentSearchIndex = 0;
             searchNote();
+        }
+    }
+
+    /**
+     * Allows for the selection of a file, and displays the name in a list view
+     */
+    @FXML
+    public void uploadImage() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select file");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("All Files", "*.*"),
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
+        );
+
+        File file = fileChooser.showOpenDialog(uploadImageB.getScene().getWindow());
+
+        if (file != null) {
+            imageListView.getItems().add(file.getName());
         }
     }
 }
