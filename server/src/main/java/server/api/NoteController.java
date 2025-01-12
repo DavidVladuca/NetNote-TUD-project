@@ -120,6 +120,12 @@ public class NoteController {
         }
     }
 
+    /**
+     * Update all the references from notes when the title of the referenced
+     * note was changed
+     * @param oldTitle - the original title
+     * @param newTitle - the new title
+     */
     private void updateReferences(String oldTitle, String newTitle) {
         System.out.println("Starting reference update: [" + oldTitle + "] -> [" + newTitle + "]");
         List<Note> allNotes = noteRepository.findAll();
