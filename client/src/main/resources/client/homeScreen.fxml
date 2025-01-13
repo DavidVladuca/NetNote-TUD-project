@@ -39,6 +39,19 @@
             </VBox>
             <VBox prefHeight="510.0" prefWidth="531.0" styleClass="bordered" stylesheets="@../css/style.css">
                <children>
+
+                  <HBox spacing="10.0" style="-fx-padding: 5; -fx-background-color: white; -fx-background-radius: 5;" alignment="CENTER_LEFT">
+                     <!-- Scrollable Tag Box -->
+                     <ScrollPane fx:id="tagsScrollPane" prefHeight="50.0" prefWidth="400.0" fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" style="-fx-background: white; -fx-border-color: transparent;">
+                        <content>
+                           <HBox fx:id="selectedTagsContainer" spacing="5.0" />
+                        </content>
+                     </ScrollPane>
+
+                     <!-- Clear Tags Button -->
+                     <Button fx:id="clearTagsB" text="Clear Tags" onAction="#clearTags" style="-fx-background-color: #e43e38; -fx-text-fill: white; -fx-background-radius: 5;" />
+                  </HBox>
+
                   <TextField fx:id="noteTitleF" promptText="%Untitled">
                      <font>
                         <Font name="Plus Jakarta Sans Regular" size="12.0" />
