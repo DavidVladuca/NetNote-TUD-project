@@ -2,7 +2,7 @@
 | --- |-----------------------------------------------------------------------------------------------------|
 | Date : | 15.01.2025                                                                                          |
 | Time : | 15:30-16:30                                                                                         | 
-| Location : | Online                                                                                              |
+| Location : | Drebbelweg Cubicle 9                                                                                              |
 | Chair | Andrei Tudor                                                                                        |
 | Minute Taker | David Vladuca                                                                                       |
 | Attendees : | David Vladuca, Andrei Tudor, Mario Gonzalez Piniero, Lachezar Marinov, Tom Holinka, James Sylwester |
