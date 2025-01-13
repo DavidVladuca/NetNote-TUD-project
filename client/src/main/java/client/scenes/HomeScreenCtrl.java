@@ -83,7 +83,7 @@ public class HomeScreenCtrl {
     /**
      * controller for the main screen.
      */
-    private final ScreenCtrl sc;
+    private ScreenCtrl sc;
 
     /**
      * connector for the server.
@@ -123,6 +123,14 @@ public class HomeScreenCtrl {
                 editCollection.getValue());
         showHome();
         localPrimaryStage.show();
+    }
+
+    /**
+     * Sets the ScreenCtrl instance for managing scene transitions.
+     * @param screenCtrl - the ScreenCtrl instance to be assigned
+     */
+    public void setScreenCtrl(ScreenCtrl screenCtrl) {
+        this.sc = screenCtrl;
     }
 
     /**
