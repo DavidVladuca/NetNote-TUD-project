@@ -11,6 +11,7 @@ import commons.LanguageOptions;
 import commons.Note;
 import commons.Server;
 import commons.Tag;
+import commons.Images;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MediaType;
@@ -55,6 +56,7 @@ import org.commonmark.renderer.html.HtmlRenderer;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -105,9 +107,10 @@ public class HomeScreenCtrl {
 
     /**
      * Initializes the whole scene.
+     *
      * @param localPrimaryStage - main stage to be used
-     * @param home - home screen controller
-     * @param editCollection - edit collections controller
+     * @param home              - home screen controller
+     * @param editCollection    - edit collections controller
      */
 
     public void init(
@@ -153,7 +156,7 @@ public class HomeScreenCtrl {
 
     /**
      * Constructor for the home screen controller.
-     * @param localScene - scene used
+     * @param localScene       - scene used
      * @param localServerUtils - server to be used
      */
     @Inject
@@ -262,7 +265,7 @@ public class HomeScreenCtrl {
     /**
      * Collection text field in the scene.
      */
-    private  ArrayList<Long> noteMatchIndices;
+    private ArrayList<Long> noteMatchIndices;
 
     /**
      * IDK TBH - todo.
@@ -373,9 +376,6 @@ public class HomeScreenCtrl {
      * Body of note in last sync to server.
      */
     private String lastSyncedBody = "";
-
-
-
 
 
     /**
@@ -835,6 +835,7 @@ public class HomeScreenCtrl {
 
     /**
      * This method is calling the keyboard shortcuts
+     *
      * @param event - the key being pressed
      */
     private void handleKeyboardShortcuts(KeyEvent event) {
@@ -846,6 +847,7 @@ public class HomeScreenCtrl {
 
     /**
      * This method is calling the keyboard shortcuts for add and delete and specifies them
+     *
      * @param event - the key being pressed
      */
     private void handleAddDeleteShortcuts(KeyEvent event) {
@@ -868,6 +870,7 @@ public class HomeScreenCtrl {
     /**
      * This method is calling the keyboard shortcuts for navigation such as ESC to search,
      * note search, show shortcuts, etc.
+     *
      * @param event - the key being pressed
      */
     private void handleNavigationShortcuts(KeyEvent event) {
@@ -879,8 +882,8 @@ public class HomeScreenCtrl {
             event.consume();
         }
         // ESC sets the focus to collection search
-        if(event.getCode() == KeyCode.ESCAPE) {
-            if(searchCollectionF.isFocused()) {
+        if (event.getCode() == KeyCode.ESCAPE) {
+            if (searchCollectionF.isFocused()) {
                 notesListView.requestFocus();
                 event.consume();
             } else {
@@ -889,7 +892,7 @@ public class HomeScreenCtrl {
             }
         }
         // Ctrl + F to search in a note
-        if(event.isControlDown()
+        if (event.isControlDown()
                 && event.getCode() == KeyCode.F) {
             searchNoteF.requestFocus();
             event.consume();
@@ -899,28 +902,29 @@ public class HomeScreenCtrl {
     /**
      * This method is calling the keyboard shortcuts for utilities,
      * such as undo, refresh, tags, etc.
+     *
      * @param event - the key being pressed
      */
     private void handleUtilityShortcuts(KeyEvent event) {
         // Ctrl + Z for undo
-        if(event.isControlDown()
+        if (event.isControlDown()
                 && event.getCode() == KeyCode.Z) {
             undo();
             event.consume();
         }
         // F5 for refresh
-        if(event.getCode() == KeyCode.F5) {
+        if (event.getCode() == KeyCode.F5) {
             refresh();
             event.consume();
         }
         // Shift + T to open up the tags edit
-        if(event.isShiftDown()
+        if (event.isShiftDown()
                 && event.getCode() == KeyCode.T) {
             handleTagsButtonAction();
             event.consume();
         }
         // Shift + E to open up edit collections
-        if(event.isShiftDown() && event.getCode() == KeyCode.E) {
+        if (event.isShiftDown() && event.getCode() == KeyCode.E) {
             editCollections();
             event.consume();
         }
@@ -929,18 +933,19 @@ public class HomeScreenCtrl {
     /**
      * This method is calling the keyboard shortcuts for focus,
      * so to open collection choice box and language combo box
+     *
      * @param event - the key being pressed
      */
     private void handleChoiceShortcuts(KeyEvent event) {
         // Shift + L to open up language combo box
-        if(event.isShiftDown()
+        if (event.isShiftDown()
                 && event.getCode() == KeyCode.L) {
             selectLangBox.requestFocus();
             selectLangBox.show();
             event.consume();
         }
         // Shift + C to open up collection choice box
-        if(event.isShiftDown()
+        if (event.isShiftDown()
                 && event.getCode() == KeyCode.C) {
             selectCollectionBox.requestFocus();
             selectCollectionBox.show();
@@ -1023,6 +1028,7 @@ public class HomeScreenCtrl {
 
     /**
      * This method ensures the syncing with the server (database).
+     *
      * @param note - note provided - in syncIfChanged method to be specific
      */
     public void syncNoteWithServer(final Note note) {
@@ -1100,7 +1106,7 @@ public class HomeScreenCtrl {
                 // Add the fetched notes to the ObservableList
                 notes.clear(); // Clear existing notes
                 notes.addAll(fetchedNotes);
-                for (Note note:fetchedNotes) {
+                for (Note note : fetchedNotes) {
                     currentCollection.addNote(note);
                 }
             } else {
@@ -1143,15 +1149,15 @@ public class HomeScreenCtrl {
         notesListView.getSelectionModel()
                 .selectedItemProperty()
                 .addListener((obs, oldNote, newNote) -> {
-            if (newNote != null) {
-                currentNote = newNote;
-                //change the output in the front-end for title and body
-                noteTitleF.setText(newNote.getTitle());
-                noteBodyF.setText(newNote.getBody());
-
-                Platform.runLater(() -> notesListView.getSelectionModel());
-            }
-        });
+                    if (newNote != null) {
+                        currentNote = newNote;
+                        //change the output in the front-end for title and body
+                        noteTitleF.setText(newNote.getTitle());
+                        noteBodyF.setText(newNote.getBody());
+                        loadImagesForCurrentNote();
+                        Platform.runLater(() -> notesListView.getSelectionModel());
+                    }
+                });
     }
 
     /**
@@ -1355,9 +1361,9 @@ public class HomeScreenCtrl {
         });
     }
 
-
     /**
      * Utility function used to locate resources within applications filepath.
+     *
      * @param path - path of the scene
      * @return - returns the URL for that particular scene
      */
@@ -1392,6 +1398,7 @@ public class HomeScreenCtrl {
 
     /**
      * Method to add a new note.
+     *
      * @param newNote - note to be added
      * @throws IOException - exception that will occur if server error
      */
@@ -1414,6 +1421,7 @@ public class HomeScreenCtrl {
      * It is very similar to addRequest method, however I needed to
      * return a new Note object
      * for the unique ID
+     *
      * @param note - note provided
      * @return a Note that was saved with a unique id
      */
@@ -1438,6 +1446,7 @@ public class HomeScreenCtrl {
 
     /**
      * Sends request to the server to add a note with a provided Note.
+     *
      * @param note - Note
      */
     public void addRequest(final Note note) {
@@ -1506,6 +1515,7 @@ public class HomeScreenCtrl {
 
     /**
      * Deletes note.
+     *
      * @param noteId - ID of note to be deleted
      */
     public void deleteCommand(final long noteId) {
@@ -1533,6 +1543,7 @@ public class HomeScreenCtrl {
 
     /**
      * Sends request to the server to delete a note by a provided ID.
+     *
      * @param noteId - ID of the note to be deleted
      */
     public static void deleteRequest(final long noteId) {
@@ -1632,9 +1643,10 @@ public class HomeScreenCtrl {
     /**
      * This method calls the noteValidator class and validates the
      * title with server.
+     *
      * @param collectionId - id of the collection that is the note
      *                     associated with
-     * @param newTitle - the title to be checked
+     * @param newTitle     - the title to be checked
      * @return true if it is a duplicate, false if it is not
      * @throws IOException when it returns something else then 200/409 code
      */
@@ -1783,7 +1795,7 @@ public class HomeScreenCtrl {
                 }
             }
         }
-        titleHighlighted  = "<h1>"
+        titleHighlighted = "<h1>"
                 + renderer.render(parser.parse(titleHighlighted))
                 + "</h1>";
         bodyHighlighted = renderer.render(parser.parse(bodyHighlighted));
@@ -1824,6 +1836,7 @@ public class HomeScreenCtrl {
 
     /**
      * Sets up the languages (adds them to the collection box).
+     *
      * @noinspection checkstyle:MagicNumber
      */
     public void setUpLanguages() {
@@ -1958,6 +1971,7 @@ public class HomeScreenCtrl {
             searchNote();
         }
     }
+
     /**
      * Highlights the next match of the note search.
      */
@@ -1990,8 +2004,113 @@ public class HomeScreenCtrl {
         File file = fileChooser.showOpenDialog(uploadImageB.getScene().getWindow());
 
         if (file != null) {
-            imageListView.getItems().add(file.getName());
+            try {
+                byte[] imageData = Files.readAllBytes(file.toPath());
+
+                Images image = new Images(
+                        null,
+                        file.getName(),
+                        imageData,
+                        currentNote
+                );
+
+                imageListView.getItems().add(file.getName());
+
+                saveImageToServer(image);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
         }
+    }
+
+    /**
+     * Saves images to the server
+     * @param image
+     * @return Images object
+     * @throws IOException
+     */
+    public Images saveImageToServer(final Images image) throws IOException {
+        if (currentNote == null) {
+            throw new IllegalStateException("Current note or note ID is not set");
+        }
+
+        // Convert the image object to JSON
+        var json = new ObjectMapper().writeValueAsString(image);
+        var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
+
+        // Construct the URL with the noteId
+        String url = "http://localhost:8080/api/images/" + currentNote.getNoteId() + "/addImage";
+
+        // Send a POST request to the server
+        try (var response = ClientBuilder.newClient()
+                .target(url)
+                .request(MediaType.APPLICATION_JSON)
+                .post(requestBody)) {
+
+            if (response.getStatus() == Response.Status.CREATED.getStatusCode()) {
+                System.out.println("Image saved successfully");
+                return response.readEntity(Images.class);
+            } else if (response.getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
+                throw new IOException("Server returned 404: Note not found");
+            } else {
+                throw new IOException("Server returned status: " + response.getStatus());
+            }
+        }
+    }
+
+    /**
+     * Fetches the notes images from the server
+     * @return List of image names
+     */
+    public List<Images> fetchImagesForNote() {
+        if (currentNote == null) {
+            throw new IllegalStateException("Current note or note ID is not set");
+        }
+
+        String url = "http://localhost:8080/api/images/" + currentNote.getNoteId() + "/allImages";
+
+        try (var response = ClientBuilder.newClient()
+                .target(url)
+                .request(MediaType.APPLICATION_JSON)
+                .get()) {
+
+            if (response.getStatus() == Response.Status.OK.getStatusCode()) {
+                // Parse the JSON response
+                String json = response.readEntity(String.class);
+                ObjectMapper mapper = new ObjectMapper();
+                return mapper.readValue(json,
+                        mapper.getTypeFactory().constructCollectionType(List.class, Images.class));
+            } else if (response.getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
+                System.err.println("No images found for note: " + currentNote.getNoteId());
+                return List.of(); // Return empty list
+            } else {
+                throw new IOException("Failed to fetch images. Server returned status: " + response.getStatus());
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching images: " + e.getMessage());
+            return List.of(); // Return empty list in case of failure
+        }
+    }
+
+    /**
+     * Loads the images from the server onto the note's listview
+     */
+    @FXML
+    public void loadImagesForCurrentNote() {
+        if (currentNote == null) {
+            System.err.println("No note selected. Cannot load images.");
+            return;
+        }
+
+        List<Images> images = fetchImagesForNote();
+        Platform.runLater(() -> {
+            imageListView.getItems().clear(); // Clear existing items
+            for (Images image : images) {
+                imageListView.getItems().add(image.getName());
+            }
+            System.out.println("Loaded " + images.size() + " images for note: " + currentNote.getTitle());
+        });
     }
 }
 
