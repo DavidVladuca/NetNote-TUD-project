@@ -9,7 +9,7 @@ public class EditCollectionsViewCtrl {
     /**
      * The main screen to be shown.
      */
-    private final ScreenCtrl sc;
+    private ScreenCtrl sc;
 
     /**
      * Button to add a collection.
@@ -95,5 +95,13 @@ public class EditCollectionsViewCtrl {
     @Inject
     public EditCollectionsViewCtrl(final ScreenCtrl screen) {
         this.sc = screen;
+    }
+
+    /**
+     * Sets the ScreenCtrl instance for managing scene transitions.
+     * @param screenCtrl - the ScreenCtrl instance to be assigned
+     */
+    public void setScreenCtrl(ScreenCtrl screenCtrl) {
+        this.sc = screenCtrl;
     }
 }
