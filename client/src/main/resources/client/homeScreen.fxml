@@ -40,16 +40,16 @@
             <VBox prefHeight="510.0" prefWidth="531.0" styleClass="bordered" stylesheets="@../css/style.css">
                <children>
 
-                  <HBox spacing="10.0" style="-fx-padding: 5; -fx-background-color: white; -fx-background-radius: 5;" alignment="CENTER_LEFT">
+                  <HBox alignment="CENTER_LEFT" spacing="10.0" style="-fx-padding: 5; -fx-background-color: white; -fx-background-radius: 5;">
                      <!-- Scrollable Tag Box -->
-                     <ScrollPane fx:id="tagsScrollPane" prefHeight="50.0" prefWidth="400.0" fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" style="-fx-background: white; -fx-border-color: transparent;">
+                     <ScrollPane fx:id="tagsScrollPane" fitToWidth="true" hbarPolicy="NEVER" prefHeight="50.0" prefWidth="400.0" style="-fx-background: white; -fx-border-color: transparent;" vbarPolicy="AS_NEEDED">
                         <content>
                            <HBox fx:id="selectedTagsContainer" spacing="5.0" />
                         </content>
                      </ScrollPane>
 
                      <!-- Clear Tags Button -->
-                     <Button fx:id="clearTagsB" text="Clear Tags" onAction="#clearTags" style="-fx-background-color: #e43e38; -fx-text-fill: white; -fx-background-radius: 5;" />
+                     <Button fx:id="clearTagsB" onAction="#clearTags" style="-fx-background-color: #e43e38; -fx-text-fill: white; -fx-background-radius: 5;" text="Clear Tags" />
                   </HBox>
 
                   <TextField fx:id="noteTitleF" promptText="%Untitled">
@@ -59,8 +59,8 @@
                   <TextArea fx:id="noteBodyF" prefHeight="500.0" prefWidth="522.0" promptText="%Text_Area" stylesheets="@../css/style.css" />
                   <Pane prefHeight="137.0" prefWidth="502.0">
                      <children>
-                        <Button fx:id="uploadImageB" layoutX="417.0" layoutY="13.0" minWidth="53.0" mnemonicParsing="false" onAction="#uploadImage" prefHeight="44.0" prefWidth="78.0" text="Upload" />
-                        <ListView fx:id="imageListView" layoutX="14.0" layoutY="13.0" orientation="HORIZONTAL" prefHeight="44.0" prefWidth="392.0" />
+                        <Button fx:id="uploadImageB" layoutX="425.0" layoutY="6.0" minWidth="53.0" mnemonicParsing="false" onAction="#uploadImage" prefHeight="44.0" prefWidth="78.0" style="-fx-background-color: #e43e38;" text="Upload" textFill="WHITE" />
+                        <ListView fx:id="imageListView" layoutX="18.0" layoutY="6.0" orientation="HORIZONTAL" prefHeight="44.0" prefWidth="392.0" />
                      </children>
                   </Pane>
                </children>
