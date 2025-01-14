@@ -15,6 +15,8 @@ public class Server {
     @JsonManagedReference
     private List<Collection> collections;
 
+    private String URL = "localhost:8080";
+
     // Default constructor for JPA
     public Server() {
         this.collections = new ArrayList<>();
@@ -26,6 +28,14 @@ public class Server {
      */
     public long getServerId() {
         return serverId;
+    }
+
+    public String getURL() {
+        return URL;
+    }
+
+    public void setURL(String URL) {
+        this.URL = URL;
     }
 
     /**

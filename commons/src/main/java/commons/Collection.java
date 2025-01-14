@@ -21,6 +21,9 @@ public class Collection {
     @Column(nullable = false) // Ensure that the title is mandatory in the database
     private String collectionTitle;
 
+    @Column(nullable = false)
+    private String collectionPath;
+
     @OneToMany(mappedBy = "collection", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @JsonManagedReference
     private List<Note> notes;
@@ -35,11 +38,21 @@ public class Collection {
      *
      * @param server - The server associated with the collection.
      * @param collectionTitle - The title of the collection.
+     * @param collectionPath - The path in the URL for the collection
      */
-    public Collection(Server server, String collectionTitle) {
+    public Collection(Server server, String collectionTitle, String collectionPath) {
         this.server = server;
         this.collectionTitle = collectionTitle;
+        this.collectionPath = collectionPath;
         this.notes = new ArrayList<>();
+    }
+
+    public String getCollectionPath() {
+        return collectionPath;
+    }
+
+    public void setCollectionPath(String collectionPath) {
+        this.collectionPath = collectionPath;
     }
 
     /**
