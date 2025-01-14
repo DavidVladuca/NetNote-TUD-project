@@ -10,6 +10,10 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.*;
+import javafx.scene.control.Alert.AlertType;
+
+import java.util.Optional;
 
 public class EditCollectionsViewCtrl {
     /**
@@ -17,7 +21,7 @@ public class EditCollectionsViewCtrl {
      */
     private ScreenCtrl sc;
 
-    private HomeScreenCtrl homeScreenCtrl;
+    private final HomeScreenCtrl homeScreenCtrl;
 
     /**
      * Button to add a collection.
@@ -77,6 +81,9 @@ public class EditCollectionsViewCtrl {
         setupCollectionsListView();
     }
 
+    /**
+     * Sets up the ListView in the front-end
+     */
     private void setupCollectionsListView() {
         // Bind the ObservableList to the ListView
         collectionsListView.setItems(collections);
@@ -108,7 +115,11 @@ public class EditCollectionsViewCtrl {
      */
     public void save() {
         //todo - implement save
+
+//        homeScreenCtrl.loadCollectionsFromServer();
+//        homeScreenCtrl.setUpCollections();
         System.out.println("Saving");
+
         sc.showHome();
     }
     /**
@@ -119,7 +130,7 @@ public class EditCollectionsViewCtrl {
         if (collectionTitle == null || collectionTitle.isEmpty()) {
             System.err.println("No collection selected to set as default."); // TODO: implement pop-up
         } else {
-
+            // TODO: implement functionality
         }
     }
     /**
@@ -132,8 +143,60 @@ public class EditCollectionsViewCtrl {
      * Deletes a collection.
      */
     public void deleteCollection() {
+        Collection selectedCollection = collectionsListView.getSelectionModel().getSelectedItem();
 
+        if (selectedCollection == null) {
+            showAlert(AlertType.WARNING, "No Selection", "Please select a collection to delete.");
+            System.err.println("No collection selected to delete."); //testing
+            return;
+        }
+
+        // Pop-up for the confirmation of deletion
+        Alert confirmationAlert = new Alert(AlertType.CONFIRMATION);
+        confirmationAlert.setTitle("Delete Confirmation");
+        confirmationAlert.setHeaderText("Are you sure?");
+        confirmationAlert.setContentText("Are you sure you want to delete the collection: "
+                + selectedCollection.getCollectionTitle() + "?");
+
+        // Wait for the user's response
+        Optional<ButtonType> result = confirmationAlert.showAndWait();
+
+        // If the user accepts the pop-up
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            try {
+                HomeScreenCtrl.deleteCollectionFromServer(selectedCollection.getCollectionId());
+
+                Platform.runLater(() -> {
+                    collections.remove(selectedCollection);
+                    collectionsListView.getSelectionModel().clearSelection();
+                });
+
+                showAlert(AlertType.INFORMATION, "Delete Successful", "Collection deleted successfully.");
+                System.out.println("Collection deleted: " + selectedCollection.getCollectionTitle()); //testing
+            } catch (Exception e) {
+                System.err.println("Error while deleting collection: " + e.getMessage());
+                e.printStackTrace();
+            }
+        } else {
+            // If the user cancels, no action is taken
+            System.out.println("Deletion cancelled by the user.");
+        }
     }
+
+    /**
+     * Shows an alert dialog.
+     * @param alertType the type of alert (e.g., INFORMATION, ERROR)
+     * @param title     the title of the alert
+     * @param message   the message to display
+     */
+    private void showAlert(AlertType alertType, String title, String message) {
+        Alert alert = new Alert(alertType);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
     /**
      * IDK - todo.
      */

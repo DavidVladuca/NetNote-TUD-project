@@ -55,7 +55,11 @@ import org.commonmark.renderer.html.HtmlRenderer;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -590,6 +594,28 @@ public class HomeScreenCtrl {
         }
     }
 
+    /**
+     * Sends a request to the server to delete a collection by a provided ID.
+     * @param collectionId - ID of the collection to be deleted
+     */
+    public static void deleteCollectionFromServer(long collectionId) {
+        Response response = ClientBuilder.newClient()
+                // Endpoint for deletion
+                .target("http://localhost:8080/api/collections/delete/" + collectionId)
+                .request()
+                .delete();
+        if (response.getStatus() == Response.Status.NO_CONTENT.getStatusCode()) {
+            System.out.println("Collection successfully deleted.");
+        } else if (response.getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
+            System.out.println("Collection not found.");
+        } else {
+            System.out.println("Failed to delete collection. Status: " + response.getStatus());
+        }
+        response.close();
+    }
+
+
+
     private void loadTagsFromServer() {
         try (var response = ClientBuilder.newClient()
                 .target("http://localhost:8080/api/tags")
@@ -1116,6 +1142,9 @@ public class HomeScreenCtrl {
         }
     }
 
+    /**
+     * Sets up the ListView in the front-end
+     */
     private void setupNotesListView() {
         // Binding the ObservableList to the ListView
         notesListView.setItems(notes);

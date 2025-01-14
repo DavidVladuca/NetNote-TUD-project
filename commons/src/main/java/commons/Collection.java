@@ -12,7 +12,7 @@ public class Collection {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long collectionId;
-    private long latestNoteId = -1;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "server_id", nullable = false) // Foreign key to Server
     @JsonBackReference
@@ -21,8 +21,8 @@ public class Collection {
     @Column(nullable = false) // Ensure that the title is mandatory in the database
     private String collectionTitle;
 
-    @Column(nullable = false)
-    private String collectionPath;
+    @Column(name = "collection_path", nullable = false)
+    private String collectionPath="-";
 
     @OneToMany(mappedBy = "collection", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @JsonManagedReference
@@ -32,6 +32,8 @@ public class Collection {
     public Collection() {
         this.notes = new ArrayList<>();
     }
+
+    private long latestNoteId = -1;
 
     /**
      * Constructor for creating a new Collection instance.

@@ -85,4 +85,24 @@ public class CollectionController {
         return collectionRepository.findAll();
     }
 
+    /**
+     * Endpoint for deleting a collection by ID
+     * @param id - ID of the collection to delete
+     * @return - ResponseEntity indicating success or failure
+     */
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<Void> deleteCollection(@PathVariable Long id) {
+        if (id <= 0) {
+            return ResponseEntity.badRequest().build(); // Invalid ID
+        }
+
+        // Check if the collection exists
+        if (!collectionRepository.existsById(id)) {
+            return ResponseEntity.notFound().build(); // Collection not found
+        }
+
+        // Delete the collection
+        collectionRepository.deleteById(id);
+        return ResponseEntity.noContent().build(); // Return 204 No Content on successful deletion
+    }
 }
