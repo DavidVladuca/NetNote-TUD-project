@@ -53,8 +53,7 @@ import netscape.javascript.JSObject;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -383,13 +382,14 @@ public class HomeScreenCtrl {
      * based on other methods it calls
      */
     @FXML
-    public void initialize() {
+    public void initialize() throws IOException {
         final int period = 5;
         keyboardShortcuts();
         arrowKeyShortcuts();
         scheduler.scheduleAtFixedRate(
                 this::syncIfChanged, 0, period, TimeUnit.SECONDS);
         setUpLanguages();
+        loadSavedLanguageChoice();
         loadCollectionsFromServer();
         setUpCollections();
         markDownTitle();
@@ -557,6 +557,8 @@ public class HomeScreenCtrl {
             notes.setAll(selectedCollection.getNotes());
         }
     }
+
+
 
     /**
      * Fetches collections from the server and stores them locally
@@ -1458,7 +1460,9 @@ public class HomeScreenCtrl {
                 .post(requestBody)) {
 
             if (response.getStatus() == creationSuccessfulCode) {
-                return response.readEntity(Note.class);
+                Note addedNote = response.readEntity(Note.class);
+                note.setNoteId(addedNote.getNoteId());
+                return addedNote;
             } else {
                 throw new IOException(
                         "Server returned status: " + response.getStatus());
@@ -1954,6 +1958,11 @@ public class HomeScreenCtrl {
                 .selectedItemProperty()
                 .addListener((obs, oldLang, newLang) -> {
                     if (!newLang.equals(oldLang)) {
+                        try {
+                            saveLanguageChoice(newLang);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                         System.out.println(selectLangBox.getValue().getAbbr());
                         locale = switch (selectLangBox.getValue().getAbbr()) {
                             case "ES" -> Locale.of("es", "ES");
@@ -1976,6 +1985,45 @@ public class HomeScreenCtrl {
                     }
                 });
 
+    }
+
+    /**
+     * This method saves the selected language to a config file
+     * @param languageToSave - language to be saved
+     */
+    private void saveLanguageChoice(Language languageToSave) throws IOException {
+        File languageFile = new File("language-choice.txt");
+        if(!languageFile.exists()) {
+            languageFile.createNewFile();
+        }
+        try(FileWriter fw = new FileWriter(languageFile)) {
+            fw.write(languageToSave.getAbbr());
+        }
+    }
+
+    /**
+     * This method loads the language that is stored in the file
+     * @throws IOException - when something messes up
+     */
+    private void loadSavedLanguageChoice() throws IOException {
+        File languageFile = new File("language-choice.txt");
+        if(languageFile.exists()) {
+            try(BufferedReader br = new BufferedReader(new FileReader(languageFile))) {
+                String savedLanguageAbbr = br.readLine();
+                for(Language language : selectLangBox.getItems()) {
+                    if(language.getAbbr().equals(savedLanguageAbbr)) {
+                        selectLangBox.setValue(language);
+                        locale = switch (language.getAbbr()) {
+                            case "ES" -> Locale.of("es", "ES");
+                            case "NL" -> Locale.of("nl", "NL");
+                            case "ZZ" -> Locale.of("zz", "ZZ");
+                            default -> Locale.of("en", "US");
+                        };
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     /**

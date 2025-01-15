@@ -8,6 +8,7 @@ import com.google.inject.Injector;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.util.Pair;
 
@@ -25,6 +26,8 @@ public class Scene extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        primaryStage.getIcons().add(new Image("/icons/icon.png"));
+
         locale = Locale.of("en", "US");
         ResourceBundle bundle = ResourceBundle.getBundle("MyBundle", locale);
 
