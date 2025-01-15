@@ -28,6 +28,7 @@ public class EditBodyCommand implements Command {
     @Override
     public void execute() {
         note.setBody(newBody);
+        controller.syncNoteWithServer(note);
     }
 
     /**

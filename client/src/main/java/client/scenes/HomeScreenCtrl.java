@@ -262,11 +262,7 @@ public class HomeScreenCtrl {
      * Invoker for keeping history of commands and executing them.
      */
     private final CommandInvoker invoker = new CommandInvoker();
-    /**
-     * Keeps track of last note deleted.
-     * It is useful for the undo button.
-     */
-    private Note lastDeletedNote = null;
+
     /**
      * Button to show tags scene.
      */
@@ -346,7 +342,14 @@ public class HomeScreenCtrl {
      * Boolean that determines whether title is in progress or not.
      */
     private boolean isTitleEditInProgress = false;
-
+    /**
+     * The original body, prior to the change.
+     */
+    private String originalBody;
+    /**
+     * Boolean that determines whether body is in progress or not.
+     */
+    private boolean isBodyEditInProgress = false;
     /**
      * Title of note in last sync to server.
      */
@@ -378,6 +381,7 @@ public class HomeScreenCtrl {
         setupNotesListView();
         setupImageListView();
         loadTagsFromServer();
+        handleBodyEdits();
         handleTitleEdits();
         prevMatch();
         nextMatch();
@@ -404,12 +408,48 @@ public class HomeScreenCtrl {
     }
 
     /**
+     * Method to handle body edits.
+     */
+    private void handleBodyEdits() {
+        // Listener for when a new note is selected in the ListView
+        notesListView.getSelectionModel()
+                .selectedItemProperty()
+                .addListener((observable, oldValue, newValue) -> {
+                    if (newValue != null) {
+                        originalBody = newValue.getBody();
+                        noteBodyF.setText(originalBody);
+                        // Reset the flag when use selects a note
+                        isBodyEditInProgress = false;
+                    }
+                });
+
+        // Listener for when the body field loses focus
+        noteBodyF.focusedProperty()
+                .addListener((observable, oldValue, newValue) -> {
+                    // Save the body only if edits are in progress
+                    if (!newValue && isBodyEditInProgress) {
+                        bodyEdit();
+                    }
+                });
+
+        // Listener for text changes in the body field
+        noteBodyF.textProperty()
+                .addListener((observable, oldValue, newValue) -> {
+                    // Detect if the body is being edited
+                    if (!newValue.equals(currentNote.getBody())) {
+                        isBodyEditInProgress = true;
+                    }
+                });
+    }
+
+    /**
      * Method to handle title edits.
      */
     private void handleTitleEdits() {
         notesListView.getSelectionModel()
                 .selectedItemProperty()
                 .addListener((observable, oldValue, newValue) -> {
+
                     if (newValue != null) {
                         originalTitle = newValue.getTitle();
                         noteTitleF.setText(originalTitle);
@@ -426,8 +466,7 @@ public class HomeScreenCtrl {
                     }
                 });
 
-        noteTitleF
-                .textProperty()
+        noteTitleF.textProperty()
                 .addListener((observable, oldValue, newValue) -> {
                     if (!newValue.equals(originalTitle)) {
                         isTitleEditInProgress = true; // Title is being edited
@@ -1517,14 +1556,7 @@ public class HomeScreenCtrl {
                 // Create a delete command and execute it
                 Command deleteCommand = new DeleteNoteCommand(
                         this, selectedNote);
-                lastDeletedNote = selectedNote;
                 invoker.executeCommand(deleteCommand);
-                // For testing purposes
-                System.out.println(
-                        "Note deleted: " + lastDeletedNote.getTitle());
-                System.out.println(
-                        "Note deleted: " + lastDeletedNote.getNoteId());
-
                 //Confirmation alert that note was deleted
                 alert.setTitle("Note Deleted");
                 alert.setHeaderText(null);
@@ -1601,6 +1633,35 @@ public class HomeScreenCtrl {
             String title = "<h1>" + renderer.render(parser.parse(currentNote.getTitle())) + "</h1>";
             String titleAndContent = title + currentNote.getBody();
             markDownOutput.getEngine().loadContent(titleAndContent);
+        }
+    }
+
+    /**
+     * Method that edits the body of the currently selected note
+     */
+    public void bodyEdit(){
+        if (!isBodyEditInProgress) { // Check if a body edit is in progress
+            return;
+        }
+
+        Note selectedNote = notesListView.getSelectionModel().getSelectedItem();
+        if (selectedNote != null) {
+            String newBody = noteBodyF.getText().trim();
+
+            if (!newBody.equals(originalBody)) {
+                try {
+                        // If different from original body, update body and sync with the server (Invoke command for editing body)
+                        Command editBodyCommand = new EditBodyCommand(currentNote,originalBody, newBody, HomeScreenCtrl.this);
+                        invoker.executeCommand(editBodyCommand);
+                    System.out.println("EXECUTED !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                        originalBody = newBody; // Update the original body to the new body
+                } catch (Exception e) {
+                    errorLogger.log(
+                            Level.INFO,
+                            "Error handling body edit: " + e.getMessage()
+                    );
+                }
+            }
         }
     }
 
