@@ -1149,3 +1149,48 @@ select c1_0.collection_id,c1_0.collection_path,c1_0.collection_title,c1_0.latest
 	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
 	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
 	at java.base/java.lang.Thread.run(Thread.java:1575)
+2025-01-15 23:13:42.394556+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "BODY CHARACTER VARYING(255)": "U&'wasfoihfoaifhawoifhoawihrfoaiwhfoaiwhfoiawhfoiawhfiohawoifha\\000aaowifhaowifh... (327)"; SQL statement:
+update note set body=?,collection_id=?,title=? where note_id=? [22001-224]
+2025-01-15 23:13:47.389770+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "BODY CHARACTER VARYING(255)": "U&'wasfoihfoaifhawoifhoawihrfoaiwhfoaiwhfoiawhfoiawhfiohawoifha\\000aaowifhaowifh... (394)"; SQL statement:
+update note set body=?,collection_id=?,title=? where note_id=? [22001-224]
+2025-01-15 23:13:52.391598+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "BODY CHARACTER VARYING(255)": "U&'wasfoihfoaifhawoifhoawihrfoaiwhfoaiwhfoiawhfoiawhfiohawoifha\\000aaowifhaowifh... (471)"; SQL statement:
+update note set body=?,collection_id=?,title=? where note_id=? [22001-224]
+2025-01-15 23:13:57.388977+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "BODY CHARACTER VARYING(255)": "U&'wasfoihfoaifhawoifhoawihrfoaiwhfoaiwhfoiawhfoiawhfiohawoifha\\000aaowifhaowifh... (509)"; SQL statement:
+update note set body=?,collection_id=?,title=? where note_id=? [22001-224]
+2025-01-15 23:14:02.392540+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "BODY CHARACTER VARYING(255)": "U&'wasfoihfoaifhawoifhoawihrfoaiwhfoaiwhfoiawhfoiawhfiohawoifha\\000aaowifhaowifh... (525)"; SQL statement:
+update note set body=?,collection_id=?,title=? where note_id=? [22001-224]
+2025-01-15 23:14:07.389876+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "BODY CHARACTER VARYING(255)": "U&'wasfoihfoaifhawoifhoawihrfoaiwhfoaiwhfoiawhfoiawhfiohawoifha\\000aaowifhaowifh... (594)"; SQL statement:
+update note set body=?,collection_id=?,title=? where note_id=? [22001-224]
+2025-01-15 23:14:12.389768+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "BODY CHARACTER VARYING(255)": "U&'wasfoihfoaifhawoifhoawihrfoaiwhfoaiwhfoiawhfoiawhfiohawoifha\\000aaowifhaowifh... (650)"; SQL statement:
+update note set body=?,collection_id=?,title=? where note_id=? [22001-224]
+2025-01-15 23:14:17.390927+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "BODY CHARACTER VARYING(255)": "U&'wasfoihfoaifhawoifhoawihrfoaiwhfoaiwhfoiawhfoiawhfiohawoifha\\000aaowifhaowifh... (729)"; SQL statement:
+update note set body=?,collection_id=?,title=? where note_id=? [22001-224]
+2025-01-15 23:14:22.390418+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "BODY CHARACTER VARYING(255)": "U&'wasfoihfoaifhawoifhoawihrfoaiwhfoaiwhfoiawhfoiawhfiohawoifha\\000aaowifhaowifh... (807)"; SQL statement:
+update note set body=?,collection_id=?,title=? where note_id=? [22001-224]
+2025-01-15 23:14:27.391996+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "BODY CHARACTER VARYING(255)": "U&'wasfoihfoaifhawoifhoawihrfoaiwhfoaiwhfoiawhfoiawhfiohawoifha\\000aaowifhaowifh... (855)"; SQL statement:
+update note set body=?,collection_id=?,title=? where note_id=? [22001-224]
+2025-01-15 23:14:32.388753+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "BODY CHARACTER VARYING(255)": "U&'wasfoihfoaifhawoifhoawihrfoaiwhfoaiwhfoiawhfoiawhfiohawoifha\\000aaowifhaowifh... (897)"; SQL statement:
+update note set body=?,collection_id=?,title=? where note_id=? [22001-224]
+2025-01-15 23:14:37.390167+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "BODY CHARACTER VARYING(255)": "U&'wasfoihfoaifhawoifhoawihrfoaiwhfoaiwhfoiawhfoiawhfiohawoifha\\000aaowifhaowifh... (939)"; SQL statement:
+update note set body=?,collection_id=?,title=? where note_id=? [22001-224]
+2025-01-15 23:14:42.388450+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "BODY CHARACTER VARYING(255)": "U&'wasfoihfoaifhawoifhoawihrfoaiwhfoaiwhfoiawhfoiawhfiohawoifha\\000aaowifhaowifh... (980)"; SQL statement:
+update note set body=?,collection_id=?,title=? where note_id=? [22001-224]
+2025-01-15 23:14:47.392946+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "BODY CHARACTER VARYING(255)": "U&'wasfoihfoaifhawoifhoawihrfoaiwhfoaiwhfoiawhfoiawhfiohawoifha\\000aaowifhaowifh... (1024)"; SQL statement:
+update note set body=?,collection_id=?,title=? where note_id=? [22001-224]
+2025-01-15 23:14:52.391561+01:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "BODY CHARACTER VARYING(255)": "U&'wasfoihfoaifhawoifhoawihrfoaiwhfoaiwhfoiawhfoiawhfiohawoifha\\000aaowifhaowifh... (1067)"; SQL statement:
+update note set body=?,collection_id=?,title=? where note_id=? [22001-224]

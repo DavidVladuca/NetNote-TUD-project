@@ -77,7 +77,6 @@ public class EditCollectionsViewCtrl {
 
     public void initialise(){
         collections.setAll(homeScreenCtrl.currentServer.getCollections());
-        System.out.println("Collections retrieved: " + homeScreenCtrl.currentServer.getCollections());
         setupCollectionsListView();
     }
 
