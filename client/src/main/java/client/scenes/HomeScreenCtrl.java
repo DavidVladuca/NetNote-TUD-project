@@ -2069,6 +2069,9 @@ public class HomeScreenCtrl {
         });
     }
 
+    /**
+     * Allows for the editing of image names on double click
+     */
     private void setupImageListView() {
         imageListView.setOnMouseClicked(event -> {
             if(event.getClickCount() == 2) {
@@ -2080,6 +2083,11 @@ public class HomeScreenCtrl {
         });
     }
 
+    /**
+     * Changes the name of an image and ensures the name
+     * cannot be empty/file extension cant be changed
+     * @param currentName
+     */
     private void renameImage(String currentName) {
         TextInputDialog dialog = new TextInputDialog(currentName);
         dialog.setTitle("Rename Image");
@@ -2089,7 +2097,8 @@ public class HomeScreenCtrl {
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(newName -> {
             if(!isValidNameChange(currentName, newName)) {
-                showErrorDialog("Invalid Name", "The name must not be empty and must retain the same file extension");
+                showErrorDialog("Invalid Name",
+                        "The name must not be empty and must retain the same file extension");
                 return;
             }
 
@@ -2100,17 +2109,26 @@ public class HomeScreenCtrl {
                 try {
                     Images updatedImage = serverUtils.updateImageOnServer(imageToRename);
                     if (updatedImage != null) {
-                        imageListView.getItems().set(imageListView.getItems().indexOf(currentName), newName);
+                        imageListView.getItems().set(
+                                imageListView.getItems().indexOf(currentName), newName);
                     } else {
-                        showErrorDialog("Update Failed", "Failed to update the image name on the server.");
+                        showErrorDialog("Update Failed",
+                                "Failed to update the image name on the server.");
                     }
                 } catch (IOException e) {
-                    showErrorDialog("Server Error", "An error occurred while updating the image name: " + e.getMessage());
+                    showErrorDialog("Server Error",
+                            "An error occurred while updating the image name: " + e.getMessage());
                 }
             }
         });
     }
 
+    /**
+     * Checks for the validity of the changed image name
+     * @param oldName
+     * @param newName
+     * @return boolean value for validity
+     */
     private boolean isValidNameChange(String oldName, String newName) {
         if (newName == null || newName.trim().isEmpty()) return false;
 
@@ -2120,6 +2138,11 @@ public class HomeScreenCtrl {
         return oldExtension.equalsIgnoreCase(newExtension);
     }
 
+    /**
+     * Retrieves the image based on its name
+     * @param name
+     * @return
+     */
     private Images fetchImageByName(String name) {
         List<Images> images = fetchImagesForNote();
         return images.stream()

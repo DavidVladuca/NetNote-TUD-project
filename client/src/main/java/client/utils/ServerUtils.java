@@ -27,13 +27,7 @@ import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientConfig;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-
 import java.util.List;
-
 import java.io.IOException;
 import java.net.ConnectException;
 import java.util.Collections;
@@ -552,7 +546,8 @@ public class ServerUtils {
             } else if (response.getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
                 throw new IOException("Image not found. Server returned 404.");
             } else {
-                throw new IOException("Failed to update image. Server returned status: " + response.getStatus());
+                throw new IOException("Failed to update image. Server returned status: "
+                        + response.getStatus());
             }
         }
     }
