@@ -27,6 +27,11 @@ import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientConfig;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
 import java.util.List;
 
 import java.io.IOException;
@@ -518,4 +523,38 @@ public class ServerUtils {
         }
         return true;
     }
+
+    /**
+     * Updates the metadata of an image on the server.
+     *
+     * @param image The image to be updated.
+     * @return The updated image object if the operation is successful, or null otherwise.
+     * @throws IOException If the server returns an unexpected response.
+     */
+    public Images updateImageOnServer(final Images image) throws IOException {
+        if (image == null || image.getId() == null) {
+            throw new IllegalArgumentException("Image or image ID cannot be null.");
+        }
+
+        String endpoint = "api/images/" + image.getId();
+        String json = new ObjectMapper().writeValueAsString(image); // Convert image to JSON
+        var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
+
+        try (var response = ClientBuilder.newClient()
+                .target(SERVER)
+                .path(endpoint)
+                .request(MediaType.APPLICATION_JSON)
+                .put(requestBody)) {
+
+            if (response.getStatus() == Response.Status.OK.getStatusCode()) {
+                System.out.println("Image updated successfully: " + image.getName());
+                return response.readEntity(Images.class); // Return the updated image
+            } else if (response.getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
+                throw new IOException("Image not found. Server returned 404.");
+            } else {
+                throw new IOException("Failed to update image. Server returned status: " + response.getStatus());
+            }
+        }
+    }
+
 }
