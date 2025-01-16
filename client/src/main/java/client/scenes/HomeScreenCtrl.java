@@ -2,14 +2,10 @@ package client.scenes;
 
 import client.HomeScreen;
 import client.utils.*;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import commons.Collection;
 import commons.*;
 import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -479,49 +475,24 @@ public class HomeScreenCtrl {
      * Syncs a specific collection with the server to ensure consistency
      */
     private void syncCollectionWithServer(Collection collection) {
-        try {
-            // Serializing the collection to JSON
-            String json = new ObjectMapper().writeValueAsString(collection);
-            System.out.println("Serialized JSON for collection: " + json); // For testing
+        Collection updatedCollection = serverUtils.syncCollectionWithServer(collection);
 
-            // Creating a PUT request to update the specific collection
-            var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
-            var response = ClientBuilder.newClient()
-                    .target("http://localhost:8080/api/collections/update/" + collection.getCollectionId())
-                    .request(MediaType.APPLICATION_JSON)
-                    .put(requestBody);
-
-            System.out.println("Response Status: " + response.getStatus()); // For testing
-
-            if (response.getStatus() == 200) {
-                // Parsing the server's response into a Collection object
-                String updatedCollectionJson = response.readEntity(String.class);
-
-                ObjectMapper mapper = new ObjectMapper();
-                Collection updatedCollection
-                        = mapper.readValue(updatedCollectionJson, Collection.class);
-
-                // Replacing the collection in place to maintain order
-                for (int i = 0; i < currentServer.getCollections().size(); i++) {
-                    if (currentServer.getCollections().get(i).getCollectionId()
-                            == updatedCollection.getCollectionId()) {
-                        currentServer.getCollections().set(i, updatedCollection);
-                        break;
-                    }
+        if (updatedCollection != null) {
+            // Replacing the collection in place to maintain order
+            for (int i = 0; i < currentServer.getCollections().size(); i++) {
+                if (currentServer.getCollections().get(i).getCollectionId()
+                        == updatedCollection.getCollectionId()) {
+                    currentServer.getCollections().set(i, updatedCollection);
+                    break;
                 }
-
-                // Refreshing the UI collections
-                Platform.runLater(() -> {
-                    setUpCollections();
-                });
-
-            } else {
-                System.err.println("Failed to sync collection. Status code: "
-                        + response.getStatus());
             }
-        } catch (Exception e) {
-            System.err.println("Error syncing collection with the server: " + e.getMessage());
-            e.printStackTrace();
+
+            // Refreshing the UI collections
+            Platform.runLater(() -> {
+                setUpCollections();
+            });
+        } else {
+            System.err.println("Failed to sync collection.");
         }
     }
 
@@ -545,33 +516,14 @@ public class HomeScreenCtrl {
      * Fetches collections from the server and stores them locally
      */
     public void loadCollectionsFromServer() {
-        try {
-            // Fetch collections from the server
-            var response = ClientBuilder.newClient()
-                    .target("http://localhost:8080/api/collections/fetch")
-                    .request(MediaType.APPLICATION_JSON)
-                    .get();
+        List<Collection> fetchedCollections = serverUtils.loadCollectionsFromServer();
 
-            if (response.getStatus() == 200) {
-                // Parse the JSON response into a List of Collection objects
-                String json = response.readEntity(String.class);
-                ObjectMapper mapper = new ObjectMapper();
-                List<Collection> fetchedCollections
-                        = mapper.readValue(json, mapper.getTypeFactory()
-                        .constructCollectionType(List.class, Collection.class));
-
-                // Update the current server's collections
-                currentServer.getCollections().clear(); // Clear existing collections
-                currentServer.getCollections().addAll(fetchedCollections);
-
-                System.out.println("Collections loaded successfully from the server.");
-            } else {
-                System.err.println("Failed to fetch collections. Error code: "
-                        + response.getStatus());
-            }
-        } catch (Exception e) {
-            System.err.println("Error loading the collections: " + e.getMessage());
-            e.printStackTrace();
+        if (!fetchedCollections.isEmpty()) {
+            currentServer.getCollections().clear(); // Clear existing collections
+            currentServer.getCollections().addAll(fetchedCollections);
+            System.out.println("Collections updated in the current server.");
+        } else {
+            System.err.println("No collections loaded. Server returned an error.");
         }
     }
 
@@ -598,27 +550,13 @@ public class HomeScreenCtrl {
 
 
     private void loadTagsFromServer() {
-        try (var response = ClientBuilder.newClient()
-                .target("http://localhost:8080/api/tags")
-                .request(MediaType.APPLICATION_JSON)
-                .get()) {
+        List<Tag> fetchedTags = serverUtils.loadTagsFromServer();
 
-            if (response.getStatus() == requestSuccessfulCode) {
-                String json = response.readEntity(String.class);
-                ObjectMapper mapper = new ObjectMapper();
-                List<Tag> fetchedTags = mapper
-                        .readValue(json, mapper
-                                .getTypeFactory()
-                                .constructCollectionType(List.class,
-                                        Tag.class));
-                availableTags.clear();
-                availableTags.addAll(fetchedTags);
-            } else {
-                System.err.println("Failed to fetch tags. Status: "
-                        + response.getStatus());
-            }
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+        if (!fetchedTags.isEmpty()) {
+            availableTags.clear();
+            availableTags.addAll(fetchedTags);
+        } else {
+            System.err.println("No tags loaded. Server returned an error.");
         }
     }
 
@@ -846,47 +784,12 @@ public class HomeScreenCtrl {
     }
 
     private void saveTagToServer(final Tag tag) throws IOException {
-        String json = new ObjectMapper().writeValueAsString(tag);
-        try (var response = ClientBuilder.newClient()
-                .target("http://localhost:8080/api/tags/create")
-                .request(MediaType.APPLICATION_JSON)
-                .post(Entity.entity(json, MediaType.APPLICATION_JSON))) {
-
-            if (response.getStatus() != creationSuccessfulCode) {
-                throw new IOException("Failed to save tag. Status: "
-                        + response.getStatus());
-            }
-        }
+        serverUtils.saveTagToServer(tag);
     }
 
 
     private void syncNoteTagsWithServer(final Note note) {
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            Set<String> tagNames = note
-                    .getTags()
-                    .stream()
-                    .map(Tag::getName)
-                    .collect(Collectors.toSet());
-            String json = mapper.writeValueAsString(tagNames);
-
-            try (Response response = ClientBuilder.newClient()
-                    .target("http://localhost:8080/api/notes/"
-                            + note.getNoteId()
-                            + "/tags")
-                    .request(MediaType.APPLICATION_JSON)
-                    .put(Entity.entity(json, MediaType.APPLICATION_JSON))) {
-
-                if (response.getStatus() != requestSuccessfulCode) {
-                    System.err.println(
-                            "Failed to sync tags with server. Status: "
-                                    + response.getStatus()
-                    );
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Error syncing tags: " + e.getMessage());
-        }
+        serverUtils.syncNoteTagsWithServer(note);
     }
 
 
@@ -1107,33 +1010,11 @@ public class HomeScreenCtrl {
      * @param note - note provided - in syncIfChanged method to be specific
      */
     public void syncNoteWithServer(final Note note) {
-        try {
-            String json = new ObjectMapper().writeValueAsString(note);
-            System.out.println("Serialized JSON: " + json);  // for testing
-
-            var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
-            // the put request to actually update the content with json
-            try (var response = ClientBuilder.newClient()
-                    .target("http://localhost:8080/api/notes/update")
-                    .request(MediaType.APPLICATION_JSON)
-                    .put(requestBody)) {
-
-                // Refresh the notes list
-                Platform.runLater(() -> refreshNotesInListView(note));
-                // for testing
-                System.out.println("Response Status: " + response.getStatus());
-                System.out.println("Response Body: "
-                        + response.readEntity(String.class));
-                // if something screwed up :D
-                if (response.getStatus() != requestSuccessfulCode) {
-                    System.err.println(
-                            "Failed to update note on server. Status code: "
-                                    + response.getStatus()
-                    );
-                }
-            }
-        } catch (Exception e) {
-            errorLogger.log(Level.INFO, e.getMessage(), e);
+        if (serverUtils.syncNoteWithServer(note)) {
+            Platform.runLater(() -> refreshNotesInListView(note));
+            System.out.println("Note synced successfully with server.");
+        } else {
+            System.err.println("Failed to sync note with server.");
         }
     }
 
@@ -1160,37 +1041,14 @@ public class HomeScreenCtrl {
 
 
     private void loadNotesFromServer() {
-        try {
-            // Fetch notes from the server
-            var response = ClientBuilder.newClient()
-                    // todo - Update with your server's API URL
-                    .target("http://localhost:8080/api/notes/fetch")
-                    .request(MediaType.APPLICATION_JSON)
-                    .get();
+        List<Note> fetchedNotes = serverUtils.loadNotesFromServer();
 
-            if (response.getStatus() == requestSuccessfulCode) {
-                // Parse the JSON response into a List of Note objects
-                String json = response.readEntity(String.class);
-                ObjectMapper mapper = new ObjectMapper();
-                List<Note> fetchedNotes = mapper.readValue(
-                        json,
-                        mapper.getTypeFactory()
-                                .constructCollectionType(
-                                        List.class, Note.class));
+        if (!fetchedNotes.isEmpty()) {
+            notes.clear();
+            notes.addAll(fetchedNotes);
 
-                // Add the fetched notes to the ObservableList
-                notes.clear(); // Clear existing notes
-                notes.addAll(fetchedNotes);
-                for (Note note : fetchedNotes) {
-                    currentCollection.addNote(note);
-                }
-            } else {
-                System.err.println(
-                        "Failed to fetch notes. Error code "
-                                + response.getStatus());
-            }
-        } catch (Exception e) {
-            System.err.println("Error loading the notes: " + e.getMessage());
+            currentCollection.getNotes().clear();
+            currentCollection.getNotes().addAll(fetchedNotes);
         }
     }
 
@@ -1527,22 +1385,12 @@ public class HomeScreenCtrl {
      * @return a Note that was saved with a unique id
      */
     public Note saveNoteToServer(final Note note) throws IOException {
-        var json = new ObjectMapper().writeValueAsString(note);
-        var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
-        // Connect to the create endpoint, where add requests are processed
-        try (var response = ClientBuilder.newClient()
-                .target("http://localhost:8080/api/notes/create")
-                .request(MediaType.APPLICATION_JSON)
-                .post(requestBody)) {
-
-            if (response.getStatus() == creationSuccessfulCode) {
-                Note addedNote = response.readEntity(Note.class);
-                note.setNoteId(addedNote.getNoteId());
-                return addedNote;
-            } else {
-                throw new IOException(
-                        "Server returned status: " + response.getStatus());
-            }
+        try {
+            Note savedNote = serverUtils.saveNoteToServer(note);
+            note.setNoteId(savedNote.getNoteId());
+            return savedNote;
+        } catch (IOException e) {
+            return null;
         }
     }
 
@@ -1553,24 +1401,12 @@ public class HomeScreenCtrl {
      * @param note - Note
      */
     public void addRequest(final Note note) {
-        try {
-            var json = new ObjectMapper().writeValueAsString(note);
-            var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
-            try (var response = ClientBuilder.newClient()
-                    // Update with the correct endpoint for adding a note
-                    .target("http://localhost:8080/api/notes/create")
-                    .request(MediaType.APPLICATION_JSON)
-                    .post(requestBody)) {
-                System.out.println(
-                        "Server addition request sent. Response is "
-                                + response.toString());
-            }
-        } catch (Exception e) {
-            errorLogger.log(
-                    Level.INFO,
-                    "Error requesting addition of note: " + e.getMessage());
+        boolean success = serverUtils.addNoteToServer(note);
 
-
+        if (success) {
+            System.out.println("Note added successfully to the server.");
+        } else {
+            System.err.println("Failed to add note to the server.");
         }
     }
 
@@ -1649,23 +1485,14 @@ public class HomeScreenCtrl {
      *
      * @param noteId - ID of the note to be deleted
      */
-    public static void deleteRequest(final long noteId) {
-        Response response = ClientBuilder.newClient()
-                // Endpoint for deletion
-                .target("http://localhost:8080/api/notes/delete/" + noteId)
-                .request()
-                .delete();
-        if (response.getStatus() == Response.Status.NO_CONTENT
-                .getStatusCode()) {
-            System.out.println("Note successfully deleted.");
-        } else if (response.getStatus() == Response.Status.NOT_FOUND
-                .getStatusCode()) {
-            System.out.println("Note not found.");
+    public void deleteRequest(final long noteId) {
+        boolean success = serverUtils.deleteRequest(noteId);
+
+        if (success) {
+            System.out.println("Note with ID " + noteId + " deleted successfully.");
         } else {
-            System.out.println("Failed to delete note. Status: " + response
-                    .getStatus());
+            System.err.println("Failed to delete note with ID " + noteId + ".");
         }
-        response.close();
     }
 
     /**
@@ -1791,34 +1618,12 @@ public class HomeScreenCtrl {
      * or there was an error
      */
     private Note fetchNoteById(final long noteId) {
-        try {
-            var response = ClientBuilder.newClient()
-                    // Replace with actual API endpoint for fetching a single
-                    // note
-                    .target("http://localhost:8080/api/notes/" + noteId)
-                    .request(MediaType.APPLICATION_JSON)
-                    .get();
+        Note note = serverUtils.fetchNoteById(noteId);
 
-            if (response.getStatus() == requestSuccessfulCode) {
-                String json = response.readEntity(String.class);
-                ObjectMapper mapper = new ObjectMapper();
-                return mapper.readValue(json, Note.class);
-            } else {
-                System.err.println(
-                        "Failed to fetch note with ID "
-                                + noteId
-                                + ". Status code: "
-                                + response.getStatus()
-                );
-                return null;
-            }
-        } catch (Exception e) {
-            System.err.println(
-                    "Error fetching note with ID "
-                            + noteId
-                            + ": "
-                            + e.getMessage()
-            );
+        if (note != null) {
+            return note;
+        } else {
+            System.err.println("Failed to fetch note with ID: " + noteId);
             return null;
         }
     }
@@ -2220,27 +2025,12 @@ public class HomeScreenCtrl {
             throw new IllegalStateException("Current note or note ID is not set");
         }
 
-        // Convert the image object to JSON
-        var json = new ObjectMapper().writeValueAsString(image);
-        var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
-
-        // Construct the URL with the noteId
-        String url = "http://localhost:8080/api/images/" + currentNote.getNoteId() + "/addImage";
-
-        // Send a POST request to the server
-        try (var response = ClientBuilder.newClient()
-                .target(url)
-                .request(MediaType.APPLICATION_JSON)
-                .post(requestBody)) {
-
-            if (response.getStatus() == Response.Status.CREATED.getStatusCode()) {
-                System.out.println("Image saved successfully");
-                return response.readEntity(Images.class);
-            } else if (response.getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
-                throw new IOException("Server returned 404: Note not found");
-            } else {
-                throw new IOException("Server returned status: " + response.getStatus());
-            }
+        try {
+            return serverUtils.saveImageToServer(image, currentNote.getNoteId());
+        } catch (IOException e) {
+            System.err.println("Error saving image to server: " + e.getMessage());
+            e.printStackTrace();
+            return null;
         }
     }
 
@@ -2250,34 +2040,11 @@ public class HomeScreenCtrl {
      * @return List of image names
      */
     public List<Images> fetchImagesForNote() {
-        if (currentNote == null) {
+        if (currentNote == null || currentNote.getNoteId() <= 0) {
             throw new IllegalStateException("Current note or note ID is not set");
         }
 
-        String url = "http://localhost:8080/api/images/" + currentNote.getNoteId() + "/allImages";
-
-        try (var response = ClientBuilder.newClient()
-                .target(url)
-                .request(MediaType.APPLICATION_JSON)
-                .get()) {
-
-            if (response.getStatus() == Response.Status.OK.getStatusCode()) {
-                // Parse the JSON response
-                String json = response.readEntity(String.class);
-                ObjectMapper mapper = new ObjectMapper();
-                return mapper.readValue(json,
-                        mapper.getTypeFactory().constructCollectionType(List.class, Images.class));
-            } else if (response.getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
-                System.err.println("No images found for note: " + currentNote.getNoteId());
-                return List.of(); // Return empty list
-            } else {
-                throw new IOException("Failed to fetch images. Server returned status: "
-                        + response.getStatus());
-            }
-        } catch (Exception e) {
-            System.err.println("Error fetching images: " + e.getMessage());
-            return List.of(); // Return empty list in case of failure
-        }
+        return serverUtils.fetchImagesForNote(currentNote.getNoteId());
     }
 
     /**
