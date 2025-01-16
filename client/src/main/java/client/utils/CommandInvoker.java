@@ -8,6 +8,9 @@ public class CommandInvoker {
     private static CommandInvoker instance;
     private final Stack<Command> commandHistory = new Stack<>();
 
+    /**
+     * Default constructor for the CommandInvoker class
+     */
     public CommandInvoker() {}
 
     /**
@@ -32,7 +35,8 @@ public class CommandInvoker {
     }
 
     /**
-     * Checks if the history of commands stack is empty or not. If it is the latter, undoes the last action
+     * Checks if the history of commands stack is empty or not.
+     * If it is the latter, undoes the last action
      */
     public void undoLastCommand() {
         if (!commandHistory.isEmpty()) {

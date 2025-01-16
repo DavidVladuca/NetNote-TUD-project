@@ -91,6 +91,7 @@ public class NoteControllerTest {
     public void testValidateTitleDuplicate() throws Exception {
         when(noteRepository.existsByCollectionCollectionIdAndTitle(0L, "Test Note")).thenReturn(true);
         mockMvc.perform(MockMvcRequestBuilders.get("/api/notes/validate-title")
+                        .param("collectionId", "0")
                         .param("title", "Test Note"))
                 .andExpect(MockMvcResultMatchers.status().isConflict());
     }
@@ -99,6 +100,7 @@ public class NoteControllerTest {
     public void testValidateTitleDifferent() throws Exception {
         when(noteRepository.existsByCollectionCollectionIdAndTitle(0L, "Test Note")).thenReturn(true);
         mockMvc.perform(MockMvcRequestBuilders.get("/api/notes/validate-title")
+                        .param("collectionId", "0")
                         .param("title", "Test Note 2"))
                 .andExpect(MockMvcResultMatchers.status().isOk());
     }

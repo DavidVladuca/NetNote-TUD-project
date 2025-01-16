@@ -8,6 +8,11 @@ public class DeleteNoteCommand implements Command {
     private final Note note;
     private boolean executedSuccessfully = false;
 
+    /**
+     * The constructor for the DeleteNoteCommand class
+     * @param controller - the HomeScreenController provided
+     * @param note - Note provided
+     */
     public DeleteNoteCommand(HomeScreenCtrl controller, Note note) {
         this.controller = controller;
         this.note = note;

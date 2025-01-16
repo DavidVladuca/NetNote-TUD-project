@@ -86,7 +86,8 @@ public class NoteController {
 
         // Check if the note exists in the database
         Note existingNote = noteRepository.findById(note.getNoteId())
-                .orElseThrow(() -> new IllegalArgumentException("Note not found for ID: " + note.getNoteId()));
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Note not found for ID: " + note.getNoteId()));
 
         // Use the existing collection if not provided in the request
         if (note.getCollection() == null) {
@@ -135,7 +136,8 @@ public class NoteController {
             System.out.println("Original body: " + body);
 
             // Update references
-            String updatedBody = body.replaceAll("\\[\\[" + Pattern.quote(oldTitle) + "\\]\\]", "[[" + newTitle + "]]");
+            String updatedBody = body.replaceAll("\\[\\[" + Pattern.quote(oldTitle) + "\\]\\]",
+                    "[[" + newTitle + "]]");
 
             if (!updatedBody.equals(body)) {
                 System.out.println("Updated body for note: " + note.getTitle());
@@ -159,11 +161,17 @@ public class NoteController {
         for (Tag tag : note.getTags()) {
             // Find existing tags or create new ones
             Tag existingTag = tagRepository.findByName(tag.getName());
-            managedTags.add(Objects.requireNonNullElseGet(existingTag, () -> tagRepository.save(new Tag(tag.getName()))));
+            managedTags.add(Objects.requireNonNullElseGet(existingTag,
+                    () -> tagRepository.save(new Tag(tag.getName()))));
         }
         note.setTags(managedTags);
     }
 
+    /**
+     * The getter for the tags for that certain note on the /noteID/tags URL
+     * @param id - the id of the note
+     * @return a response entity of the set of tags
+     */
     @GetMapping("/{id}/tags")
     public ResponseEntity<Set<Tag>> getTagsForNote(@PathVariable Long id) {
         return noteRepository.findById(id)
@@ -171,8 +179,15 @@ public class NoteController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    /**
+     * The update method for the tags, on /noteID/tags URL, when the tags get updated
+     * @param id - the id of the note
+     * @param tagNames - the names of the tags
+     * @return a response entity of the Note
+     */
     @PutMapping("/{id}/tags")
-    public ResponseEntity<Note> updateTagsForNote(@PathVariable Long id, @RequestBody Set<String> tagNames) {
+    public ResponseEntity<Note> updateTagsForNote(@PathVariable Long id,
+                                                  @RequestBody Set<String> tagNames) {
         Note note = noteRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Note not found for ID: " + id));
 
@@ -238,13 +253,17 @@ public class NoteController {
 
     /**
      * Validates if a title already exists within the given collection.
+     * @param collectionId - the ID of the collection
      * @param title - Title to check for duplicates
      * @return - HTTP 409 Conflict if duplicate, 200 OK otherwise
      */
     @GetMapping("/validate-title")
-    public ResponseEntity<Void> validateTitle(@RequestParam String title) {
-        // Checks if there is the same title - even when there is a space at the end, that is ensured by trim()
-        boolean isDuplicate = noteRepository.existsByCollectionCollectionIdAndTitle(0L, title.trim());
+    public ResponseEntity<Void> validateTitle(@RequestParam Long collectionId,
+                                              @RequestParam String title) {
+        // Checks if there is the same title
+        // - even when there is a space at the end, that is ensured by trim()
+        boolean isDuplicate
+                = noteRepository.existsByCollectionCollectionIdAndTitle(collectionId, title.trim());
         if (isDuplicate) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build(); // returns 409 Conflict Code
         }
