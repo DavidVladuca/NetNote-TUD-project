@@ -6,6 +6,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -13,6 +14,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
 
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import java.util.Optional;
 
 public class EditCollectionsViewCtrl {
@@ -81,6 +84,7 @@ public class EditCollectionsViewCtrl {
     public void initialise(){
         collections.setAll(homeScreenCtrl.currentServer.getCollections());
         setupCollectionsListView();
+        collectionKeyboardShortcuts();
     }
 
     /**
@@ -229,5 +233,50 @@ public class EditCollectionsViewCtrl {
      */
     public void setScreenCtrl(ScreenCtrl screenCtrl) {
         this.sc = screenCtrl;
+    }
+
+    /**
+     * This method calls the keyboard shortcuts, separately when noteListView is
+     * in focus because it did not work normally
+     */
+    public void collectionKeyboardShortcuts() {
+        Platform.runLater(() -> {
+            Scene currentScene = addB.getScene();
+            if (currentScene == null) {
+                System.out.println("Scene is not set!");
+                return;
+            }
+            // Normal shortcuts
+            currentScene.setOnKeyPressed(event -> handleKeyboardShortcuts(event));
+            // Special case if focus is on the collections list view
+            collectionsListView.setOnKeyPressed(event -> handleKeyboardShortcuts(event));
+        });
+    }
+
+    /**
+     * This method handles the keyboard shortcuts in edit collections view
+     * @param event - the keys pressed
+     */
+    private void handleKeyboardShortcuts(KeyEvent event) {
+        // Control + A for add
+        if(event.isControlDown() && event.getCode() == KeyCode.A) {
+            addCollection();
+            event.consume();
+        }
+        // Control + Delete for delete
+        if(event.isControlDown() && event.getCode() == KeyCode.DELETE) {
+            deleteCollection();
+            event.consume();
+        }
+        // Control + D for make default
+        if(event.isControlDown() && event.getCode() == KeyCode.D) {
+            makeDefault();
+            event.consume();
+        }
+        // Control + S for save
+        if(event.isControlDown() && event.getCode() == KeyCode.S) {
+            save();
+            event.consume();
+        }
     }
 }

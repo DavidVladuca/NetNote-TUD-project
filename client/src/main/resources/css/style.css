@@ -34,6 +34,7 @@
 .selection {
     -fx-cursor: hand;
     -fx-mark-color: white;
+    -fx-background-color: #262626;
 }
 
 .selection .label {
@@ -46,6 +47,7 @@
 
 .selection .list-cell {
     -fx-background-color: #262626;
+    -fx-text-fill: white;
 }
 
 .selection .list-cell:hover {
