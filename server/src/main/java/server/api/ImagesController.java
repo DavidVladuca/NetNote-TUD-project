@@ -36,7 +36,8 @@ public class ImagesController {
      * @return - ResponseEntity with the saved image
      */
     @PostMapping("/{noteId}/addImage")
-    public ResponseEntity<Images> addImageToNote(@PathVariable Long noteId, @RequestBody Images image) {
+    public ResponseEntity<Images> addImageToNote(@PathVariable Long noteId,
+                                                 @RequestBody Images image) {
         Optional<Note> noteOptional = noteRepository.findById(noteId);
         if (noteOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -85,7 +86,8 @@ public class ImagesController {
      * @return - The updated image object
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Images> updateImage(@PathVariable Long id, @RequestBody Images updatedImage) {
+    public ResponseEntity<Images> updateImage(@PathVariable Long id,
+                                              @RequestBody Images updatedImage) {
         Optional<Images> imageOptional = imageRepository.findById(id);
         if (imageOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

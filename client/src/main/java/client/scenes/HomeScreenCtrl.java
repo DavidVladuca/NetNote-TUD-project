@@ -3,15 +3,10 @@ package client.scenes;
 import client.HomeScreen;
 import client.utils.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.inject.Inject;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import commons.Collection;
-import commons.Language;
-import commons.LanguageOptions;
-import commons.Note;
-import commons.Server;
-import commons.Tag;
-import commons.Images;
+import commons.*;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MediaType;
@@ -23,26 +18,14 @@ import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
-import javafx.scene.text.Text;
-import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -56,14 +39,7 @@ import org.commonmark.renderer.html.HtmlRenderer;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.ResourceBundle;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -125,6 +101,7 @@ public class HomeScreenCtrl {
 
     /**
      * Sets the ScreenCtrl instance for managing scene transitions.
+     *
      * @param screenCtrl - the ScreenCtrl instance to be assigned
      */
     public void setScreenCtrl(ScreenCtrl screenCtrl) {
@@ -144,7 +121,8 @@ public class HomeScreenCtrl {
     /**
      * Triggers the edit collection viewer.
      */
-    public void showEditCollection() { //TODO: should this be used? if yes, call inside: initialise() from EditCollectionsViewCtrl
+    //TODO: should this be used? if yes, call inside: initialise() from EditCollectionsViewCtrl
+    public void showEditCollection() {
         if (primaryStage == null) {
             throw new IllegalStateException("Primary stage is not initialized");
         }
@@ -154,6 +132,7 @@ public class HomeScreenCtrl {
 
     /**
      * Constructor for the home screen controller.
+     *
      * @param localScene       - scene used
      * @param localServerUtils - server to be used
      */
@@ -411,13 +390,15 @@ public class HomeScreenCtrl {
         markDownOutput.getEngine().setJavaScriptEnabled(true);
 
         // Bind Java methods to JavaScript
-        markDownOutput.getEngine().getLoadWorker().stateProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue == Worker.State.SUCCEEDED) {
-                // Rebind `javaApp` after the WebView finishes loading
-                JSObject window = (JSObject) markDownOutput.getEngine().executeScript("window");
-                window.setMember("javaApp", this);
-            }
-        });
+        markDownOutput.getEngine().getLoadWorker().stateProperty()
+                .addListener((observable, oldValue, newValue) -> {
+                    if (newValue == Worker.State.SUCCEEDED) {
+                        // Rebind `javaApp` after the WebView finishes loading
+                        JSObject window =
+                                (JSObject) markDownOutput.getEngine().executeScript("window");
+                        window.setMember("javaApp", this);
+                    }
+                });
     }
 
     /**
@@ -468,7 +449,7 @@ public class HomeScreenCtrl {
         // Setting up the converter for displaying collection titles
         selectCollectionBox.setConverter(new StringConverter<>() {
             @Override
-            public String toString(Collection collection){
+            public String toString(Collection collection) {
                 return collection.getCollectionTitle();
             }
 
@@ -478,21 +459,19 @@ public class HomeScreenCtrl {
             }
         });
 
-        selectCollectionBox.getSelectionModel().selectedItemProperty().addListener((obs, oldCollection, newCollection) -> {
-            if (!newCollection.equals(oldCollection)) {
-                updateNotesList(newCollection);
-                System.out.println("\nShow " + selectCollectionBox.getValue().getCollectionTitle()); //testing
+        selectCollectionBox.getSelectionModel()
+                .selectedItemProperty().addListener((obs, oldCollection, newCollection) -> {
+                    if (!newCollection.equals(oldCollection)) {
+                        updateNotesList(newCollection);
 
-                // Update current collection based on selection
-                if (newCollection.getCollectionTitle().equals("All")) {
-                    currentCollection = default_collection; // Resetting to Default
-                } else {
-                    currentCollection = newCollection; // Setting to the selected collection
-                }
-
-                System.out.println("\nCurrent collection: " + currentCollection.getCollectionTitle());
-            }
-        });
+                        // Update current collection based on selection
+                        if (newCollection.getCollectionTitle().equals("All")) {
+                            currentCollection = default_collection; // Resetting to Default
+                        } else {
+                            currentCollection = newCollection; // Setting to the selected collection
+                        }
+                    }
+                });
 
     }
 
@@ -517,14 +496,15 @@ public class HomeScreenCtrl {
             if (response.getStatus() == 200) {
                 // Parsing the server's response into a Collection object
                 String updatedCollectionJson = response.readEntity(String.class);
-                System.out.println("Updated collection received from server: " + updatedCollectionJson); // For testing
 
                 ObjectMapper mapper = new ObjectMapper();
-                Collection updatedCollection = mapper.readValue(updatedCollectionJson, Collection.class);
+                Collection updatedCollection
+                        = mapper.readValue(updatedCollectionJson, Collection.class);
 
                 // Replacing the collection in place to maintain order
                 for (int i = 0; i < currentServer.getCollections().size(); i++) {
-                    if (currentServer.getCollections().get(i).getCollectionId() == updatedCollection.getCollectionId()) {
+                    if (currentServer.getCollections().get(i).getCollectionId()
+                            == updatedCollection.getCollectionId()) {
                         currentServer.getCollections().set(i, updatedCollection);
                         break;
                     }
@@ -536,7 +516,8 @@ public class HomeScreenCtrl {
                 });
 
             } else {
-                System.err.println("Failed to sync collection. Status code: " + response.getStatus());
+                System.err.println("Failed to sync collection. Status code: "
+                        + response.getStatus());
             }
         } catch (Exception e) {
             System.err.println("Error syncing collection with the server: " + e.getMessage());
@@ -546,6 +527,7 @@ public class HomeScreenCtrl {
 
     /**
      * Updates "notes" based on the chosen collection in selectCollectionBox
+     *
      * @param selectedCollection (chosen collection)
      */
     private void updateNotesList(Collection selectedCollection) {
@@ -557,7 +539,6 @@ public class HomeScreenCtrl {
             notes.setAll(selectedCollection.getNotes());
         }
     }
-
 
 
     /**
@@ -575,8 +556,9 @@ public class HomeScreenCtrl {
                 // Parse the JSON response into a List of Collection objects
                 String json = response.readEntity(String.class);
                 ObjectMapper mapper = new ObjectMapper();
-                List<Collection> fetchedCollections = mapper.readValue(json,
-                        mapper.getTypeFactory().constructCollectionType(List.class, Collection.class));
+                List<Collection> fetchedCollections
+                        = mapper.readValue(json, mapper.getTypeFactory()
+                        .constructCollectionType(List.class, Collection.class));
 
                 // Update the current server's collections
                 currentServer.getCollections().clear(); // Clear existing collections
@@ -584,7 +566,8 @@ public class HomeScreenCtrl {
 
                 System.out.println("Collections loaded successfully from the server.");
             } else {
-                System.err.println("Failed to fetch collections. Error code: " + response.getStatus());
+                System.err.println("Failed to fetch collections. Error code: "
+                        + response.getStatus());
             }
         } catch (Exception e) {
             System.err.println("Error loading the collections: " + e.getMessage());
@@ -594,6 +577,7 @@ public class HomeScreenCtrl {
 
     /**
      * Sends a request to the server to delete a collection by a provided ID.
+     *
      * @param collectionId - ID of the collection to be deleted
      */
     public static void deleteCollectionFromServer(long collectionId) {
@@ -611,7 +595,6 @@ public class HomeScreenCtrl {
         }
         response.close();
     }
-
 
 
     private void loadTagsFromServer() {
@@ -647,26 +630,73 @@ public class HomeScreenCtrl {
     @FXML
     public void handleTagsButtonAction() {
         final int tagProfileHeight = 100;
-        final int v = 10;
+        final int vSpacing = 10;
+
         if (currentNote == null) {
             System.err.println("No note selected. Cannot assign tags.");
             return;
         }
 
-        // Log current tags
+        logCurrentTags();
+        List<CheckBox> tagCheckBoxes = new ArrayList<>();
+        // Create the dialog
+        Dialog<Void> dialog = createTagDialog(tagProfileHeight, vSpacing, tagCheckBoxes);
+
+        dialog.setResultConverter(button -> {
+            if (button == ButtonType.OK) {
+                processSelectedTags(tagCheckBoxes);
+            }
+            return null;
+        });
+
+        dialog.showAndWait();
+    }
+
+    /**
+     * This method logs the current tags
+     */
+    private void logCurrentTags() {
         System.out.println(
                 "Current tags for note '" + currentNote.getTitle() + "':");
         currentNote.getTags()
                 .forEach(tag -> System.out.println("- " + tag.getName()));
+    }
 
-        // Create the dialog
+    /**
+     * This method creates the Tag Dialog
+     * @param tagProfileHeight the tag profile height
+     * @param vSpacing - the v spacing
+     * @param tagCheckBoxes - the list of the tag check boxes
+     * @return the created Tag Dialog
+     */
+    private Dialog<Void> createTagDialog(int tagProfileHeight,
+                                         int vSpacing,
+                                         List<CheckBox> tagCheckBoxes) {
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("Manage Tags");
         dialog.setHeaderText("Select or create tags for the note:");
 
+        VBox tagListContainer = createTagListContainer(vSpacing, tagCheckBoxes);
+
+        ScrollPane scrollPane = createScrollPane(tagListContainer, tagProfileHeight);
+        Button addTagButton = createAddTagButton(tagListContainer, tagCheckBoxes);
+
+        VBox dialogContent = new VBox(15, scrollPane, addTagButton);
+        dialog.getDialogPane().setContent(dialogContent);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        return dialog;
+    }
+
+    /**
+     * This method creates the Tag List Container
+     * @param vSpacing - the vSpacing
+     * @param tagCheckBoxes the list of the tag check boxes
+     * @return vBox representing the Tag List Container
+     */
+    private VBox createTagListContainer(int vSpacing, List<CheckBox> tagCheckBoxes) {
         // Container for tag checkboxes
-        VBox tagListContainer = new VBox(v);
-        List<CheckBox> tagCheckBoxes = new ArrayList<>();
+        VBox tagListContainer = new VBox(vSpacing);
 
         // Populate the tag list with checkboxes
         for (Tag tag : availableTags) {
@@ -675,82 +705,106 @@ public class HomeScreenCtrl {
             tagCheckBoxes.add(checkBox);
             tagListContainer.getChildren().add(checkBox);
         }
+        return tagListContainer;
+    }
 
+    /**
+     * This method creates the scroll pane
+     * @param tagListContainer - vbox with the tag list
+     * @param tagProfileHeight - the height of the tag profile
+     * @return the scroll pane created
+     */
+    private ScrollPane createScrollPane(VBox tagListContainer, int tagProfileHeight) {
         // ScrollPane for tag list
         ScrollPane scrollPane = new ScrollPane(tagListContainer);
         scrollPane.setFitToWidth(true);
         scrollPane.setPrefHeight(tagProfileHeight);
         // Limit to approx. 4 tags visible
+        return scrollPane;
+    }
 
-        // Add Tag Button
+    /**
+     * This method creates the add a tag button
+     * @param tagListContainer - the Vbox representing the tag list container
+     * @param tagCheckBoxes the list of the tag check boxes
+     * @return a button representing the add tag
+     */
+    private Button createAddTagButton(VBox tagListContainer, List<CheckBox> tagCheckBoxes) {
         Button addTagButton = new Button("Add a Tag");
-        addTagButton.setOnAction(event -> {
-            TextInputDialog inputDialog = new TextInputDialog();
-            inputDialog.setTitle("Add Tag");
-            inputDialog.setHeaderText("Enter the name of the new tag:");
-            inputDialog.setContentText("Tag name:");
+        addTagButton.setOnAction(event -> handleAddTag(tagListContainer, tagCheckBoxes));
+        return addTagButton;
+    }
 
-            Optional<String> result = inputDialog.showAndWait();
-            result.ifPresent(tagName -> {
-                if (tagName.trim().isEmpty()) {
-                    showErrorDialog(
-                            "Invalid Tag Name",
-                            "The tag name cannot be empty.");
-                    return;
-                }
+    /**
+     * This method handles the tag adding actions
+     * @param tagListContainer the provided vbox representing the tag list container
+     * @param tagCheckBoxes the list of the tag check boxes
+     */
+    private void handleAddTag(VBox tagListContainer, List<CheckBox> tagCheckBoxes) {
+        TextInputDialog inputDialog = new TextInputDialog();
+        inputDialog.setTitle("Add Tag");
+        inputDialog.setHeaderText("Enter the name of the new tag:");
+        inputDialog.setContentText("Tag name:");
+        Optional<String> result = inputDialog.showAndWait();
+        result.ifPresent(tagName -> processNewTag(tagName, tagListContainer, tagCheckBoxes));
+    }
 
-                if (availableTags.stream()
-                        .anyMatch(tag -> tag
-                                .getName()
-                                .equals(tagName.trim()))) {
-                    showErrorDialog("Duplicate Tag",
-                            "A tag with the name '"
-                                    + tagName.trim()
-                                    + "' already exists.");
-                    return;
-                }
+    /**
+     * This method processes the new Tag
+     * @param tagName - the name of the tag
+     * @param tagListContainer the VBox representing the tag list
+     * @param tagCheckBoxes the list of the tag check boxes
+     */
+    private void processNewTag(String tagName,
+                               VBox tagListContainer,
+                               List<CheckBox> tagCheckBoxes) {
+        if (tagName.trim().isEmpty()) {
+            showErrorDialog(
+                    "Invalid Tag Name",
+                    "The tag name cannot be empty.");
+            return;
+        }
 
-                Tag newTag = new Tag(tagName.trim());
-                availableTags.add(newTag);
+        if (availableTags.stream()
+                .anyMatch(tag -> tag
+                        .getName()
+                        .equals(tagName.trim()))) {
+            showErrorDialog("Duplicate Tag",
+                    "A tag with the name '"
+                            + tagName.trim()
+                            + "' already exists.");
+            return;
+        }
 
-                CheckBox newCheckBox = new CheckBox(newTag.getName());
-                tagCheckBoxes.add(newCheckBox);
-                tagListContainer.getChildren().add(newCheckBox);
+        Tag newTag = new Tag(tagName.trim());
+        availableTags.add(newTag);
 
-                try {
-                    saveTagToServer(newTag);
-                    System.out.println(
-                            "New tag saved to server: " + newTag.getName());
-                } catch (Exception e) {
-                    System.err.println(
-                            "Failed to save the new tag: " + e.getMessage());
-                }
-            });
-        });
+        CheckBox newCheckBox = new CheckBox(newTag.getName());
+        tagCheckBoxes.add(newCheckBox);
+        tagListContainer.getChildren().add(newCheckBox);
 
-        // Layout for the dialog content
-        final int v2 = 15;
-        VBox dialogContent = new VBox(v2, scrollPane, addTagButton);
-        dialog.getDialogPane().setContent(dialogContent);
-        dialog.getDialogPane()
-                .getButtonTypes()
-                .addAll(ButtonType.OK, ButtonType.CANCEL);
+        try {
+            saveTagToServer(newTag);
+            System.out.println(
+                    "New tag saved to server: " + newTag.getName());
+        } catch (Exception e) {
+            System.err.println(
+                    "Failed to save the new tag: " + e.getMessage());
+        }
+    }
 
-        // Handle dialog result
-        dialog.setResultConverter(button -> {
-            if (button == ButtonType.OK) {
-                Set<Tag> selectedTags = new HashSet<>();
-                for (int i = 0; i < tagCheckBoxes.size(); i++) {
-                    if (tagCheckBoxes.get(i).isSelected()) {
-                        selectedTags.add(availableTags.get(i));
-                    }
-                }
-                updateNoteTags(selectedTags);
+    /**
+     * This method processes the selected tags
+     * @param tagCheckBoxes the list of the tag check boxes
+     */
+    private void processSelectedTags(List<CheckBox> tagCheckBoxes) {
+        Set<Tag> selectedTags = new HashSet<>();
+        for (int i = 0; i < tagCheckBoxes.size(); i++) {
+            if (tagCheckBoxes.get(i).isSelected()) {
+                selectedTags.add(availableTags.get(i));
             }
-            return null;
-        });
-
-        dialog.showAndWait();
+        }
+        updateNoteTags(selectedTags);
     }
 
     private void showErrorDialog(
@@ -1235,27 +1289,12 @@ public class HomeScreenCtrl {
 
             // Process #tags to make them clickable
             String processedContent = newValue.replaceAll("#(\\w+)",
-                    "<button style=\"background-color: #e43e38; color: white; border: none; padding: 2px 6px; border-radius: 4px; cursor: pointer;\" " +
+                    "<button style=\"background-color: #e43e38; " +
+                            "color: white; border: none; padding: 2px 6px; " +
+                            "border-radius: 4px; cursor: pointer;\" " +
                             "onclick=\"javaApp.filterByTag('$1')\">#$1</button>");
 
-            // Process [[Note]] references
-            Matcher matcher = Pattern.compile("\\[\\[(.*?)\\]\\]").matcher(processedContent);
-            StringBuffer result = new StringBuffer();
-
-            while (matcher.find()) {
-                String title = matcher.group(1);
-                boolean noteExists = notes.stream().anyMatch(note -> note.getTitle().equals(title));
-                String replacement;
-
-                if (noteExists) {
-                    replacement = "<a href=\"#\" style=\"color: blue; text-decoration: underline;\" onclick=\"javaApp.openNoteByTitle('" + title.replace("'", "\\'") + "')\">" + title + "</a>";
-                } else {
-                    replacement = "<span style=\"color: red; font-style: italic;\">" + title + "</span>";
-                }
-
-                matcher.appendReplacement(result, replacement);
-            }
-            matcher.appendTail(result);
+            StringBuffer result = processNoteReferences(processedContent);
 
             // Convert the title and body to HTML
             String showTitle = "<h1>"
@@ -1270,7 +1309,35 @@ public class HomeScreenCtrl {
     }
 
     /**
+     * This method processes the [[Other Note]] references
+     * @param processedContent - the content that is processed
+     * @return the StringBuffer representing the other note
+     */
+    private StringBuffer processNoteReferences(String processedContent) {
+        Matcher matcher = Pattern.compile("\\[\\[(.*?)\\]\\]").matcher(processedContent);
+        StringBuffer result = new StringBuffer();
+
+        while (matcher.find()) {
+            String title = matcher.group(1);
+            boolean noteExists = notes.stream().anyMatch(note -> note.getTitle().equals(title));
+            String replacement;
+
+            if (noteExists) {
+                replacement = "<a href=\"#\" style=\"color: blue; text-decoration: underline;\" onclick=\"javaApp.openNoteByTitle('" + title.replace("'", "\\'") + "')\">" + title + "</a>";
+            } else {
+                replacement = "<span style=\"color: red; font-style: italic;\">"
+                        + title + "</span>";
+            }
+
+            matcher.appendReplacement(result, replacement);
+        }
+        matcher.appendTail(result);
+        return result;
+    }
+
+    /**
      * Find the referenced note and open it
+     *
      * @param title - the title of the referenced note
      */
     @FXML
@@ -1302,6 +1369,7 @@ public class HomeScreenCtrl {
     /**
      * Update all the references from notes when the title of the referenced
      * note was changed
+     *
      * @param oldTitle - the original title
      * @param newTitle - the new title
      */
@@ -1323,6 +1391,7 @@ public class HomeScreenCtrl {
 
     /**
      * Filter all the notes, making only those with the tag visible
+     *
      * @param tag - the tag to be filtered by
      */
     @FXML
@@ -1330,12 +1399,14 @@ public class HomeScreenCtrl {
         Platform.runLater(() -> {
             // Check if the tag is already in the container
             boolean tagExists = selectedTagsContainer.getChildren().stream()
-                    .anyMatch(node -> node instanceof Button && ((Button) node).getText().equals("#" + tag));
+                    .anyMatch(node -> node instanceof Button
+                            && ((Button) node).getText().equals("#" + tag));
 
             if (!tagExists) {
                 // Add the tag to the selected tags container
                 Button tagButton = new Button("#" + tag);
-                tagButton.setStyle("-fx-background-color: #e43e38; -fx-text-fill: white; -fx-background-radius: 5;");
+                tagButton.setStyle("-fx-background-color: #e43e38; " +
+                        "-fx-text-fill: white; -fx-background-radius: 5;");
                 tagButton.setOnAction(event -> {
                     selectedTagsContainer.getChildren().remove(tagButton);
                     refresh(); // Reset filtering
@@ -1364,11 +1435,16 @@ public class HomeScreenCtrl {
         System.out.println("All tags cleared. Displaying all notes.");
     }
 
+    /**
+     * This method ensures the functionality for adding a tag
+     * @param tagName - the name of the tag, e.g. #foo
+     */
     public void addTag(String tagName) {
         Platform.runLater(() -> {
             // Create a new Button for the tag
             Button tagButton = new Button("#" + tagName);
-            tagButton.setStyle("-fx-background-color: #e43e38; -fx-text-fill: white; -fx-background-radius: 5;");
+            tagButton.setStyle("-fx-background-color: #e43e38; " +
+                    "-fx-text-fill: white; -fx-background-radius: 5;");
 
             // Allow removing the tag when clicked
             tagButton.setOnAction(event -> selectedTagsContainer.getChildren().remove(tagButton));
@@ -1378,8 +1454,10 @@ public class HomeScreenCtrl {
 
             // Ensure the ScrollPane scrolls to the bottom
             tagsScrollPane.layout(); // Trigger layout update
-            tagsScrollPane.setHvalue(1.0); // Scroll to the far right (if horizontal scrolling is needed)
-            tagsScrollPane.setVvalue(1.0); // Scroll to the bottom (if vertical scrolling is needed)
+            // Scroll to the far right (if horizontal scrolling is needed)
+            tagsScrollPane.setHvalue(1.0);
+            // Scroll to the bottom (if vertical scrolling is needed)
+            tagsScrollPane.setVvalue(1.0);
 
             System.out.println("Tag added: #" + tagName);
         });
@@ -1428,9 +1506,7 @@ public class HomeScreenCtrl {
      */
     public void addCommand(final Note newNote) throws IOException {
         Note savedNote = saveNoteToServer(newNote);
-
         currentCollection.addNote(savedNote);  // Add to the collection
-        System.out.println("New note added to collection: " + currentCollection.getCollectionTitle()); //testing
         notes.add(savedNote);                   // Add to the ObservableList
         notesListView.getSelectionModel().select(savedNote);
         // Update UI fields
@@ -1629,31 +1705,24 @@ public class HomeScreenCtrl {
                             currentCollection.getCollectionId(), newTitle);
                     // Show and alert if the title is duplicate
                     if (isDuplicate) {
-                        Alert alert = new Alert(Alert.AlertType.WARNING);
-                        alert.setTitle("Duplicate Title");
-                        alert.setHeaderText("Title Already Exists");
-                        alert.setContentText("The title \""
+                        showWarningAlert("Duplicate Title",
+                                "Title Already Exists",
+                                "The title \""
                                 + newTitle
                                 + "\" already exists in this collection. "
                                 + "Please choose a different one.");
-                        alert.showAndWait();
-
                         // Revert to the original title
                         Platform.runLater(() -> noteTitleF.setText(originalTitle));
-                    }
-                    else if (newTitle.isEmpty()) {
-                        Alert alert = new Alert(Alert.AlertType.WARNING);
-                        alert.setTitle("Empty Title");
-                        alert.setHeaderText("Title Cannot be Empty!");
-                        alert.setContentText("Please enter a valid title!");
-                        alert.showAndWait();
-
+                    } else if (newTitle.isEmpty()) {
+                        showWarningAlert("Empty Title",
+                                "Title Cannot be Empty!",
+                                "Please enter a valid title!");
                         // Revert to the original title
                         Platform.runLater(() -> noteTitleF.setText(originalTitle));
-                    }
-                    else {
-                        // If not duplicate, update title and sync with the server (Invoke command for editing title)
-                        Command editTitleCommand = new EditTitleCommand( currentNote,originalTitle, newTitle,HomeScreenCtrl.this);
+                    } else {
+                        // If not duplicate, update title and sync with the server
+                        Command editTitleCommand = new EditTitleCommand(currentNote,
+                                originalTitle, newTitle, HomeScreenCtrl.this);
                         invoker.executeCommand(editTitleCommand);
                         originalTitle = newTitle;
                     }
@@ -1665,6 +1734,17 @@ public class HomeScreenCtrl {
                 }
             }
         }
+    }
+
+    /**
+     * This method shows the alert represented as WARNING
+     */
+    private void showWarningAlert(String title, String headerText, String contentText) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle(title);
+        alert.setHeaderText(headerText);
+        alert.setContentText(contentText);
+        alert.showAndWait();
     }
 
     /**
@@ -1762,74 +1842,75 @@ public class HomeScreenCtrl {
             } else {
                 //parse in special way such that the found results are
                 // highlighted
-                for (int i = noteMatchIndices.size() - 1; i >= 0; i--) {
-                    //iterating from the back to not have to consider changes in
-                    // index due to additions
-                    if (noteMatchIndices.get(i) < titleHighlighted.length()) {
-                        if (i == currentSearchIndex) {
-                            titleHighlighted = titleHighlighted.substring(
-                                    0, Math.toIntExact(noteMatchIndices.get(i)))
-                                    + "<mark style=\"background: #E1C16E\">"
-                                    + searchText
-                                    + "</mark>"
-                                    + titleHighlighted
-                                    .substring(Math.toIntExact(noteMatchIndices
-                                            .get(i)) + searchText.length()
-                                    );
+                titleHighlighted = highlightMatchesInTitle(titleHighlighted, searchText);
+                bodyHighlighted
+                        = highlightMatchesInBody(bodyHighlighted, searchText, titleHighlighted);
 
-                        } else {
-                            titleHighlighted = titleHighlighted.substring(
-                                    0, Math.toIntExact(noteMatchIndices.get(i)))
-                                    + "<mark>"
-                                    + searchText
-                                    + "</mark>"
-                                    + titleHighlighted
-                                    .substring(Math.toIntExact(noteMatchIndices
-                                            .get(i)) + searchText.length()
-                                    );
-                        }
-                    } else {
-                        if (i == currentSearchIndex) {
-                            bodyHighlighted = bodyHighlighted
-                                    .substring(0, Math.toIntExact(
-                                            noteMatchIndices.get(i))
-                                            - titleHighlighted.length())
-                                    + "<mark style=\"background: #E1C16E\">"
-                                    + searchText
-                                    + "</mark>"
-                                    + bodyHighlighted.substring(
-                                    (Math.toIntExact(noteMatchIndices
-                                            .get(i))
-                                            - titleHighlighted
-                                            .length())
-                                            + searchText.length());
-                        } else {
-                            bodyHighlighted = bodyHighlighted
-                                    .substring(
-                                            0, Math.toIntExact(noteMatchIndices
-                                                    .get(i))
-                                                    - titleHighlighted.length())
-                                    + "<mark>"
-                                    + searchText
-                                    + "</mark>"
-                                    + bodyHighlighted.substring(
-                                    Math.toIntExact(noteMatchIndices
-                                            .get(i))
-                                            - titleHighlighted.length()
-                                            + searchText.length());
-                        }
-                    }
-                }
             }
         }
-        titleHighlighted = "<h1>"
-                + renderer.render(parser.parse(titleHighlighted))
-                + "</h1>";
-        bodyHighlighted = renderer.render(parser.parse(bodyHighlighted));
-        String totalContent = titleHighlighted + bodyHighlighted;
-        markDownOutput.getEngine().loadContent(totalContent);
+        renderHighlightedContent(titleHighlighted, bodyHighlighted);
+    }
 
+    /**
+     * This method highlights the matches in the title
+     * @param titleHighlighted - the title highlighted
+     * @param searchText - the search text
+     * @return a String representing the highlighted title part
+     */
+    private String highlightMatchesInTitle(String titleHighlighted, String searchText) {
+        String highlightedTitle = titleHighlighted;
+        for (int i = noteMatchIndices.size() - 1; i >= 0; i--) {
+            if (noteMatchIndices.get(i) < highlightedTitle.length()) {
+                highlightedTitle = highlightMatch(
+                        highlightedTitle,
+                        searchText,
+                        Math.toIntExact(noteMatchIndices.get(i)),
+                        i == currentSearchIndex
+                );
+            }
+        }
+        return highlightedTitle;
+    }
 
+    /**
+     * This method highlights the matches in the body of the note
+     * @param body - the body of the note
+     * @param searchText - the search text
+     * @param title - the title provided
+     * @return a String representing the highlighted part
+     */
+    private String highlightMatchesInBody(String body, String searchText, String title) {
+        String highlightedBody = body;
+        int titleLength = title.length();
+        for (int i = noteMatchIndices.size() - 1; i >= 0; i--) {
+            if (noteMatchIndices.get(i) >= titleLength) {
+                int bodyIndex = Math.toIntExact(noteMatchIndices.get(i)) - titleLength;
+                highlightedBody = highlightMatch(
+                        highlightedBody,
+                        searchText,
+                        bodyIndex,
+                        i == currentSearchIndex
+                );
+            }
+        }
+        return highlightedBody;
+    }
+
+    /**
+     * This method highlights the match
+     * @param content - the content
+     * @param searchText - the search text
+     * @param index - the index of the current match
+     * @param isCurrent - is it current?
+     * @return a String representing the highlighted part
+     */
+    private String highlightMatch(String content, String searchText, int index, boolean isCurrent) {
+        String highlightStyle = isCurrent ? " style=\"background: #E1C16E\"" : "";
+        return content.substring(0, index)
+                + "<mark" + highlightStyle + ">"
+                + searchText
+                + "</mark>"
+                + content.substring(index + searchText.length());
     }
 
     /**
@@ -1862,6 +1943,18 @@ public class HomeScreenCtrl {
     }
 
     /**
+     * This method renders the highlighted content in the markdown
+     * @param title - the title of the note
+     * @param body - the body of the note
+     */
+    private void renderHighlightedContent(String title, String body) {
+        String renderedTitle = "<h1>" + renderer.render(parser.parse(title)) + "</h1>";
+        String renderedBody = renderer.render(parser.parse(body));
+        String totalContent = renderedTitle + renderedBody;
+        markDownOutput.getEngine().loadContent(totalContent);
+    }
+
+    /**
      * Sets up the languages (adds them to the collection box).
      *
      * @noinspection checkstyle:MagicNumber
@@ -1869,11 +1962,30 @@ public class HomeScreenCtrl {
     public void setUpLanguages() {
         final double height = 15;
         final double width = 30;
+
+        initializeLanguageOptions();
+        configureLanguageComboBox(height, width);
+        configureLanguageConverter();
+        configureLanguageSelectionListener(height, width);
+    }
+
+    /**
+     * This method initializes the language options
+     */
+    private void initializeLanguageOptions() {
         selectLangBox.getItems().forEach(lang -> System.out.println(
                 "Language: " + lang.getAbbr()));
         selectLangBox.getItems()
                 .setAll(LanguageOptions.getInstance().getLanguages());
         selectLangBox.setValue(selectLangBox.getItems().getFirst());
+    }
+
+    /**
+     * This method configures the combo box with languages
+     * @param height - the height of the combo box
+     * @param width - the width of the combo box
+     */
+    private void configureLanguageComboBox(double height, double width) {
         /* How to do this gotten from stack overflow
         (https://stackoverflow.com/questions/32334
         137/javafx-choicebox-with-image-and-text)
@@ -1892,19 +2004,9 @@ public class HomeScreenCtrl {
                                     setText(null);
                                     setGraphic(null);
                                 } else {
-                                    String iconPath = item.getImg_path();
-                                    Image icon = new Image(Objects
-                                            .requireNonNull(getClass()
-                                                    .getClassLoader()
-                                                    .getResourceAsStream(
-                                                            iconPath)));
-                                    ImageView iconImageView = new ImageView(
-                                            icon);
-                                    iconImageView.setFitHeight(height);
-                                    iconImageView.setFitWidth(width);
-                                    iconImageView.setPreserveRatio(false);
-                                    setGraphic(iconImageView);
-
+                                    setGraphic(createLanguageIcon(item.getImgPath(),
+                                            height,
+                                            width));
                                 }
                             }
                         };
@@ -1920,21 +2022,30 @@ public class HomeScreenCtrl {
                     setText(null);
                     setGraphic(null);
                 } else {
-                    //path described from client location
-                    String iconPath = item.getImg_path();
-                    Image icon = new Image(Objects.requireNonNull(
-                            getClass()
-                                    .getClassLoader()
-                                    .getResourceAsStream(iconPath)));
-                    ImageView iconImageView = new ImageView(icon);
-                    iconImageView.setFitHeight(height);
-                    iconImageView.setFitWidth(width);
-                    iconImageView.setPreserveRatio(false);
-                    setGraphic(iconImageView); // only shows the flag
+                    setGraphic(createLanguageIcon(item.getImgPath(), height, width));
                 }
             }
         });
+    }
 
+    private ImageView createLanguageIcon(String iconPath, double height, double width) {
+        Image icon = new Image(Objects
+                .requireNonNull(getClass()
+                        .getClassLoader()
+                        .getResourceAsStream(
+                                iconPath)));
+        ImageView iconImageView = new ImageView(
+                icon);
+        iconImageView.setFitHeight(height);
+        iconImageView.setFitWidth(width);
+        iconImageView.setPreserveRatio(false);
+        return iconImageView;
+    }
+
+    /**
+     * This method configures the language converter
+     */
+    private void configureLanguageConverter() {
         selectLangBox.setConverter(new StringConverter<>() {
             @Override
             public String toString(final Language language) {
@@ -1953,7 +2064,9 @@ public class HomeScreenCtrl {
                 return selectLangBox.getItems().getFirst();
             }
         });
+    }
 
+    private void configureLanguageSelectionListener(double height, double width) {
         selectLangBox.getSelectionModel()
                 .selectedItemProperty()
                 .addListener((obs, oldLang, newLang) -> {
@@ -1981,37 +2094,37 @@ public class HomeScreenCtrl {
                         languageText.setText(bundle.getString("Language"));
                         noteTitleF.setPromptText(bundle.getString("Untitled"));
                         noteBodyF.setPromptText(bundle.getString("Text_Area"));
-
                     }
                 });
-
     }
 
     /**
      * This method saves the selected language to a config file
+     *
      * @param languageToSave - language to be saved
      */
     private void saveLanguageChoice(Language languageToSave) throws IOException {
         File languageFile = new File("language-choice.txt");
-        if(!languageFile.exists()) {
+        if (!languageFile.exists()) {
             languageFile.createNewFile();
         }
-        try(FileWriter fw = new FileWriter(languageFile)) {
+        try (FileWriter fw = new FileWriter(languageFile)) {
             fw.write(languageToSave.getAbbr());
         }
     }
 
     /**
      * This method loads the language that is stored in the file
+     *
      * @throws IOException - when something messes up
      */
     private void loadSavedLanguageChoice() throws IOException {
         File languageFile = new File("language-choice.txt");
-        if(languageFile.exists()) {
-            try(BufferedReader br = new BufferedReader(new FileReader(languageFile))) {
+        if (languageFile.exists()) {
+            try (BufferedReader br = new BufferedReader(new FileReader(languageFile))) {
                 String savedLanguageAbbr = br.readLine();
-                for(Language language : selectLangBox.getItems()) {
-                    if(language.getAbbr().equals(savedLanguageAbbr)) {
+                for (Language language : selectLangBox.getItems()) {
+                    if (language.getAbbr().equals(savedLanguageAbbr)) {
                         selectLangBox.setValue(language);
                         locale = switch (language.getAbbr()) {
                             case "ES" -> Locale.of("es", "ES");
@@ -2097,6 +2210,7 @@ public class HomeScreenCtrl {
 
     /**
      * Saves images to the server
+     *
      * @param image
      * @return Images object
      * @throws IOException
@@ -2132,6 +2246,7 @@ public class HomeScreenCtrl {
 
     /**
      * Fetches the notes images from the server
+     *
      * @return List of image names
      */
     public List<Images> fetchImagesForNote() {
@@ -2156,7 +2271,8 @@ public class HomeScreenCtrl {
                 System.err.println("No images found for note: " + currentNote.getNoteId());
                 return List.of(); // Return empty list
             } else {
-                throw new IOException("Failed to fetch images. Server returned status: " + response.getStatus());
+                throw new IOException("Failed to fetch images. Server returned status: "
+                        + response.getStatus());
             }
         } catch (Exception e) {
             System.err.println("Error fetching images: " + e.getMessage());
@@ -2180,7 +2296,8 @@ public class HomeScreenCtrl {
             for (Images image : images) {
                 imageListView.getItems().add(image.getName());
             }
-            System.out.println("Loaded " + images.size() + " images for note: " + currentNote.getTitle());
+            System.out.println("Loaded " + images.size()
+                    + " images for note: " + currentNote.getTitle());
         });
     }
 }

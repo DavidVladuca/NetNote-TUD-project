@@ -6,7 +6,7 @@ public class Language {
     private int id; //needed for the model selection
     private String name;
     private String abbr; //abbreviation
-    private String img_path;
+    private String imgPath;
 
 
     /**
@@ -14,18 +14,20 @@ public class Language {
      * @param id - id number for the language
      * @param name - name (complete) of the language
      * @param abbr - two letter abbreviation of the language
-     * @param img_path - path for the location of the language flag
+     * @param imgPath - path for the location of the language flag
      */
-    public Language(int id, String name, String abbr, String img_path) throws IllegalArgumentException{
+    public Language(int id, String name, String abbr, String imgPath)
+            throws IllegalArgumentException{
         if (abbr.length()!=2){
-            throw new IllegalArgumentException("Abbreviation must be two characters long (use ISO 639).");
+            throw new IllegalArgumentException("Abbreviation must be " +
+                    "two characters long (use ISO 639).");
         } else if (abbr.matches("[^A-Z]")){
             throw new IllegalArgumentException("Abbreviation must only contain uppercase letters");
         }else{
             this.id = id;
             this.name = name;
             this.abbr = abbr;
-            this.img_path = img_path;
+            this.imgPath = imgPath;
         }
 
     }
@@ -58,16 +60,16 @@ public class Language {
      * getter for location of the language flag
      * @return - returns the path for the flag of the language
      */
-    public String getImg_path(){
-        return img_path;
+    public String getImgPath(){
+        return imgPath;
     }
 
     /**
      * Sets a new id
-     * @param new_id
+     * @param newId
      */
-    public void setId(int new_id){
-        this.id = new_id;
+    public void setId(int newId){
+        this.id = newId;
     }
 
     /**
@@ -84,7 +86,7 @@ public class Language {
         return this.id == that.id &&
                 Objects.equals(this.name, that.name) &&
                 Objects.equals(this.abbr, that.abbr) &&
-                Objects.equals(this.img_path, that.img_path);
+                Objects.equals(this.imgPath, that.imgPath);
     }
 
     /**
@@ -93,7 +95,7 @@ public class Language {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, abbr, img_path);
+        return Objects.hash(id, name, abbr, imgPath);
     }
 
     /**
@@ -106,7 +108,7 @@ public class Language {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", abbr='" + abbr + '\'' +
-                ", img_path='" + img_path + '\'' +
+                ", img_path='" + imgPath + '\'' +
                 '}';
     }
 }

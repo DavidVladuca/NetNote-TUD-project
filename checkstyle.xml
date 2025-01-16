@@ -9,9 +9,11 @@
         <property name="fileNamePattern" value=".*Test\.java$"/>
     </module>
     <module name="TreeWalker">
-        <module name="UnusedImports"/>
+        <module name="UnusedImports">
+            <property name="severity" value="error"/>
+        </module>
         <module name="MissingJavadocMethod">
-            <property name="severity" value="warning"/>
+            <property name="severity" value="error"/>
             <property name="scope" value="public"/>
             <property name="minLineCount" value="0"/>
             <property name="allowedAnnotations" value="Main"/>
@@ -23,7 +25,7 @@
             <property name="allowMissingReturnTag" value="false"/>
         </module>
         <module name="MethodLength">
-            <property name="severity" value="warning"/>
+            <property name="severity" value="error"/>
             <property name="tokens" value="METHOD_DEF, CTOR_DEF, COMPACT_CTOR_DEF"/>
             <property name="max" value="50"/>
         </module>
@@ -35,22 +37,27 @@
             <property name="severity" value="warning"/>
         </module>
         <module name="ParameterNumber">
-            <property name="severity" value="warning"/>
+            <property name="severity" value="error"/>
             <property name="tokens" value="METHOD_DEF, CTOR_DEF"/>
             <property name="max" value="6"/>
         </module>
         <module name="CyclomaticComplexity">
-            <property name="severity" value="warning"/>
+            <property name="severity" value="error"/>
             <property name="switchBlockAsSingleDecisionPoint" value="true"/>
             <property name="max" value="6"/>
             <property name="tokens"
                       value="LITERAL_WHILE, LITERAL_DO, LITERAL_FOR, LITERAL_IF, LITERAL_SWITCH, LITERAL_CASE, QUESTION"/>
         </module>
+        <module name="ParameterNumber">
+            <property name="severity" value="error"/>
+            <property name="tokens" value="METHOD_DEF, CTOR_DEF"/>
+            <property name="max" value="6"/>
+        </module>
         <module name="Indentation">
-            <property name="severity" value="warning"/>
+            <property name="severity" value="error"/>
         </module>
         <module name="UnusedImports">
-            <property name="severity" value="warning"/>
+            <property name="severity" value="error"/>
         </module>
         <module name="MemberName">
             <property name="severity" value="warning"/>
@@ -59,19 +66,19 @@
             <property name="severity" value="warning"/>
         </module>
         <module name="ParameterName">
-            <property name="severity" value="warning"/>
+            <property name="severity" value="error"/>
         </module>
         <module name="LocalVariableName">
-            <property name="severity" value="warning"/>
+            <property name="severity" value="error"/>
         </module>
         <module name="StaticVariableName">
-            <property name="severity" value="warning"/>
+            <property name="severity" value="error"/>
         </module>
         <module name="LambdaParameterName">
-            <property name="severity" value="warning"/>
+            <property name="severity" value="error"/>
         </module>
         <module name="TypeName">
-            <property name="severity" value="warning"/>
+            <property name="severity" value="error"/>
         </module>
         <module name="ClassTypeParameterName">
             <property name="format" value="(^[A-Z][0-9]?)$|([A-Z][a-zA-Z0-9]*$)"/>
@@ -79,9 +86,9 @@
         </module>
     </module>
     <module name="LineLength">
-        <property name="severity" value="warning"/>
+        <property name="severity" value="error"/>
         <property name="fileExtensions" value="java"/>
-        <property name="max" value="500"/>
+        <property name="max" value="100"/>
         <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
     </module>
 </module>

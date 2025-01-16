@@ -11,7 +11,16 @@ public class ScreenCtrl {
     private Scene editCollectionScene;
     private EditCollectionsViewCtrl editCollectionsViewCtrl;
 
-    public void init(Stage primaryStage, Pair<HomeScreenCtrl, Parent> home, Pair<EditCollectionsViewCtrl, Parent> editCollection) {
+    /**
+     * The initializator for the Screen
+     * @param primaryStage - the primary stage
+     * @param home - the HomeScreenCtrl
+     * @param editCollection - the EditCollectionsViewCtrl
+     */
+    public void init(Stage primaryStage,
+                     Pair<HomeScreenCtrl, Parent> home,
+                     Pair<EditCollectionsViewCtrl,
+                             Parent> editCollection) {
         this.primaryStage = primaryStage;
         this.homeScene = new Scene(home.getValue());
         this.editCollectionScene = new Scene(editCollection.getValue());
@@ -20,13 +29,23 @@ public class ScreenCtrl {
         primaryStage.show();
     }
 
+    /**
+     * This method shows the Home Screen
+     */
     public void showHome() {
-        if(primaryStage == null) {throw new IllegalStateException("Primary stage is not initialized");}
+        if(primaryStage == null) {
+            throw new IllegalStateException("Primary stage is not initialized");
+        }
         primaryStage.setScene(homeScene);
     }
 
+    /**
+     * This method shows the Edit Collections View
+     */
     public void showEditCollection() {
-        if(primaryStage == null) {throw new IllegalStateException("Primary stage is not initialized");}
+        if(primaryStage == null) {
+            throw new IllegalStateException("Primary stage is not initialized");
+        }
 
         if (editCollectionsViewCtrl != null) {
             this.editCollectionsViewCtrl.initialise();

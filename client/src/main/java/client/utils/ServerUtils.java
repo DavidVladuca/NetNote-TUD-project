@@ -16,62 +16,70 @@
  */
 package client.utils;
 
-import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
+import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.core.Response;
+import org.glassfish.jersey.client.ClientConfig;
 
 import java.io.IOException;
 import java.net.ConnectException;
 
-import jakarta.ws.rs.core.Response;
-import org.glassfish.jersey.client.ClientConfig;
-
-import jakarta.ws.rs.ProcessingException;
-import jakarta.ws.rs.client.ClientBuilder;
+import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 public class ServerUtils {
 
-	private static final String SERVER = "http://localhost:8080/";
+    private static final String SERVER = "http://localhost:8080/";
 
-	/**
-	 * This method validates the title with server if it is or
-	 * is not duplicate.
-	 * @param collectionId - id of the collection that is the note
-	 *                        associated with
-	 * @param newTitle - the title to be checked
-	 * @return true if it is a duplicate, false if it is not
-	 * @throws IOException when it returns something else then 200/409 code
-	 */
-	public boolean validateTitleWithServer(
-			final Long collectionId, final String newTitle)
-			throws IOException {
-		String endpoint = "api/notes/validate-title";
+    /**
+     * This method validates the title with server if it is or
+     * is not duplicate.
+     *
+     * @param collectionId - id of the collection that is the note
+     *                     associated with
+     * @param newTitle     - the title to be checked
+     * @return true if it is a duplicate, false if it is not
+     * @throws IOException when it returns something else then 200/409 code
+     */
+    public boolean validateTitleWithServer(
+            final Long collectionId, final String newTitle)
+            throws IOException {
+        String endpoint = "api/notes/validate-title";
 
-		Response response = ClientBuilder.newClient()
-				.target(SERVER)
-				.path(endpoint)  // Endpoint path
-				.queryParam("title", newTitle)
-				.request()
-				.get();
+        Response response = ClientBuilder.newClient()
+                .target(SERVER)
+                .path(endpoint)  // Endpoint path
+                .queryParam("collectionId", collectionId)
+                .queryParam("title", newTitle)
+                .request()
+                .get();
 
-		if (response.getStatus() == 409) {
-			return true;
-		} else if (response.getStatus() == 200) {
-			return false;
-		} else {
-			throw new IOException("Error: " + response.getStatus());
-		}
-	}
+        if (response.getStatus() == 409) {
+            System.out.println("Duplicate title detected: " + newTitle);
+            return true;
+        } else if (response.getStatus() == 200) {
+            System.out.println("Title is unique: " + newTitle);
+            return false;
+        } else {
+            throw new IOException("Error: " + response.getStatus());
+        }
+    }
 
-	public boolean isServerAvailable() {
-		try {
-			ClientBuilder.newClient(new ClientConfig()) //
-					.target(SERVER) //
-					.request(APPLICATION_JSON) //
-					.get();
-		} catch (ProcessingException e) {
-			if (e.getCause() instanceof ConnectException) {
-				return false;
-			}
-		}
-		return true;
-	}
+    /**
+     * This method says if the server is or is not available
+     * @return the boolean that is true if the server is available,
+     * and is false if the server is not
+     */
+    public boolean isServerAvailable() {
+        try {
+            ClientBuilder.newClient(new ClientConfig()) //
+                    .target(SERVER) //
+                    .request(APPLICATION_JSON) //
+                    .get();
+        } catch (ProcessingException e) {
+            if (e.getCause() instanceof ConnectException) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

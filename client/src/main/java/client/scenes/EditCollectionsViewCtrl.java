@@ -75,6 +75,9 @@ public class EditCollectionsViewCtrl {
         this.homeScreenCtrl = homeScreenCtrl;
     }
 
+    /**
+     * This method initialises the EditCollectionsView
+     */
     public void initialise(){
         collections.setAll(homeScreenCtrl.currentServer.getCollections());
         setupCollectionsListView();
@@ -102,7 +105,8 @@ public class EditCollectionsViewCtrl {
                 .addListener((observable, oldCollection, newCollection) -> {
                     if (newCollection != null) {
                         titleTextF.setText(newCollection.getCollectionTitle());
-                        serverTextF.setText(newCollection.getServer().getURL());// TODO: if we want multiple servers -> make it not hard-coded
+                        serverTextF.setText(newCollection.getServer().getURL());
+                        // TODO: if we want multiple servers -> make it not hard-coded
                         collectionTextF.setText(newCollection.getCollectionPath());
                         Platform.runLater(() -> collectionsListView.getSelectionModel());
                     }
@@ -127,7 +131,8 @@ public class EditCollectionsViewCtrl {
     public void makeDefault() {
         String collectionTitle = titleTextF.getText();
         if (collectionTitle == null || collectionTitle.isEmpty()) {
-            System.err.println("No collection selected to set as default."); // TODO: implement pop-up
+            System.err.println("No collection selected to set as default.");
+            // TODO: implement pop-up
         } else {
             // TODO: implement functionality
         }
@@ -170,8 +175,9 @@ public class EditCollectionsViewCtrl {
                     collectionsListView.getSelectionModel().clearSelection();
                 });
 
-                showAlert(AlertType.INFORMATION, "Delete Successful", "Collection deleted successfully.");
-                System.out.println("Collection deleted: " + selectedCollection.getCollectionTitle()); //testing
+                showAlert(AlertType.INFORMATION,
+                        "Delete Successful",
+                        "Collection deleted successfully.");
             } catch (Exception e) {
                 System.err.println("Error while deleting collection: " + e.getMessage());
                 e.printStackTrace();
