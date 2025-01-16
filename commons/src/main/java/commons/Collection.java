@@ -31,7 +31,7 @@ public class Collection {
     private List<Note> notes;
 
     /**
-     * Default constructor for for Collection for JPA
+     * Default constructor for Collection for JPA
      */
     public Collection() {
         this.notes = new ArrayList<>();
