@@ -15,7 +15,7 @@ public class ServerTest {
     public void setUp() {
         server1 = new Server();
         server2 = new Server();
-        collection1 = new Collection(server1, "Test Collection 1");
+        collection1 = new Collection(server1, "Test Collection 1", "collection-1");
     }
 
     @Test
@@ -85,5 +85,16 @@ public class ServerTest {
                 "\n" +
                 "No Notes";
         assertEquals(expected, actual);
+    }
+
+    @Test
+    void getURL() {
+        assertEquals(server1.getURL(), "localhost:8080");
+    }
+
+    @Test
+    void setURL() {
+        server1.setURL("localhost:8081");
+        assertEquals(server1.getURL(), "localhost:8081");
     }
 }

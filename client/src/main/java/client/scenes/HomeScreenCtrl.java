@@ -103,7 +103,6 @@ public class HomeScreenCtrl {
      */
     private javafx.scene.Scene editCollectionScene;
 
-
     /**
      * Initializes the whole scene.
      *
@@ -145,7 +144,7 @@ public class HomeScreenCtrl {
     /**
      * Triggers the edit collection viewer.
      */
-    public void showEditCollection() {
+    public void showEditCollection() { //TODO: should this be used? if yes, call inside: initialise() from EditCollectionsViewCtrl
         if (primaryStage == null) {
             throw new IllegalStateException("Primary stage is not initialized");
         }
@@ -309,14 +308,14 @@ public class HomeScreenCtrl {
     /**
      * current server being used.
      */
-    private final Server currentServer = new Server();
+    public final Server currentServer = new Server();
 
     /**
      * Current collection. If just the program for the first time
      * makes a default collection.
      */
     public Collection default_collection = new Collection(
-            currentServer, "Default");
+            currentServer, "Default", "default");
     public Collection currentCollection = default_collection;
 
 
@@ -391,6 +390,7 @@ public class HomeScreenCtrl {
                 this::syncIfChanged, 0, period, TimeUnit.SECONDS);
         setUpLanguages();
         loadSavedLanguageChoice();
+        loadCollectionsFromServer();
         setUpCollections();
         markDownTitle();
         markDownContent();
@@ -458,12 +458,12 @@ public class HomeScreenCtrl {
     public void setUpCollections() {
         ObservableList<Collection> collectionOptions = FXCollections.observableArrayList();
         collectionOptions.add(default_collection);
-        collectionOptions.add(new Collection(currentServer, "All"));
+        collectionOptions.add(new Collection(currentServer, "All", "all"));
         collectionOptions.addAll(currentServer.getCollections());
 
         selectCollectionBox.setItems(collectionOptions);
 
-        selectCollectionBox.setValue(collectionOptions.get(0));
+        selectCollectionBox.setValue(collectionOptions.get(0)); //auto-set to the Default collection
 
         // Setting up the converter for displaying collection titles
         selectCollectionBox.setConverter(new StringConverter<>() {
@@ -481,7 +481,7 @@ public class HomeScreenCtrl {
         selectCollectionBox.getSelectionModel().selectedItemProperty().addListener((obs, oldCollection, newCollection) -> {
             if (!newCollection.equals(oldCollection)) {
                 updateNotesList(newCollection);
-                System.out.println("\nShow " + selectCollectionBox.getValue().getCollectionTitle());
+                System.out.println("\nShow " + selectCollectionBox.getValue().getCollectionTitle()); //testing
 
                 // Update current collection based on selection
                 if (newCollection.getCollectionTitle().equals("All")) {
@@ -497,7 +497,7 @@ public class HomeScreenCtrl {
     }
 
     /**
-     * Syncs all collections with the server to ensure consistency
+     * Syncs a specific collection with the server to ensure consistency
      */
     private void syncCollectionWithServer(Collection collection) {
         try {
@@ -563,7 +563,7 @@ public class HomeScreenCtrl {
     /**
      * Fetches collections from the server and stores them locally
      */
-    private void loadCollectionsFromServer() {
+    public void loadCollectionsFromServer() {
         try {
             // Fetch collections from the server
             var response = ClientBuilder.newClient()
@@ -591,6 +591,27 @@ public class HomeScreenCtrl {
             e.printStackTrace();
         }
     }
+
+    /**
+     * Sends a request to the server to delete a collection by a provided ID.
+     * @param collectionId - ID of the collection to be deleted
+     */
+    public static void deleteCollectionFromServer(long collectionId) {
+        Response response = ClientBuilder.newClient()
+                // Endpoint for deletion
+                .target("http://localhost:8080/api/collections/delete/" + collectionId)
+                .request()
+                .delete();
+        if (response.getStatus() == Response.Status.NO_CONTENT.getStatusCode()) {
+            System.out.println("Collection successfully deleted.");
+        } else if (response.getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
+            System.out.println("Collection not found.");
+        } else {
+            System.out.println("Failed to delete collection. Status: " + response.getStatus());
+        }
+        response.close();
+    }
+
 
 
     private void loadTagsFromServer() {
@@ -1119,6 +1140,9 @@ public class HomeScreenCtrl {
         }
     }
 
+    /**
+     * Sets up the ListView in the front-end
+     */
     private void setupNotesListView() {
         // Binding the ObservableList to the ListView
         notesListView.setItems(notes);
@@ -1406,6 +1430,7 @@ public class HomeScreenCtrl {
         Note savedNote = saveNoteToServer(newNote);
 
         currentCollection.addNote(savedNote);  // Add to the collection
+        System.out.println("New note added to collection: " + currentCollection.getCollectionTitle()); //testing
         notes.add(savedNote);                   // Add to the ObservableList
         notesListView.getSelectionModel().select(savedNote);
         // Update UI fields
