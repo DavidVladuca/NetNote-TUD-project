@@ -7,6 +7,9 @@ import commons.Collection;
 import commons.*;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.core.Response;
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
+import javafx.animation.SequentialTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -20,12 +23,15 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+import javafx.util.Duration;
 import javafx.util.Pair;
 import javafx.util.StringConverter;
 import netscape.javascript.JSObject;
@@ -251,7 +257,7 @@ public class HomeScreenCtrl {
     /**
      * Selection box for the working collection.
      */
-    public ChoiceBox<Collection> selectCollectionBox = new ChoiceBox<>();
+    public ComboBox<Collection> selectCollectionBox = new ComboBox<>();
     /**
      * Invoker for keeping history of commands and executing them.
      */
@@ -349,7 +355,6 @@ public class HomeScreenCtrl {
      * Body of note in last sync to server.
      */
     private String lastSyncedBody = "";
-
 
     /**
      * This method initializes the controller
@@ -602,9 +607,10 @@ public class HomeScreenCtrl {
 
     /**
      * This method creates the Tag Dialog
+     *
      * @param tagProfileHeight the tag profile height
-     * @param vSpacing - the v spacing
-     * @param tagCheckBoxes - the list of the tag check boxes
+     * @param vSpacing         - the v spacing
+     * @param tagCheckBoxes    - the list of the tag check boxes
      * @return the created Tag Dialog
      */
     private Dialog<Void> createTagDialog(int tagProfileHeight,
@@ -628,7 +634,8 @@ public class HomeScreenCtrl {
 
     /**
      * This method creates the Tag List Container
-     * @param vSpacing - the vSpacing
+     *
+     * @param vSpacing      - the vSpacing
      * @param tagCheckBoxes the list of the tag check boxes
      * @return vBox representing the Tag List Container
      */
@@ -648,6 +655,7 @@ public class HomeScreenCtrl {
 
     /**
      * This method creates the scroll pane
+     *
      * @param tagListContainer - vbox with the tag list
      * @param tagProfileHeight - the height of the tag profile
      * @return the scroll pane created
@@ -663,8 +671,9 @@ public class HomeScreenCtrl {
 
     /**
      * This method creates the add a tag button
+     *
      * @param tagListContainer - the Vbox representing the tag list container
-     * @param tagCheckBoxes the list of the tag check boxes
+     * @param tagCheckBoxes    the list of the tag check boxes
      * @return a button representing the add tag
      */
     private Button createAddTagButton(VBox tagListContainer, List<CheckBox> tagCheckBoxes) {
@@ -675,8 +684,9 @@ public class HomeScreenCtrl {
 
     /**
      * This method handles the tag adding actions
+     *
      * @param tagListContainer the provided vbox representing the tag list container
-     * @param tagCheckBoxes the list of the tag check boxes
+     * @param tagCheckBoxes    the list of the tag check boxes
      */
     private void handleAddTag(VBox tagListContainer, List<CheckBox> tagCheckBoxes) {
         TextInputDialog inputDialog = new TextInputDialog();
@@ -689,9 +699,10 @@ public class HomeScreenCtrl {
 
     /**
      * This method processes the new Tag
-     * @param tagName - the name of the tag
+     *
+     * @param tagName          - the name of the tag
      * @param tagListContainer the VBox representing the tag list
-     * @param tagCheckBoxes the list of the tag check boxes
+     * @param tagCheckBoxes    the list of the tag check boxes
      */
     private void processNewTag(String tagName,
                                VBox tagListContainer,
@@ -733,6 +744,7 @@ public class HomeScreenCtrl {
 
     /**
      * This method processes the selected tags
+     *
      * @param tagCheckBoxes the list of the tag check boxes
      */
     private void processSelectedTags(List<CheckBox> tagCheckBoxes) {
@@ -821,6 +833,7 @@ public class HomeScreenCtrl {
         handleNavigationShortcuts(event);
         handleUtilityShortcuts(event);
         handleChoiceShortcuts(event);
+        handleTagsAndEmbeddedShortcuts(event);
     }
 
     /**
@@ -906,6 +919,24 @@ public class HomeScreenCtrl {
             editCollections();
             event.consume();
         }
+        // Shift + U to upload a file
+        if (event.isShiftDown() && event.getCode() == KeyCode.U) {
+            uploadImage();
+            event.consume();
+        }
+    }
+
+    private void handleTagsAndEmbeddedShortcuts(KeyEvent event) {
+        // Shift + U to upload a file
+        if (event.isShiftDown() && event.getCode() == KeyCode.U) {
+            uploadImage();
+            event.consume();
+        }
+        // Control + C to clear tags
+        if (event.isControlDown() && event.getCode() == KeyCode.C) {
+            clearTags();
+            event.consume();
+        }
     }
 
     /**
@@ -971,9 +1002,17 @@ public class HomeScreenCtrl {
                         Shift + C: Show available collections
                         Shift + E: Edit collections
                         Shift + T: Edit Tags
+                        Shift + U: Upload a file
+                        Control + C: Clear Tags
                         F5: \t\tRefresh
                         Ctrl + F: Search within a note
                         ESC: Set/reset focus to the collection search
+                        
+                        COLLECTION VIEW:
+                        Control + A: Add a collection
+                        Control + Delete: Delete a collection
+                        Control + D: Make collection default
+                        Control + S: Save a collection
                         """
         );
         shortcuts.showAndWait();
@@ -1168,6 +1207,7 @@ public class HomeScreenCtrl {
 
     /**
      * This method processes the [[Other Note]] references
+     *
      * @param processedContent - the content that is processed
      * @return the StringBuffer representing the other note
      */
@@ -1295,6 +1335,7 @@ public class HomeScreenCtrl {
 
     /**
      * This method ensures the functionality for adding a tag
+     *
      * @param tagName - the name of the tag, e.g. #foo
      */
     public void addTag(String tagName) {
@@ -1348,6 +1389,8 @@ public class HomeScreenCtrl {
             counter++;
         }
 
+        showAddInfo("New note has been successfully added!");
+
         // Create the new note
         Note newNote = new Note(newTitle, "", currentCollection);
         // Create command for adding new note
@@ -1355,6 +1398,52 @@ public class HomeScreenCtrl {
         // Use the invoker to execute the command
         invoker.executeCommand(addNoteCommand);
     }
+
+    /**
+     * This method shows the 'toast' pop up when a note is added
+     * @param message - the message to be displayed
+     */
+    private void showAddInfo(String message) {
+        // Get the root node of the scene
+        Pane root = (Pane) addB.getScene().getRoot();
+        // Create a label for the toast message
+        Label toastLabel = new Label(message);
+        toastLabel.setStyle("-fx-background-color:  #1E1E1E; " +
+                "-fx-text-fill: white; -fx-padding: 10px;" +
+                " -fx-border-radius: 5; -fx-background-radius: 5;");
+
+        // Wrap the toast in a temporary StackPane
+        StackPane toastContainer = new StackPane(toastLabel);
+        toastContainer.setStyle("-fx-alignment: center; -fx-background-color: transparent;");
+        toastContainer.setMouseTransparent(true);
+
+        // Add the StackPane to the root node
+        root.getChildren().add(toastContainer);
+
+        // This centers the label
+        if (root instanceof Pane pane) {
+            toastContainer.layoutXProperty()
+                    .bind(pane.widthProperty()
+                            .subtract(toastContainer.widthProperty()).divide(2));
+            toastContainer.layoutYProperty()
+                    .bind(pane.heightProperty()
+                            .subtract(toastContainer.heightProperty()).divide(2));
+        }
+        // Fade-in animation
+        FadeTransition fadeIn = new FadeTransition(Duration.millis(500), toastContainer);
+        fadeIn.setFromValue(0);
+        fadeIn.setToValue(1);
+        // Pause before fade-out
+        PauseTransition pause = new PauseTransition(Duration.millis(1500));
+        // Fade-out animation
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(500), toastContainer);
+        fadeOut.setFromValue(1);
+        fadeOut.setToValue(0);
+        fadeOut.setOnFinished(event -> root.getChildren().remove(toastContainer));
+        // Play animations sequentially
+        new SequentialTransition(fadeIn, pause, fadeOut).play();
+    }
+
 
     /**
      * Method to add a new note.
@@ -1535,9 +1624,9 @@ public class HomeScreenCtrl {
                         showWarningAlert("Duplicate Title",
                                 "Title Already Exists",
                                 "The title \""
-                                + newTitle
-                                + "\" already exists in this collection. "
-                                + "Please choose a different one.");
+                                        + newTitle
+                                        + "\" already exists in this collection. "
+                                        + "Please choose a different one.");
                         // Revert to the original title
                         Platform.runLater(() -> noteTitleF.setText(originalTitle));
                     } else if (newTitle.isEmpty()) {
@@ -1658,8 +1747,9 @@ public class HomeScreenCtrl {
 
     /**
      * This method highlights the matches in the title
+     *
      * @param titleHighlighted - the title highlighted
-     * @param searchText - the search text
+     * @param searchText       - the search text
      * @return a String representing the highlighted title part
      */
     private String highlightMatchesInTitle(String titleHighlighted, String searchText) {
@@ -1679,9 +1769,10 @@ public class HomeScreenCtrl {
 
     /**
      * This method highlights the matches in the body of the note
-     * @param body - the body of the note
+     *
+     * @param body       - the body of the note
      * @param searchText - the search text
-     * @param title - the title provided
+     * @param title      - the title provided
      * @return a String representing the highlighted part
      */
     private String highlightMatchesInBody(String body, String searchText, String title) {
@@ -1703,10 +1794,11 @@ public class HomeScreenCtrl {
 
     /**
      * This method highlights the match
-     * @param content - the content
+     *
+     * @param content    - the content
      * @param searchText - the search text
-     * @param index - the index of the current match
-     * @param isCurrent - is it current?
+     * @param index      - the index of the current match
+     * @param isCurrent  - is it current?
      * @return a String representing the highlighted part
      */
     private String highlightMatch(String content, String searchText, int index, boolean isCurrent) {
@@ -1749,8 +1841,9 @@ public class HomeScreenCtrl {
 
     /**
      * This method renders the highlighted content in the markdown
+     *
      * @param title - the title of the note
-     * @param body - the body of the note
+     * @param body  - the body of the note
      */
     private void renderHighlightedContent(String title, String body) {
         String renderedTitle = "<h1>" + renderer.render(parser.parse(title)) + "</h1>";
@@ -1787,8 +1880,9 @@ public class HomeScreenCtrl {
 
     /**
      * This method configures the combo box with languages
+     *
      * @param height - the height of the combo box
-     * @param width - the width of the combo box
+     * @param width  - the width of the combo box
      */
     private void configureLanguageComboBox(double height, double width) {
         /* How to do this gotten from stack overflow
