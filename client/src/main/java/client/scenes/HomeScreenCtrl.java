@@ -376,6 +376,7 @@ public class HomeScreenCtrl {
         markDownContent();
         loadNotesFromServer();
         setupNotesListView();
+        setupImageListView();
         loadTagsFromServer();
         handleTitleEdits();
         prevMatch();
@@ -2161,6 +2162,89 @@ public class HomeScreenCtrl {
                     + " images for note: " + currentNote.getTitle());
         });
     }
+
+    /**
+     * Allows for the editing of image names on double click
+     */
+    private void setupImageListView() {
+        imageListView.setOnMouseClicked(event -> {
+            if(event.getClickCount() == 2) {
+                String selectedImageName = imageListView.getSelectionModel().getSelectedItem();
+                if (selectedImageName != null) {
+                    renameImage(selectedImageName);
+                }
+            }
+        });
+    }
+
+    /**
+     * Changes the name of an image and ensures the name
+     * cannot be empty/file extension cant be changed
+     * @param currentName
+     */
+    private void renameImage(String currentName) {
+        TextInputDialog dialog = new TextInputDialog(currentName);
+        dialog.setTitle("Rename Image");
+        dialog.setHeaderText("Rename Image");
+        dialog.setContentText("New name:");
+
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(newName -> {
+            if(!isValidNameChange(currentName, newName)) {
+                showErrorDialog("Invalid Name",
+                        "The name must not be empty and must retain the same file extension");
+                return;
+            }
+
+            Images imageToRename = fetchImageByName(currentName);
+            if(imageToRename != null) {
+                imageToRename.setName(newName);
+
+                try {
+                    Images updatedImage = serverUtils.updateImageOnServer(imageToRename);
+                    if (updatedImage != null) {
+                        imageListView.getItems().set(
+                                imageListView.getItems().indexOf(currentName), newName);
+                    } else {
+                        showErrorDialog("Update Failed",
+                                "Failed to update the image name on the server.");
+                    }
+                } catch (IOException e) {
+                    showErrorDialog("Server Error",
+                            "An error occurred while updating the image name: " + e.getMessage());
+                }
+            }
+        });
+    }
+
+    /**
+     * Checks for the validity of the changed image name
+     * @param oldName
+     * @param newName
+     * @return boolean value for validity
+     */
+    private boolean isValidNameChange(String oldName, String newName) {
+        if (newName == null || newName.trim().isEmpty()) return false;
+
+        String oldExtension = oldName.substring(oldName.lastIndexOf('.') + 1);
+        String newExtension = newName.substring(newName.lastIndexOf('.') + 1);
+
+        return oldExtension.equalsIgnoreCase(newExtension);
+    }
+
+    /**
+     * Retrieves the image based on its name
+     * @param name
+     * @return
+     */
+    private Images fetchImageByName(String name) {
+        List<Images> images = fetchImagesForNote();
+        return images.stream()
+                .filter(img -> img.getName().equals(name))
+                .findFirst()
+                .orElse(null);
+    }
+
 }
 
 
