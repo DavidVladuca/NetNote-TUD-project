@@ -106,7 +106,7 @@ public class ImagesController {
      * @param id - ID of the image
      * @return - ResponseEntity indicating the result of the operation
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteImage(@PathVariable Long id) {
         if (!imageRepository.existsById(id)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

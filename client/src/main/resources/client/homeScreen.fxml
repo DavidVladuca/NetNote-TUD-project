@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.ScrollPane?>
@@ -60,7 +59,8 @@
                   <Pane prefHeight="137.0" prefWidth="502.0">
                      <children>
                         <Button fx:id="uploadImageB" layoutX="425.0" layoutY="6.0" minWidth="53.0" mnemonicParsing="false" onAction="#uploadImage" prefHeight="44.0" prefWidth="78.0" style="-fx-background-color: #e43e38;" text="Upload" textFill="WHITE" />
-                        <ListView fx:id="imageListView" layoutX="18.0" layoutY="6.0" orientation="HORIZONTAL" prefHeight="44.0" prefWidth="392.0" />
+                        <ListView fx:id="imageListView" layoutX="8.0" layoutY="6.0" orientation="HORIZONTAL" prefHeight="44.0" prefWidth="363.0" />
+                        <Button id="deleteB" fx:id="deleteImageB" layoutX="371.0" layoutY="6.0" mnemonicParsing="false" onAction="#deleteImage" styleClass="down-button" stylesheets="@../css/style.css" />
                      </children>
                   </Pane>
                </children>

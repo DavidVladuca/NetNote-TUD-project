@@ -169,6 +169,11 @@ public class HomeScreenCtrl {
      * Button for deleting a note.
      */
     private Button deleteB;
+
+    /**
+     * Button for deleting a selected image
+     */
+    private Button deleteImageB;
     /**
      * Button for undo-ing last change.
      */
@@ -2245,6 +2250,49 @@ public class HomeScreenCtrl {
                 .orElse(null);
     }
 
+    /**
+     * Method is called when clicking the delete button,
+     * deletes a selected image from note
+     */
+    @FXML
+    public void deleteImage() {
+        String selectedImageName = imageListView.getSelectionModel().getSelectedItem();
+
+        if (selectedImageName == null) {
+            showErrorDialog("No Image Selected", "Please select an image to delete.");
+            return;
+        }
+
+        // Confirm deletion
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Delete Image");
+        alert.setHeaderText("Are you sure you want to delete this image?");
+        alert.setContentText("Image: \"" + selectedImageName + "\"");
+        Optional<ButtonType> result = alert.showAndWait();
+
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            Images imageToDelete = fetchImageByName(selectedImageName);
+
+            if (imageToDelete == null) {
+                showErrorDialog("Image Not Found", "The selected image could not be found.");
+                return;
+            }
+
+            try {
+                boolean success = serverUtils.deleteImageFromServer(imageToDelete);
+
+                if (success) {
+                    Platform.runLater(() -> imageListView.getItems().remove(selectedImageName));
+                    System.out.println("Image deleted: " + selectedImageName);
+                } else {
+                    showErrorDialog("Server Error", "Failed to delete the image from the server.");
+                }
+            } catch (Exception e) {
+                showErrorDialog("Error",
+                        "An error occurred while deleting the image: " + e.getMessage());
+            }
+        }
+    }
 }
 
 
