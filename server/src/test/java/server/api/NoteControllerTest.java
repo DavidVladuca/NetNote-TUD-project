@@ -145,7 +145,7 @@ public class NoteControllerTest {
     }
 
     /**
-     * Tests the delete endpoint, expect 404 Not Found after deletion
+     * Tests the delete endpoint, expect no content after deletion
      *
      * @throws Exception
      */
@@ -158,7 +158,7 @@ public class NoteControllerTest {
     }
 
     /**
-     * Tests the delete endpoint with bad id
+     * Tests the delete endpoint with bad id, expect 404 not found
      *
      * @throws Exception
      */
@@ -169,7 +169,7 @@ public class NoteControllerTest {
     }
 
     /**
-     * Tests the get endpoint with a valid id
+     * Tests the get endpoint with a valid id, expect 200 Ok
      *
      * @throws Exception
      */
