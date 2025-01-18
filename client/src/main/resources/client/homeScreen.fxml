@@ -59,8 +59,9 @@
                   <Pane prefHeight="137.0" prefWidth="502.0">
                      <children>
                         <Button fx:id="uploadImageB" layoutX="425.0" layoutY="6.0" minWidth="53.0" mnemonicParsing="false" onAction="#uploadImage" prefHeight="44.0" prefWidth="78.0" style="-fx-background-color: #e43e38;" text="Upload" textFill="WHITE" />
-                        <ListView fx:id="imageListView" layoutX="8.0" layoutY="6.0" orientation="HORIZONTAL" prefHeight="44.0" prefWidth="363.0" />
-                        <Button id="deleteB" fx:id="deleteImageB" layoutX="371.0" layoutY="6.0" mnemonicParsing="false" onAction="#deleteImage" styleClass="down-button" stylesheets="@../css/style.css" />
+                        <ListView fx:id="imageListView" layoutX="8.0" layoutY="6.0" orientation="HORIZONTAL" prefHeight="44.0" prefWidth="307.0" />
+                        <Button id="deleteB" fx:id="deleteImageB" layoutX="317.0" layoutY="6.0" mnemonicParsing="false" onAction="#deleteImage" styleClass="down-button" stylesheets="@../css/style.css" />
+                        <Button fx:id="downloadImageB" layoutX="371.0" layoutY="6.0" minWidth="53.0" mnemonicParsing="false" onAction="#showDownloadImageScreen" prefHeight="44.0" prefWidth="53.0" styleClass="down-button" stylesheets="@../css/style.css" text="D" />
                      </children>
                   </Pane>
                </children>
