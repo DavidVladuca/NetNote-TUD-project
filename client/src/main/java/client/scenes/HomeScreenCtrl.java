@@ -2134,6 +2134,18 @@ public class HomeScreenCtrl {
         File file = fileChooser.showOpenDialog(uploadImageB.getScene().getWindow());
 
         if (file != null) {
+            String fileName = file.getName();
+
+            // Check for duplicate names
+            List<String> existingNames = fetchImagesForNote().stream()
+                    .map(Images::getName)
+                    .collect(Collectors.toList());
+            if (existingNames.contains(fileName)) {
+                showErrorDialog("Duplicate Image Name",
+                        "An image with the name \"" + fileName + "\" already exists in this note. Please rename the file and try again.");
+                return;
+            }
+
             try {
                 byte[] imageData = Files.readAllBytes(file.toPath());
 
@@ -2239,6 +2251,16 @@ public class HomeScreenCtrl {
             if(!isValidNameChange(currentName, newName)) {
                 showErrorDialog("Invalid Name",
                         "The name must not be empty and must retain the same file extension");
+                return;
+            }
+
+            // Check for duplicate names
+            List<String> existingNames = fetchImagesForNote().stream()
+                    .map(Images::getName)
+                    .collect(Collectors.toList());
+            if (existingNames.contains(newName)) {
+                showErrorDialog("Duplicate Name",
+                        "An image with the name \"" + newName + "\" already exists. Please choose a different name.");
                 return;
             }
 
