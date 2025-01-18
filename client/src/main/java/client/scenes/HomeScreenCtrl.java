@@ -1091,57 +1091,112 @@ public class HomeScreenCtrl {
         });
     }
 
+    private void refreshTagsDisplay() {
+        Platform.runLater(() -> {
+            selectedTagsContainer.getChildren().clear();
+            for (String tag : getAllTags()) {
+                ChoiceBox<String> tagBox = new ChoiceBox<>();
+                tagBox.setValue(tag);
+                selectedTagsContainer.getChildren().add(tagBox);
+            }
+            togglePlaceholderText(); // Handle placeholder visibility.
+        });
+    }
+
+
     @FXML
     public void filterByTag(String tag) {
         Platform.runLater(() -> {
+            // Clean the tag (remove # if present)
+            String cleanTag = tag.startsWith("#") ? tag.substring(1) : tag;
+
             // Check if the tag already exists in the filtering box
             boolean tagExists = selectedTagsContainer.getChildren().stream()
                     .filter(node -> node instanceof ChoiceBox)
                     .map(node -> ((ChoiceBox<String>) node).getValue())
-                    .anyMatch(existingTag -> existingTag.equals(tag));
+                    .anyMatch(existingTag -> existingTag.equals(cleanTag));
 
             if (!tagExists) {
                 // Create the ChoiceBox for the new tag
                 ChoiceBox<String> tagChoiceBox = new ChoiceBox<>();
-                tagChoiceBox.setItems(FXCollections.observableArrayList(getAllTags()));
-                tagChoiceBox.setValue(tag);
-                adjustChoiceBoxWidth(tagChoiceBox, tag);
+                tagChoiceBox.setValue(cleanTag);
 
-                // Remove placeholder text when tags are added
-                togglePlaceholderText();
+                // Store the original value to revert if the selection is canceled
+                final String[] originalValue = {cleanTag};
 
-                // Listen for changes to the selected tag
+                // Refresh the available tags when the ChoiceBox is opened
+                tagChoiceBox.setOnShowing(event -> refreshAvailableTags(tagChoiceBox));
+
+                // Revert to the original value if the dropdown is closed without selecting anything
+                tagChoiceBox.setOnHiding(event -> {
+                    if (tagChoiceBox.getValue() == null) {
+                        Platform.runLater(() -> tagChoiceBox.setValue(originalValue[0])); // Revert to the original value
+                    }
+                });
+
+                // Validate the new tag combination when a tag is selected
                 tagChoiceBox.getSelectionModel().selectedItemProperty().addListener((obs, oldTag, newTag) -> {
                     if (newTag != null) {
-                        // Collect selected tags before allowing the new one
-                        Set<String> selectedTags = selectedTagsContainer.getChildren().stream()
-                                .filter(node -> node instanceof ChoiceBox)
-                                .map(node -> ((ChoiceBox<String>) node).getValue())
-                                .map(tagValue -> tagValue.startsWith("#") ? tagValue.substring(1) : tagValue)
-                                .collect(Collectors.toSet());
+                        Set<String> selectedTags = collectSelectedTags(newTag, oldTag);
 
-                        // Temporarily add the new tag to the set for validation
-                        selectedTags.add(newTag.startsWith("#") ? newTag.substring(1) : newTag);
-
-                        if (!isCombinationValid(selectedTags)) {
-                            // Show alert and revert to the previous tag
-                            showAlert("Invalid Tag Combination", "No notes match the selected combination of tags.");
-                            Platform.runLater(() -> tagChoiceBox.setValue(oldTag));
-                        } else {
+                        if (isCombinationValid(selectedTags)) {
                             // Valid tag: adjust UI and apply filtering
                             adjustChoiceBoxWidth(tagChoiceBox, newTag);
                             filterNotesByTags();
+                            originalValue[0] = newTag; // Update the original value
+                        } else {
+                            // Invalid tag: show alert and revert to the previous tag
+                            showAlert("Invalid Tag Combination",
+                                    "No notes match the selected tag combination. Please try again.");
+                            Platform.runLater(() -> tagChoiceBox.setValue(originalValue[0])); // Revert selection
                         }
                     }
                 });
 
-                selectedTagsContainer.getChildren().add(tagChoiceBox);
-            }
+                adjustChoiceBoxWidth(tagChoiceBox, cleanTag);
 
-            // Apply filtering with the initial tag
-            filterNotesByTags();
+                // Remove placeholder text when tags are added
+                togglePlaceholderText();
+
+                // Add the new ChoiceBox to the UI
+                selectedTagsContainer.getChildren().add(tagChoiceBox);
+
+                // Apply filtering with the initial tag
+                filterNotesByTags();
+            }
         });
     }
+
+
+    private Set<String> collectSelectedTags(String newTag, String oldTag) {
+        // Collect currently selected tags
+        Set<String> selectedTags = selectedTagsContainer.getChildren().stream()
+                .filter(node -> node instanceof ChoiceBox)
+                .map(node -> ((ChoiceBox<String>) node).getValue())
+                .collect(Collectors.toSet());
+
+        // Replace old tag with the new one in the tag set
+        if (oldTag != null) selectedTags.remove(oldTag);
+        if (newTag != null) selectedTags.add(newTag);
+
+        return selectedTags;
+    }
+
+    private void refreshAvailableTags(ChoiceBox<String> choiceBox) {
+        // Get all tags except the ones already selected in other ChoiceBoxes
+        Set<String> selectedTags = selectedTagsContainer.getChildren().stream()
+                .filter(node -> node instanceof ChoiceBox)
+                .map(node -> ((ChoiceBox<String>) node).getValue())
+                .collect(Collectors.toSet());
+
+        List<String> availableTags = getAllTags().stream()
+                .filter(tagName -> !selectedTags.contains(tagName))
+                .collect(Collectors.toList());
+
+        // Update the available options in the ChoiceBox
+        choiceBox.setItems(FXCollections.observableArrayList(availableTags));
+    }
+
 
 
     private void togglePlaceholderText() {
@@ -1184,8 +1239,6 @@ public class HomeScreenCtrl {
         new Scene(new Group(tempText));
         return tempText.getLayoutBounds().getWidth();
     }
-
-
 
     private List<String> getAllTags() {
         return notes.stream()
