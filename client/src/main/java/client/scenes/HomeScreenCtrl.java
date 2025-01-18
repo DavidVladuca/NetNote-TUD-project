@@ -2153,7 +2153,9 @@ public class HomeScreenCtrl {
                     .collect(Collectors.toList());
             if (existingNames.contains(fileName)) {
                 showErrorDialog("Duplicate Image Name",
-                        "An image with the name \"" + fileName + "\" already exists in this note. Please rename the file and try again.");
+                        "An image with the name \"" + fileName +
+                                "\" already exists in this note. " +
+                                "Please rename the file and try again.");
                 return;
             }
 
@@ -2271,7 +2273,8 @@ public class HomeScreenCtrl {
                     .collect(Collectors.toList());
             if (existingNames.contains(newName)) {
                 showErrorDialog("Duplicate Name",
-                        "An image with the name \"" + newName + "\" already exists. Please choose a different name.");
+                        "An image with the name \"" + newName +
+                                "\" already exists. Please choose a different name.");
                 return;
             }
 
@@ -2368,6 +2371,9 @@ public class HomeScreenCtrl {
         }
     }
 
+    /**
+     * Shows an image download screen
+     */
     @FXML
     public void showDownloadImageScreen() {
         Stage downloadStage = new Stage();
@@ -2401,15 +2407,21 @@ public class HomeScreenCtrl {
         downloadStage.show();
     }
 
+    /**
+     * Downloads an image to the device
+     * @param imageName
+     */
     private void downloadImage(String imageName) {
         if (currentNote == null || currentNote.getNoteId() <= 0) {
-            showErrorDialog("No Note Selected", "Please select a note to download images from.");
+            showErrorDialog("No Note Selected",
+                    "Please select a note to download images from.");
             return;
         }
 
         try {
             // Construct the image URL
-            String encodedNoteTitle = URLEncoder.encode(currentNote.getTitle(), StandardCharsets.UTF_8);
+            String encodedNoteTitle = URLEncoder.encode(currentNote.getTitle(),
+                    StandardCharsets.UTF_8);
             String encodedImageName = URLEncoder.encode(imageName, StandardCharsets.UTF_8);
             String imageUrl = String.format("http://localhost:8080/api/images/files/notes/%s/%s",
                     encodedNoteTitle, encodedImageName);
@@ -2427,21 +2439,30 @@ public class HomeScreenCtrl {
                 // Save the image locally
                 FileChooser fileChooser = new FileChooser();
                 fileChooser.setInitialFileName(imageName);
-                fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("All Files", "*.*"));
+                fileChooser.getExtensionFilters().add(
+                        new FileChooser.ExtensionFilter("All Files", "*.*"));
 
                 File saveFile = fileChooser.showSaveDialog(null);
                 if (saveFile != null) {
                     Files.write(saveFile.toPath(), imageData);
-                    showInfoDialog("Download Successful", "Image downloaded successfully to: " + saveFile.getAbsolutePath());
+                    showInfoDialog("Download Successful",
+                            "Image downloaded successfully to: " + saveFile.getAbsolutePath());
                 }
             } else {
-                showErrorDialog("Download Failed", "Image not found or server error occurred.");
+                showErrorDialog("Download Failed",
+                        "Image not found or server error occurred.");
             }
         } catch (Exception e) {
-            showErrorDialog("Error", "An error occurred while downloading the image: " + e.getMessage());
+            showErrorDialog("Error",
+                    "An error occurred while downloading the image: " + e.getMessage());
         }
     }
 
+    /**
+     * Information dialog
+     * @param title
+     * @param message
+     */
     private void showInfoDialog(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);
