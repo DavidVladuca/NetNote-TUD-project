@@ -1059,19 +1059,12 @@ public class HomeScreenCtrl {
         noteBodyF.textProperty().addListener((observable, oldValue, newValue) -> {
             currentNote.setBody(newValue);
 
-            // Extract tags from the note body
-            Set<String> extractedTags = new HashSet<>();
-            Matcher tagMatcher = Pattern.compile("#(\\w+)").matcher(newValue);
-            while (tagMatcher.find()) {
-                extractedTags.add(tagMatcher.group(1));
+            // Send the updated note to the server
+            try {
+                syncNoteWithServer(currentNote);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
-            // Convert extracted tags to Tag objects
-            Set<Tag> newTags = extractedTags.stream()
-                    .map(tagName -> new Tag("#" + tagName))
-                    .collect(Collectors.toSet());
-
-            System.out.println("Converted tags: " + newTags);
             System.out.println("Note : " + currentNote.getNoteId() + currentNote.getTags().toString());
 
             // Process #tags to make them clickable
@@ -1110,60 +1103,46 @@ public class HomeScreenCtrl {
         });
     }
 
-    /**
-     * Filters notes by the given tag.
-     * @param tag The tag to filter by.
-     */
     @FXML
     public void filterByTag(String tag) {
         System.out.println("Filtering by tag: " + tag);
-        Platform.runLater(() -> {
-            refreshNotesAndTags();
-            System.out.println("Latest notes and tags fetched for filtering.");
 
-            // Check if the tag already exists
+        // Ensure this runs on the JavaFX UI thread
+        Platform.runLater(() -> {
+            // Check if the tag is already in the filtering box
             boolean tagExists = selectedTagsContainer.getChildren().stream()
                     .anyMatch(node -> node instanceof ChoiceBox &&
                             ((ChoiceBox<String>) node).getValue().equals(tag));
 
             if (!tagExists) {
                 // Remove the placeholder if it exists
-                selectedTagsContainer.getChildren().removeIf(node -> node instanceof Text);
+                togglePlaceholderText();
 
-                // Add the new tag
+                // Add the new tag to the filtering box
                 ChoiceBox<String> tagChoiceBox = new ChoiceBox<>();
                 tagChoiceBox.setItems(FXCollections.observableArrayList(getAllTags()));
                 tagChoiceBox.setValue(tag);
 
-                // Style and set up the tag dynamically
+                // Style and set up the ChoiceBox
                 adjustChoiceBoxWidth(tagChoiceBox, tag);
+
+                // Listen for changes to reapply filtering when tags change
                 tagChoiceBox.getSelectionModel().selectedItemProperty().addListener((obs, oldTag, newTag) -> {
                     if (newTag != null) {
                         adjustChoiceBoxWidth(tagChoiceBox, newTag);
-                        filterNotesBySelectedTags();
+                        filterNotesByTags(); // Reapply filtering
                     }
                 });
 
+                // Add the tag to the container
                 selectedTagsContainer.getChildren().add(tagChoiceBox);
             }
 
-            // Reapply filtering and hide placeholder
-            filterNotesBySelectedTags();
-            togglePlaceholderText();
+            // Apply filtering immediately
+            filterNotesByTags();
         });
     }
 
-    private void refreshNotesAndTags() {
-        // Example: Replace this with the actual code to fetch the latest state
-        notes = FXCollections.observableArrayList(
-                currentServer.getCollections().stream()
-                        .flatMap(collection -> collection.getNotes().stream())
-                        .collect(Collectors.toList())
-        );
-
-
-        List<String> latestTags = getAllTags();
-    }
 
 
     private void togglePlaceholderText() {
@@ -1214,8 +1193,7 @@ public class HomeScreenCtrl {
 
 
     private List<String> getAllTags() {
-        return currentServer.getCollections().stream()
-                .flatMap(collection -> collection.getNotes().stream())
+        return notes.stream()
                 .flatMap(note -> note.getTags().stream())
                 .map(Tag::getName)
                 .distinct()
@@ -1223,17 +1201,22 @@ public class HomeScreenCtrl {
     }
 
 
-    private void filterNotesBySelectedTags() {
+
+    private void filterNotesByTags() {
+        // Get all selected tags from the filtering box
         Set<String> selectedTags = selectedTagsContainer.getChildren().stream()
                 .filter(node -> node instanceof ChoiceBox)
-                .map(node -> ((ChoiceBox<String>) node).getValue())
+                .map(node -> ((ChoiceBox<String>) node).getValue()) // Get the tag name
                 .collect(Collectors.toSet());
 
+        // If no tags are selected, reset the list to show all notes
         if (selectedTags.isEmpty()) {
             notesListView.setItems(FXCollections.observableArrayList(notes));
+            togglePlaceholderText(); // Ensure placeholder is visible
             return;
         }
 
+        // Filter notes that contain ALL selected tags
         ObservableList<Note> filteredNotes = FXCollections.observableArrayList(
                 notes.stream()
                         .filter(note -> note.getTags().stream()
@@ -1243,12 +1226,16 @@ public class HomeScreenCtrl {
                         .collect(Collectors.toList())
         );
 
+        // Update the ListView with filtered notes
         notesListView.setItems(filteredNotes);
 
-        if (filteredNotes.isEmpty()) {
-            System.out.println("No notes found matching tags: " + selectedTags);
-        }
+        // Debugging output
+        System.out.println("Filtered notes with tags: " + selectedTags);
+        System.out.println("Notes displayed: " + filteredNotes.stream()
+                .map(Note::getTitle)
+                .collect(Collectors.toList()));
     }
+
 
     @FXML
     private void clearTags() {

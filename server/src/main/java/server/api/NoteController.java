@@ -90,21 +90,38 @@ public class NoteController {
         existingNote.setTitle(note.getTitle());
         existingNote.setBody(note.getBody());
 
-        // Update tags
-        Set<Tag> updatedTags = note.getTags().stream()
-                .map(tag -> tagRepository.findById(tag.getTagId())
-                        .orElseGet(() -> tagRepository.save(tag)))
-                .collect(Collectors.toSet());
+        // Extract tags from the body
+        Matcher tagMatcher = Pattern.compile("#(\\w+)").matcher(note.getBody());
+        Set<Tag> updatedTags = new HashSet<>();
+
+        System.out.println("Note : " + note.getNoteId());
+        while (tagMatcher.find()) {
+            String tagName = tagMatcher.group(1);
+
+            // Check if the tag exists, or create it
+            Tag tag = tagRepository.findByName(tagName)
+                    .orElseGet(() -> {
+                        Tag newTag = new Tag(tagName);
+                        return tagRepository.save(newTag);
+                    });
+            System.out.println(tag.toString());
+            updatedTags.add(tag);
+        }
+
+        // Update the note's tags
         existingNote.setTags(updatedTags);
+        System.out.println("\nNote : "+ note.getNoteId());
+        System.out.println("tags : " + existingNote.getTags() + "\n");
 
         try {
-            noteRepository.save(existingNote); // Save only the managed entity
+            noteRepository.save(existingNote); // Save the updated note
             return ResponseEntity.ok(existingNote);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
 
     /**
      * Update all the references from notes when the title of the referenced
