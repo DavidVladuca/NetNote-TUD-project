@@ -40,6 +40,8 @@ import org.commonmark.renderer.html.HtmlRenderer;
 
 import java.io.*;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -1170,6 +1172,10 @@ public class HomeScreenCtrl {
      */
     public void markDownContent() {
         noteBodyF.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (currentNote == null || currentNote.getNoteId() <= 0) {
+                System.err.println("No note selected or note ID is invalid");
+                return;
+            }
             currentNote.setBody(newValue);
 
             // Extract tags from the note body
@@ -1197,19 +1203,60 @@ public class HomeScreenCtrl {
                             "border-radius: 4px; cursor: pointer;\" " +
                             "onclick=\"javaApp.filterByTag('$1')\">#$1</button>");
 
-            StringBuffer result = processNoteReferences(processedContent);
+            // Process [[Note References]]
+            StringBuffer processedReferences = processNoteReferences(processedContent);
+
+            // Process Image Syntax (![alt-text](image-url))
+            String processedImages = processImageMarkdown(processedReferences.toString());
 
             // Convert the title and body to HTML
             String showTitle = "<h1>"
                     + renderer.render(parser.parse(noteTitleF.getText()))
                     + "</h1>";
-            String showContent = renderer.render(parser.parse(result.toString()));
+            String showContent = renderer.render(parser.parse(processedImages));
+
+            // Combine title and body content
+            String titleAndContent = showTitle + showContent;
+
+            // Debug: Log the final HTML being passed to the WebView
+            System.out.println("Processed HTML: " + titleAndContent);
 
             // Load the combined title and content into the WebView
-            String titleAndContent = showTitle + showContent;
             markDownOutput.getEngine().loadContent(titleAndContent);
         });
     }
+
+    private String processImageMarkdown(String content) {
+        // Fetch the images for the current note
+        List<Images> availableImages = fetchImagesForNote();
+        System.out.println("Available Images: " + availableImages);
+
+        for (Images image : availableImages) {
+            // Construct the image URL
+            String encodedTitle = URLEncoder.encode(currentNote.getTitle(), StandardCharsets.UTF_8);
+            String encodedName = URLEncoder.encode(image.getName(), StandardCharsets.UTF_8);
+            String imageUrl = String.format("http://127.0.0.1:8080/api/images/files/notes/%s/%s", encodedTitle, encodedName);
+
+            // Log the constructed image URL
+            System.out.println("Generated Image URL for " + image.getName() + ": " + imageUrl);
+
+            // Match the specific Markdown syntax for this image
+            String markdownPattern = String.format("!\\[(.*?)\\]\\(%s\\)", Pattern.quote(image.getName()));
+            content = content.replaceAll(markdownPattern, Matcher.quoteReplacement(
+                    String.format("<img src=\"%s\" alt=\"$1\" style=\"max-width: 100%%; height: auto;\"/>", imageUrl)
+            ));
+        }
+
+        // Log the final processed content
+        System.out.println("Final Processed Content: " + content);
+
+        return content;
+    }
+
+
+
+
+
 
     /**
      * This method processes the [[Other Note]] references
