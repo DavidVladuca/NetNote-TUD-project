@@ -11,6 +11,7 @@ import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.SequentialTransition;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Worker;
@@ -381,8 +382,7 @@ public class HomeScreenCtrl {
         setupNotesListView();
         setupImageListView();
         loadTagsFromServer();
-        handleBodyEdits();
-        handleTitleEdits();
+        handleFieldEdits();
         prevMatch();
         nextMatch();
         enableJavaScript();
@@ -408,70 +408,89 @@ public class HomeScreenCtrl {
     }
 
     /**
-     * Method to handle body edits.
+     * Finalizing field edits
      */
-    private void handleBodyEdits() {
-        // Listener for when a new note is selected in the ListView
-        notesListView.getSelectionModel()
-                .selectedItemProperty()
-                .addListener((observable, oldValue, newValue) -> {
-                    if (newValue != null) {
-                        originalBody = newValue.getBody();
-                        noteBodyF.setText(originalBody);
-                        // Reset the flag when use selects a note
-                        isBodyEditInProgress = false;
-                    }
-                });
+    private void finalizeEdits() {
+        switch (currentEditState) {
+            case TITLE -> {
+                if (isTitleEditInProgress) {
+                    titleEdit(); // Finalize title edits
+                }
+            }
+            case BODY -> {
+                if (isBodyEditInProgress) {
+                    bodyEdit(); // Finalize body edits
+                }
+            }
+            default -> {
+                // No edits in progress
+            }
+        }
 
-        // Listener for when the body field loses focus
-        noteBodyF.focusedProperty()
-                .addListener((observable, oldValue, newValue) -> {
-                    // Save the body only if edits are in progress
-                    if (!newValue && isBodyEditInProgress) {
-                        bodyEdit();
-                    }
-                });
-
-        // Listener for text changes in the body field
-        noteBodyF.textProperty()
-                .addListener((observable, oldValue, newValue) -> {
-                    // Detect if the body is being edited
-                    if (!newValue.equals(currentNote.getBody())) {
-                        isBodyEditInProgress = true;
-                    }
-                });
+        // Reset the edit state after finalizing
+        currentEditState = EditState.NONE;
     }
 
     /**
-     * Method to handle title edits.
+     * Handdles editing of the titles
      */
-    private void handleTitleEdits() {
-        notesListView.getSelectionModel()
-                .selectedItemProperty()
-                .addListener((observable, oldValue, newValue) -> {
+    private void handleFieldEdits() {
+        // Listener for focus changes on the title field
+        noteTitleF.focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue) { // Losing focus
+                finalizeEdits();
+            } else { // Gaining focus
+                currentEditState = EditState.TITLE; // Set active edit state
+            }
+        });
 
-                    if (newValue != null) {
-                        originalTitle = newValue.getTitle();
-                        noteTitleF.setText(originalTitle);
-                        // Reset the flag when use selects a note
-                        isTitleEditInProgress = false;
-                    }
-                });
+        // Listener for focus changes on the body field
+        noteBodyF.focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue) { // Losing focus
+                finalizeEdits();
+            } else { // Gaining focus
+                currentEditState = EditState.BODY; // Set active edit state
+            }
+        });
 
-        noteTitleF.focusedProperty()
-                .addListener((observable, oldValue, newValue) -> {
-                    // Only call if title was edited
-                    if (!newValue && isTitleEditInProgress) {
-                        titleEdit();
-                    }
-                });
+        // Listener for note selection changes in the ListView
+        notesListView.getSelectionModel().selectedItemProperty().addListener((observable, oldNote, newNote) -> {
+            // Finalize edits for the previously selected note
+            finalizeEdits();
 
-        noteTitleF.textProperty()
-                .addListener((observable, oldValue, newValue) -> {
-                    if (!newValue.equals(originalTitle)) {
-                        isTitleEditInProgress = true; // Title is being edited
-                    }
-                });
+            // Load the new note's data
+            if (newNote != null) {
+                originalTitle = newNote.getTitle();
+                originalBody = newNote.getBody();
+                noteTitleF.setText(originalTitle);
+                noteBodyF.setText(originalBody);
+
+                // Reset edit flags
+                isTitleEditInProgress = false;
+                isBodyEditInProgress = false;
+                currentEditState = EditState.NONE;
+            }
+        });
+
+
+
+    // Listener for text changes in the title field
+        noteTitleF.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null || newValue.equals(originalTitle)) {
+                isTitleEditInProgress = false;
+            } else {
+                isTitleEditInProgress = true;
+            }
+        });
+
+        // Listener for text changes in the body field
+        noteBodyF.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null || newValue.equals(originalBody)) {
+                isBodyEditInProgress = false;
+            } else {
+                isBodyEditInProgress = true;
+            }
+        });
     }
 
     /**
@@ -556,6 +575,10 @@ public class HomeScreenCtrl {
         }
     }
 
+    /**
+     * EditState enum for keeping track of the editing of the fields
+     */
+    private EditState currentEditState = EditState.NONE;
 
     /**
      * Fetches collections from the server and stores them locally
@@ -1204,7 +1227,6 @@ public class HomeScreenCtrl {
      */
     public void markDownContent() {
         noteBodyF.textProperty().addListener((observable, oldValue, newValue) -> {
-            currentNote.setBody(newValue);
 
             // Extract tags from the note body
             Set<String> extractedTags = new HashSet<>();
@@ -1653,7 +1675,6 @@ public class HomeScreenCtrl {
                         // If different from original body, update body and sync with the server (Invoke command for editing body)
                         Command editBodyCommand = new EditBodyCommand(currentNote,originalBody, newBody, HomeScreenCtrl.this);
                         invoker.executeCommand(editBodyCommand);
-                    System.out.println("EXECUTED !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                         originalBody = newBody; // Update the original body to the new body
                 } catch (Exception e) {
                     errorLogger.log(
@@ -1662,6 +1683,7 @@ public class HomeScreenCtrl {
                     );
                 }
             }
+            isBodyEditInProgress=false;
         }
     }
 
@@ -1711,6 +1733,7 @@ public class HomeScreenCtrl {
                                     + e.getMessage());
                 }
             }
+            isTitleEditInProgress=false;
         }
     }
 
