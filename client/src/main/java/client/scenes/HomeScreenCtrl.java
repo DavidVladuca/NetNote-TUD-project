@@ -896,49 +896,51 @@ public class HomeScreenCtrl {
      *
      * @param note - note provided - in syncIfChanged method to be specific
      */
-    public void syncNoteWithServer(final Note note) {
+    public void syncNoteWithServer(Note note) {
         try {
             String json = new ObjectMapper().writeValueAsString(note);
-            System.out.println("Serialized JSON: " + json);  // for testing
-
             var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
-            // the put request to actually update the content with json
+
             try (var response = ClientBuilder.newClient()
                     .target("http://localhost:8080/api/notes/update")
                     .request(MediaType.APPLICATION_JSON)
                     .put(requestBody)) {
 
-                // Refresh the notes list
-                Platform.runLater(() -> refreshNotesInListView(note));
-                // for testing
-                System.out.println("Response Status: " + response.getStatus());
-                System.out.println("Response Body: "
-                        + response.readEntity(String.class));
-                // if something screwed up :D
-                if (response.getStatus() != requestSuccessfulCode) {
-                    System.err.println(
-                            "Failed to update note on server. Status code: "
-                                    + response.getStatus()
-                    );
+                if (response.getStatus() == 200) {
+                    // Fetch the updated note from the server
+                    Note updatedNote = fetchNoteById(note.getNoteId());
+                    if (updatedNote != null) {
+                        currentNote = updatedNote;
+                        refreshNotesInListView(currentNote);
+                    }
+                } else {
+                    System.err.println("Failed to update note on server. Status code: " + response.getStatus());
                 }
             }
         } catch (Exception e) {
-            errorLogger.log(Level.INFO, e.getMessage(), e);
+            e.printStackTrace();
         }
     }
 
-    private void refreshNotesInListView(final Note note) {
+
+
+    private void refreshNotesInListView(Note updatedNote) {
         for (int i = 0; i < notes.size(); i++) {
-            Note update = notes.get(i);
-            if (note.getNoteId() == update.getNoteId()) {
-                if (update.getTitle() != null && !update.getTitle().isEmpty()) {
-                    // Update the note's data in the ObservableList
-                    notes.set(i, update);
-                    break;
-                }
+            if (notes.get(i).getNoteId() == updatedNote.getNoteId()) {
+                notes.set(i, updatedNote); // Replace with updated note
+                break;
             }
         }
+        notesListView.refresh(); // Refresh UI display
+        //updateMarkdownView();
     }
+
+    private void updateMarkdownView() {
+        String titleHtml = "<h1>" + renderer.render(parser.parse(currentNote.getTitle())) + "</h1>";
+        String bodyHtml = renderer.render(parser.parse(currentNote.getBody()));
+        markDownOutput.getEngine().loadContent(titleHtml + bodyHtml);
+    }
+
 
     /**
      * Edits the collections in the scene.
@@ -951,38 +953,31 @@ public class HomeScreenCtrl {
 
     private void loadNotesFromServer() {
         try {
-            // Fetch notes from the server
             var response = ClientBuilder.newClient()
-                    // todo - Update with your server's API URL
                     .target("http://localhost:8080/api/notes/fetch")
                     .request(MediaType.APPLICATION_JSON)
                     .get();
 
-            if (response.getStatus() == requestSuccessfulCode) {
-                // Parse the JSON response into a List of Note objects
+            if (response.getStatus() == 200) {
                 String json = response.readEntity(String.class);
+
                 ObjectMapper mapper = new ObjectMapper();
                 List<Note> fetchedNotes = mapper.readValue(
                         json,
-                        mapper.getTypeFactory()
-                                .constructCollectionType(
-                                        List.class, Note.class));
+                        mapper.getTypeFactory().constructCollectionType(List.class, Note.class)
+                );
 
-                // Add the fetched notes to the ObservableList
-                notes.clear(); // Clear existing notes
+                notes.clear();
                 notes.addAll(fetchedNotes);
-                for (Note note : fetchedNotes) {
-                    currentCollection.addNote(note);
-                }
+                System.out.println("Deserialized Notes: " + notes);
             } else {
-                System.err.println(
-                        "Failed to fetch notes. Error code "
-                                + response.getStatus());
+                System.err.println("Failed to fetch notes. Status: " + response.getStatus());
             }
         } catch (Exception e) {
-            System.err.println("Error loading the notes: " + e.getMessage());
+            errorLogger.log(Level.SEVERE, "Error loading notes: " + e.getMessage(), e);
         }
     }
+
 
     /**
      * Sets up the ListView in the front-end
@@ -1065,7 +1060,7 @@ public class HomeScreenCtrl {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            System.out.println("Note : " + currentNote.getNoteId() + currentNote.getTags().toString());
+            System.out.println("Note (MD): " + currentNote.getNoteId() + currentNote.getTags().toString());
 
             // Process #tags to make them clickable
             String processedContent = newValue.replaceAll("#(\\w+)",
@@ -1105,40 +1100,35 @@ public class HomeScreenCtrl {
 
     @FXML
     public void filterByTag(String tag) {
-        System.out.println("Filtering by tag: " + tag);
-
-        // Ensure this runs on the JavaFX UI thread
         Platform.runLater(() -> {
-            // Check if the tag is already in the filtering box
+            // Check if the tag already exists in the filtering box
             boolean tagExists = selectedTagsContainer.getChildren().stream()
-                    .anyMatch(node -> node instanceof ChoiceBox &&
-                            ((ChoiceBox<String>) node).getValue().equals(tag));
+                    .filter(node -> node instanceof ChoiceBox)
+                    .map(node -> ((ChoiceBox<String>) node).getValue())
+                    .anyMatch(existingTag -> existingTag.equals(tag));
 
             if (!tagExists) {
-                // Remove the placeholder if it exists
-                togglePlaceholderText();
-
-                // Add the new tag to the filtering box
+                // Add the tag to the filtering box
                 ChoiceBox<String> tagChoiceBox = new ChoiceBox<>();
                 tagChoiceBox.setItems(FXCollections.observableArrayList(getAllTags()));
                 tagChoiceBox.setValue(tag);
-
-                // Style and set up the ChoiceBox
                 adjustChoiceBoxWidth(tagChoiceBox, tag);
 
-                // Listen for changes to reapply filtering when tags change
+                // Remove placeholder text when tags are added
+                togglePlaceholderText();
+
+                // Listen for changes to reapply filtering
                 tagChoiceBox.getSelectionModel().selectedItemProperty().addListener((obs, oldTag, newTag) -> {
                     if (newTag != null) {
                         adjustChoiceBoxWidth(tagChoiceBox, newTag);
-                        filterNotesByTags(); // Reapply filtering
+                        filterNotesByTags();
                     }
                 });
 
-                // Add the tag to the container
                 selectedTagsContainer.getChildren().add(tagChoiceBox);
             }
 
-            // Apply filtering immediately
+            // Apply filtering with the new tag
             filterNotesByTags();
         });
     }
@@ -1147,7 +1137,6 @@ public class HomeScreenCtrl {
 
     private void togglePlaceholderText() {
         Platform.runLater(() -> {
-            // Check if the container has any tags
             boolean hasTags = selectedTagsContainer.getChildren().stream()
                     .anyMatch(node -> node instanceof ChoiceBox);
 
@@ -1164,6 +1153,7 @@ public class HomeScreenCtrl {
             }
         });
     }
+
 
 
     private void adjustChoiceBoxWidth(ChoiceBox<String> choiceBox, String tag) {
@@ -1203,38 +1193,57 @@ public class HomeScreenCtrl {
 
 
     private void filterNotesByTags() {
-        // Get all selected tags from the filtering box
         Set<String> selectedTags = selectedTagsContainer.getChildren().stream()
                 .filter(node -> node instanceof ChoiceBox)
-                .map(node -> ((ChoiceBox<String>) node).getValue()) // Get the tag name
+                .map(node -> ((ChoiceBox<String>) node).getValue())
+                .map(tag -> tag.startsWith("#") ? tag.substring(1) : tag)
                 .collect(Collectors.toSet());
 
-        // If no tags are selected, reset the list to show all notes
-        if (selectedTags.isEmpty()) {
-            notesListView.setItems(FXCollections.observableArrayList(notes));
-            togglePlaceholderText(); // Ensure placeholder is visible
-            return;
-        }
+        System.out.println("Filtering by tags: " + selectedTags);
 
-        // Filter notes that contain ALL selected tags
+        // Filter notes using the latest tag list
         ObservableList<Note> filteredNotes = FXCollections.observableArrayList(
                 notes.stream()
-                        .filter(note -> note.getTags().stream()
-                                .map(Tag::getName)
-                                .collect(Collectors.toSet())
-                                .containsAll(selectedTags)) // Match ALL tags
-                        .collect(Collectors.toList())
+                        .filter(note -> {
+                            Set<String> noteTags = note.getTags().stream()
+                                    .map(Tag::getName)
+                                    .collect(Collectors.toSet());
+                            return noteTags.containsAll(selectedTags);
+                        })
+                        .toList()
         );
 
-        // Update the ListView with filtered notes
         notesListView.setItems(filteredNotes);
-
-        // Debugging output
-        System.out.println("Filtered notes with tags: " + selectedTags);
-        System.out.println("Notes displayed: " + filteredNotes.stream()
-                .map(Note::getTitle)
-                .collect(Collectors.toList()));
+        System.out.println("Filtered notes: " + filteredNotes);
     }
+
+
+
+    public void refresh() {
+        Platform.runLater(() -> {
+            System.out.println("Refreshing notes and tags...");
+            try {
+                // Fetch updated notes from the server
+                loadNotesFromServer();
+
+                // Fetch updated collections (optional, if needed)
+                loadCollectionsFromServer();
+
+                // Refresh tags (if tag list UI is separate, ensure it's updated too)
+                selectedTagsContainer.getChildren().clear();
+                togglePlaceholderText();
+
+                // Update the notes list view
+                notesListView.setItems(FXCollections.observableArrayList(notes));
+
+                System.out.println("Refresh completed.");
+            } catch (Exception e) {
+                errorLogger.log(Level.SEVERE, "Error during refresh: " + e.getMessage(), e);
+            }
+        });
+    }
+
+
 
 
     @FXML
@@ -1598,27 +1607,6 @@ public class HomeScreenCtrl {
         return serverUtils.validateTitleWithServer(collectionId, newTitle);
     }
 
-
-    /**
-     * Refreshes the notes list by re-fetching the notes from the server.
-     */
-    public void refresh() {
-        Platform.runLater(() -> {
-            System.out.println("Refreshing all notes...");
-            try {
-                // Re-fetches all notes from the server
-                // and updates the ObservableList
-                loadNotesFromServer();
-                loadCollectionsFromServer(); //Re-fetches all collections from the server
-                System.out.println("All notes refreshed successfully!");
-            } catch (Exception e) {
-                errorLogger.log(
-                        Level.FINE,
-                        "Error refreshing notes: " + e.getMessage());
-            }
-        });
-    }
-
     /**
      * Fetches a specific note from the server by its ID.
      *
@@ -1626,38 +1614,26 @@ public class HomeScreenCtrl {
      * @return The fetched Note object or null if it was not found
      * or there was an error
      */
-    private Note fetchNoteById(final long noteId) {
+    private Note fetchNoteById(long noteId) {
         try {
             var response = ClientBuilder.newClient()
-                    // Replace with actual API endpoint for fetching a single
-                    // note
                     .target("http://localhost:8080/api/notes/" + noteId)
                     .request(MediaType.APPLICATION_JSON)
                     .get();
 
-            if (response.getStatus() == requestSuccessfulCode) {
+            if (response.getStatus() == 200) {
                 String json = response.readEntity(String.class);
                 ObjectMapper mapper = new ObjectMapper();
                 return mapper.readValue(json, Note.class);
             } else {
-                System.err.println(
-                        "Failed to fetch note with ID "
-                                + noteId
-                                + ". Status code: "
-                                + response.getStatus()
-                );
-                return null;
+                System.err.println("Failed to fetch note with ID " + noteId);
             }
         } catch (Exception e) {
-            System.err.println(
-                    "Error fetching note with ID "
-                            + noteId
-                            + ": "
-                            + e.getMessage()
-            );
-            return null;
+            e.printStackTrace();
         }
+        return null;
     }
+
 
     /**
      * Searches for a note based on text field input.

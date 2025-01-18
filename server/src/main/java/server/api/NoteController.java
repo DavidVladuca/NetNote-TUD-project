@@ -77,6 +77,7 @@ public class NoteController {
      * @param note - note that was provided with json
      * @return a response entity with the status of the execution
      */
+    @Transactional
     @PutMapping("/update")
     public ResponseEntity<Note> updateNote(@RequestBody Note note) {
         if (note.getNoteId() <= 0) {
@@ -114,8 +115,9 @@ public class NoteController {
         System.out.println("tags : " + existingNote.getTags() + "\n");
 
         try {
-            noteRepository.save(existingNote); // Save the updated note
-            return ResponseEntity.ok(existingNote);
+            // Save the updated note and return it
+            Note savedNote = noteRepository.save(existingNote);
+            return ResponseEntity.ok(savedNote); // Return the updated note
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
