@@ -49,14 +49,7 @@ import server.database.TagRepository;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.ResourceBundle;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -1108,7 +1101,7 @@ public class HomeScreenCtrl {
                     .anyMatch(existingTag -> existingTag.equals(tag));
 
             if (!tagExists) {
-                // Add the tag to the filtering box
+                // Create the ChoiceBox for the new tag
                 ChoiceBox<String> tagChoiceBox = new ChoiceBox<>();
                 tagChoiceBox.setItems(FXCollections.observableArrayList(getAllTags()));
                 tagChoiceBox.setValue(tag);
@@ -1117,22 +1110,38 @@ public class HomeScreenCtrl {
                 // Remove placeholder text when tags are added
                 togglePlaceholderText();
 
-                // Listen for changes to reapply filtering
+                // Listen for changes to the selected tag
                 tagChoiceBox.getSelectionModel().selectedItemProperty().addListener((obs, oldTag, newTag) -> {
                     if (newTag != null) {
-                        adjustChoiceBoxWidth(tagChoiceBox, newTag);
-                        filterNotesByTags();
+                        // Collect selected tags before allowing the new one
+                        Set<String> selectedTags = selectedTagsContainer.getChildren().stream()
+                                .filter(node -> node instanceof ChoiceBox)
+                                .map(node -> ((ChoiceBox<String>) node).getValue())
+                                .map(tagValue -> tagValue.startsWith("#") ? tagValue.substring(1) : tagValue)
+                                .collect(Collectors.toSet());
+
+                        // Temporarily add the new tag to the set for validation
+                        selectedTags.add(newTag.startsWith("#") ? newTag.substring(1) : newTag);
+
+                        if (!isCombinationValid(selectedTags)) {
+                            // Show alert and revert to the previous tag
+                            showAlert("Invalid Tag Combination", "No notes match the selected combination of tags.");
+                            Platform.runLater(() -> tagChoiceBox.setValue(oldTag));
+                        } else {
+                            // Valid tag: adjust UI and apply filtering
+                            adjustChoiceBoxWidth(tagChoiceBox, newTag);
+                            filterNotesByTags();
+                        }
                     }
                 });
 
                 selectedTagsContainer.getChildren().add(tagChoiceBox);
             }
 
-            // Apply filtering with the new tag
+            // Apply filtering with the initial tag
             filterNotesByTags();
         });
     }
-
 
 
     private void togglePlaceholderText() {
@@ -1193,6 +1202,7 @@ public class HomeScreenCtrl {
 
 
     private void filterNotesByTags() {
+        // Collect the currently selected tags
         Set<String> selectedTags = selectedTagsContainer.getChildren().stream()
                 .filter(node -> node instanceof ChoiceBox)
                 .map(node -> ((ChoiceBox<String>) node).getValue())
@@ -1201,7 +1211,7 @@ public class HomeScreenCtrl {
 
         System.out.println("Filtering by tags: " + selectedTags);
 
-        // Filter notes using the latest tag list
+        // Filter notes using the selected tags
         ObservableList<Note> filteredNotes = FXCollections.observableArrayList(
                 notes.stream()
                         .filter(note -> {
@@ -1213,8 +1223,42 @@ public class HomeScreenCtrl {
                         .toList()
         );
 
+        // Update the notes list view with the filtered notes
         notesListView.setItems(filteredNotes);
         System.out.println("Filtered notes: " + filteredNotes);
+
+        // Update the current note selection
+        if (!filteredNotes.contains(currentNote) && !filteredNotes.isEmpty()) {
+            Note firstNote = filteredNotes.get(0);
+            notesListView.getSelectionModel().select(firstNote);
+            currentNote = firstNote;
+
+            // Update UI fields to reflect the selected note
+            noteTitleF.setText(firstNote.getTitle());
+            noteBodyF.setText(firstNote.getBody());
+            loadImagesForCurrentNote();
+        }
+    }
+
+
+
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private boolean isCombinationValid(Set<String> selectedTags) {
+        // Check if there are any notes matching the selected tags
+        return notes.stream()
+                .anyMatch(note -> {
+                    Set<String> noteTags = note.getTags().stream()
+                            .map(Tag::getName)
+                            .collect(Collectors.toSet());
+                    return noteTags.containsAll(selectedTags);
+                });
     }
 
 
