@@ -552,4 +552,40 @@ public class ServerUtils {
         }
     }
 
+    /**
+     * This method deletes a selected image from the list view from the server
+     * @param image
+     * @return boolean value declaring whether deletion was successful
+     */
+    public boolean deleteImageFromServer(Images image) {
+        if (image.getId() == null || image.getId() <= 0) {
+            System.err.println("Invalid image ID: " + image.getId());
+            return false;
+        }
+
+        String deleteUrl = "http://localhost:8080/api/images/delete/" + image.getId();
+        System.out.println("Delete URL: " + deleteUrl);
+
+        Response response = null;
+        try {
+            response = ClientBuilder.newClient()
+                    .target(deleteUrl)
+                    .request()
+                    .delete();
+
+            System.out.println("Response status: " + response.getStatus());
+            System.out.println("Response body: " + response.readEntity(String.class));
+
+            return response.getStatus() == Response.Status.NO_CONTENT.getStatusCode();
+        } catch (Exception e) {
+            System.err.println("Error during delete request: " + e.getMessage());
+            return false;
+        } finally {
+            if (response != null) {
+                response.close();
+            }
+        }
+    }
+
+
 }

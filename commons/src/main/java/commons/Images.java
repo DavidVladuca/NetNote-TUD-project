@@ -7,6 +7,8 @@ import java.util.Arrays;
 
 @Entity
 public class Images {
+    private String mimeType;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -101,6 +103,22 @@ public class Images {
      */
     public void setNote(Note note) {
         this.note = note;
+    }
+
+    /**
+     * Gets the mimetype of an image
+     * @return mimetype as a string
+     */
+    public String getMimeType() {
+        return mimeType;
+    }
+
+    /**
+     * Sets the mimetype of an image
+     * @param mimeType
+     */
+    public void setMimeType(String mimeType) {
+        this.mimeType = mimeType;
     }
 
     /**

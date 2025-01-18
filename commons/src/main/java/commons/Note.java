@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -20,6 +21,9 @@ public class Note {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long noteId; //todo - this does not work well all notes have id 0
+
+    @OneToMany(mappedBy = "note", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Images> images = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     // Ensure that the title is mandatory in the database
@@ -149,6 +153,22 @@ public class Note {
      */
     public void setTags(Set<Tag> tags) {
         this.tags = tags;
+    }
+
+    /**
+     * Retrieves list of images associated with the note
+     * @return List of images objects
+     */
+    public List<Images> getImages() {
+        return images;
+    }
+
+    /**
+     * Sets the list of images associated with the note
+     * @param images
+     */
+    public void setImages(List<Images> images) {
+        this.images = images;
     }
 
     /**
