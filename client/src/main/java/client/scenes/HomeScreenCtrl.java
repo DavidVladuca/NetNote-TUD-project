@@ -501,6 +501,7 @@ public class HomeScreenCtrl {
                     // Only call if title was edited
                     if (!newValue && isTitleEditInProgress) {
                         titleEdit();
+                        syncNoteWithServer(currentNote);
                     }
                 });
 
@@ -509,6 +510,7 @@ public class HomeScreenCtrl {
                 .addListener((observable, oldValue, newValue) -> {
                     if (!newValue.equals(originalTitle)) {
                         isTitleEditInProgress = true; // Title is being edited
+                        currentNote.setTitle(newValue.trim());
                     }
                 });
     }
