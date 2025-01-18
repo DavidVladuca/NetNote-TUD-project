@@ -1163,21 +1163,17 @@ public class HomeScreenCtrl {
         });
     }
 
-
-
     private void adjustChoiceBoxWidth(ChoiceBox<String> choiceBox, String tag) {
         // Calculate the approximate text width for the tag
         double textWidth = computeTextWidth(tag, 12); // 12 is the font size
 
         // Define the maximum allowable width
         double maxWidth = 150; // Adjust this value as needed
-        double padding = 20; // Space for dropdown arrow
+        double padding = 30; // Space for dropdown arrow
 
         // Set the ChoiceBox width to the smaller of the calculated width or maxWidth
         choiceBox.setPrefWidth(Math.min(textWidth + padding, maxWidth));
     }
-
-
 
     private double computeTextWidth(String text, int fontSize) {
         // Create a temporary Text node to calculate the width
@@ -1240,8 +1236,6 @@ public class HomeScreenCtrl {
         }
     }
 
-
-
     private void showAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.WARNING);
         alert.setTitle(title);
@@ -1260,8 +1254,6 @@ public class HomeScreenCtrl {
                     return noteTags.containsAll(selectedTags);
                 });
     }
-
-
 
     public void refresh() {
         Platform.runLater(() -> {
@@ -1287,9 +1279,6 @@ public class HomeScreenCtrl {
         });
     }
 
-
-
-
     @FXML
     private void clearTags() {
         Platform.runLater(() -> {
@@ -1307,7 +1296,7 @@ public class HomeScreenCtrl {
     @FXML
     public void openNoteByTitle(String title) {
         // Find the target note by its title
-        Note targetNote = notes.stream()
+        Note targetNote = notesListView.getItems().stream()
                 .filter(note -> note.getTitle().equals(title))
                 .findFirst()
                 .orElse(null);
@@ -1325,7 +1314,11 @@ public class HomeScreenCtrl {
 
             System.out.println("Switched to note: " + targetNote.getTitle());
         } else {
-            System.err.println("Note with title '" + title + "' not found.");
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Referenced Note Not Found");
+            alert.setHeaderText("Cannot Open Referenced Note");
+            alert.setContentText("The referenced note \"" + title + "\" is not in the current filtered list.");
+            alert.showAndWait();
         }
     }
 
