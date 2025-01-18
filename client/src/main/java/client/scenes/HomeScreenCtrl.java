@@ -21,25 +21,16 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
+import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.text.Text;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
@@ -52,6 +43,8 @@ import javafx.util.StringConverter;
 import netscape.javascript.JSObject;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
+import org.springframework.beans.factory.annotation.Autowired;
+import server.database.TagRepository;
 
 import java.io.*;
 import java.net.URL;
@@ -162,11 +155,6 @@ public class HomeScreenCtrl {
             final ScreenCtrl localScene, final ServerUtils localServerUtils) {
         this.sc = localScene;
         this.serverUtils = localServerUtils;
-        availableTags = FXCollections.observableArrayList(
-                new Tag("#Tag1"),
-                new Tag("#Tag2"),
-                new Tag("#Tag3")
-        );
     }
 
     /**
@@ -292,11 +280,6 @@ public class HomeScreenCtrl {
     private Button tagsButton;
 
     /**
-     * List of all available tags (replace with actual fetching logic).
-     */
-    private final ObservableList<Tag> availableTags;
-
-    /**
      * List of filtered tags
      */
     @FXML
@@ -304,6 +287,9 @@ public class HomeScreenCtrl {
 
     @FXML
     private ScrollPane tagsScrollPane;
+
+    @FXML
+    private ScrollBar horizontalScrollBar;
 
     /**
      * current server being used.
@@ -332,7 +318,7 @@ public class HomeScreenCtrl {
     /**
      * Display of all the notes in the application.
      */
-    private final ObservableList<Note> notes = FXCollections
+    private ObservableList<Note> notes = FXCollections
             .observableArrayList();
     /**
      * Button that allows for selection of images
@@ -396,12 +382,94 @@ public class HomeScreenCtrl {
         markDownContent();
         loadNotesFromServer();
         setupNotesListView();
-        loadTagsFromServer();
         handleTitleEdits();
         prevMatch();
         nextMatch();
         enableJavaScript();
+        scrollBarInitialize();
+        configureScrollPane();
+        configureTextFiltering();
     }
+
+    private void configureTextFiltering() {
+        // Placeholder Text for "Filter by tag..."
+        Text placeholderText = new Text("Filter by tag...");
+        placeholderText.setStyle("-fx-fill: lightgray; -fx-font-size: 12; -fx-font-style: italic;");
+
+        // Add the placeholder text to the container by default
+        selectedTagsContainer.getChildren().add(placeholderText);
+    }
+
+    private void scrollBarInitialize() {
+        Platform.runLater(() -> {
+            // Set initial ScrollBar range
+            horizontalScrollBar.setMin(0);
+            horizontalScrollBar.setMax(1); // ScrollBar value ranges from 0 to 1 (normalized)
+
+            // Update the ScrollBar's visibility and size dynamically
+            tagsScrollPane.viewportBoundsProperty().addListener((obs, oldBounds, newBounds) -> updateScrollBar());
+            selectedTagsContainer.boundsInParentProperty().addListener((obs, oldBounds, newBounds) -> updateScrollBar());
+
+            // Bind ScrollPane's hvalue to ScrollBar's value
+            horizontalScrollBar.valueProperty().addListener((obs, oldVal, newVal) ->
+                    tagsScrollPane.setHvalue(newVal.doubleValue())
+            );
+
+            // Bind ScrollBar's value to ScrollPane's hvalue
+            tagsScrollPane.hvalueProperty().addListener((obs, oldVal, newVal) ->
+                    horizontalScrollBar.setValue(newVal.doubleValue())
+            );
+
+            // Ensure scrollbar state is correct at initialization
+            updateScrollBar();
+        });
+    }
+
+    private void updateScrollBar() {
+        double contentWidth = selectedTagsContainer.getBoundsInParent().getWidth();
+        double viewportWidth = tagsScrollPane.getViewportBounds().getWidth();
+
+        if (contentWidth <= viewportWidth || contentWidth == 0) {
+            // No scrolling needed: ScrollBar spans the full width and is disabled
+            horizontalScrollBar.setVisibleAmount(1.0); // Full size
+            horizontalScrollBar.setDisable(true); // Disable interaction
+            horizontalScrollBar.setValue(0); // Reset position
+        } else {
+            // Scrolling needed: Adjust ScrollBar size based on visible area
+            double visibleRatio = viewportWidth / contentWidth;
+            horizontalScrollBar.setVisibleAmount(visibleRatio);
+            horizontalScrollBar.setDisable(false); // Enable interaction
+        }
+
+        // Update ScrollBar range to stay in sync
+        horizontalScrollBar.setMax(1.0); // Normalized to ScrollPane hvalue range (0 to 1)
+    }
+
+    private void configureScrollPane() {
+        // Ensure that the ScrollPane allows horizontal scrolling based on content width
+        selectedTagsContainer.setPrefWidth(Region.USE_COMPUTED_SIZE);
+        selectedTagsContainer.setMinWidth(Region.USE_PREF_SIZE);
+        selectedTagsContainer.setMaxWidth(Region.USE_COMPUTED_SIZE);
+
+        tagsScrollPane.setFitToHeight(true); // Ensure vertical fit
+        tagsScrollPane.setFitToWidth(false); // Disable automatic horizontal fit
+
+        // Intercept scroll events to allow only horizontal scrolling
+        tagsScrollPane.addEventFilter(ScrollEvent.SCROLL, event -> {
+            // Calculate horizontal scroll delta
+            double delta = event.getDeltaY(); // Mouse wheel scroll
+            double newHValue = tagsScrollPane.getHvalue() - delta / tagsScrollPane.getWidth();
+
+            // Constrain newHValue to valid range [0, 1]
+            newHValue = Math.max(0, Math.min(1, newHValue));
+            tagsScrollPane.setHvalue(newHValue);
+
+            // Consume the event to disable vertical scrolling
+            event.consume();
+        });
+    }
+
+
 
     /**
      * Enable JavaScript in the WebView and bind Java methods to JavaScript
@@ -612,230 +680,6 @@ public class HomeScreenCtrl {
         response.close();
     }
 
-
-
-    private void loadTagsFromServer() {
-        try (var response = ClientBuilder.newClient()
-                .target("http://localhost:8080/api/tags")
-                .request(MediaType.APPLICATION_JSON)
-                .get()) {
-
-            if (response.getStatus() == requestSuccessfulCode) {
-                String json = response.readEntity(String.class);
-                ObjectMapper mapper = new ObjectMapper();
-                List<Tag> fetchedTags = mapper
-                        .readValue(json, mapper
-                                .getTypeFactory()
-                                .constructCollectionType(List.class,
-                                        Tag.class));
-                availableTags.clear();
-                availableTags.addAll(fetchedTags);
-            } else {
-                System.err.println("Failed to fetch tags. Status: "
-                        + response.getStatus());
-            }
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    // todo edit and delete button for the tags
-
-    /**
-     * Pops up the tags view.
-     */
-    @FXML
-    public void handleTagsButtonAction() {
-        final int tagProfileHeight = 100;
-        final int v = 10;
-        if (currentNote == null) {
-            System.err.println("No note selected. Cannot assign tags.");
-            return;
-        }
-
-        // Log current tags
-        System.out.println(
-                "Current tags for note '" + currentNote.getTitle() + "':");
-        currentNote.getTags()
-                .forEach(tag -> System.out.println("- " + tag.getName()));
-
-        // Create the dialog
-        Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Manage Tags");
-        dialog.setHeaderText("Select or create tags for the note:");
-
-        // Container for tag checkboxes
-        VBox tagListContainer = new VBox(v);
-        List<CheckBox> tagCheckBoxes = new ArrayList<>();
-
-        // Populate the tag list with checkboxes
-        for (Tag tag : availableTags) {
-            CheckBox checkBox = new CheckBox(tag.getName());
-            checkBox.setSelected(currentNote.getTags().contains(tag));
-            tagCheckBoxes.add(checkBox);
-            tagListContainer.getChildren().add(checkBox);
-        }
-
-        // ScrollPane for tag list
-        ScrollPane scrollPane = new ScrollPane(tagListContainer);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setPrefHeight(tagProfileHeight);
-        // Limit to approx. 4 tags visible
-
-        // Add Tag Button
-        Button addTagButton = new Button("Add a Tag");
-        addTagButton.setOnAction(event -> {
-            TextInputDialog inputDialog = new TextInputDialog();
-            inputDialog.setTitle("Add Tag");
-            inputDialog.setHeaderText("Enter the name of the new tag:");
-            inputDialog.setContentText("Tag name:");
-
-            Optional<String> result = inputDialog.showAndWait();
-            result.ifPresent(tagName -> {
-                if (tagName.trim().isEmpty()) {
-                    showErrorDialog(
-                            "Invalid Tag Name",
-                            "The tag name cannot be empty.");
-                    return;
-                }
-
-                if (availableTags.stream()
-                        .anyMatch(tag -> tag
-                                .getName()
-                                .equals(tagName.trim()))) {
-                    showErrorDialog("Duplicate Tag",
-                            "A tag with the name '"
-                                    + tagName.trim()
-                                    + "' already exists.");
-                    return;
-                }
-
-                Tag newTag = new Tag(tagName.trim());
-                availableTags.add(newTag);
-
-                CheckBox newCheckBox = new CheckBox(newTag.getName());
-                tagCheckBoxes.add(newCheckBox);
-                tagListContainer.getChildren().add(newCheckBox);
-
-                try {
-                    saveTagToServer(newTag);
-                    System.out.println(
-                            "New tag saved to server: " + newTag.getName());
-                } catch (Exception e) {
-                    System.err.println(
-                            "Failed to save the new tag: " + e.getMessage());
-                }
-            });
-        });
-
-        // Layout for the dialog content
-        final int v2 = 15;
-        VBox dialogContent = new VBox(v2, scrollPane, addTagButton);
-        dialog.getDialogPane().setContent(dialogContent);
-        dialog.getDialogPane()
-                .getButtonTypes()
-                .addAll(ButtonType.OK, ButtonType.CANCEL);
-
-        // Handle dialog result
-        dialog.setResultConverter(button -> {
-            if (button == ButtonType.OK) {
-                Set<Tag> selectedTags = new HashSet<>();
-                for (int i = 0; i < tagCheckBoxes.size(); i++) {
-                    if (tagCheckBoxes.get(i).isSelected()) {
-                        selectedTags.add(availableTags.get(i));
-                    }
-                }
-                updateNoteTags(selectedTags);
-            }
-            return null;
-        });
-
-        dialog.showAndWait();
-    }
-
-    private void showErrorDialog(
-            final String currentTitle, final String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(currentTitle);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-
-    private void updateNoteTags(final Set<Tag> selectedTags) {
-        Set<Tag> currentTags = new HashSet<>(currentNote.getTags());
-        boolean tagsUpdated = false;
-
-        // Add new tags
-        for (Tag tag : selectedTags) {
-            if (!currentTags.contains(tag)) {
-                currentTags.add(tag);
-                System.out.println("Tag added to note: " + tag.getName());
-                tagsUpdated = true;
-            }
-        }
-
-        // Remove unselected tags
-        for (Tag tag : new HashSet<>(currentTags)) {
-            if (!selectedTags.contains(tag)) {
-                currentTags.remove(tag);
-                System.out.println("Tag removed from note: " + tag.getName());
-                tagsUpdated = true;
-            }
-        }
-
-        if (tagsUpdated) {
-            currentNote.setTags(currentTags);
-            syncNoteTagsWithServer(currentNote);
-        }
-    }
-
-    private void saveTagToServer(final Tag tag) throws IOException {
-        String json = new ObjectMapper().writeValueAsString(tag);
-        try (var response = ClientBuilder.newClient()
-                .target("http://localhost:8080/api/tags/create")
-                .request(MediaType.APPLICATION_JSON)
-                .post(Entity.entity(json, MediaType.APPLICATION_JSON))) {
-
-            if (response.getStatus() != creationSuccessfulCode) {
-                throw new IOException("Failed to save tag. Status: "
-                        + response.getStatus());
-            }
-        }
-    }
-
-
-    private void syncNoteTagsWithServer(final Note note) {
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            Set<String> tagNames = note
-                    .getTags()
-                    .stream()
-                    .map(Tag::getName)
-                    .collect(Collectors.toSet());
-            String json = mapper.writeValueAsString(tagNames);
-
-            try (Response response = ClientBuilder.newClient()
-                    .target("http://localhost:8080/api/notes/"
-                            + note.getNoteId()
-                            + "/tags")
-                    .request(MediaType.APPLICATION_JSON)
-                    .put(Entity.entity(json, MediaType.APPLICATION_JSON))) {
-
-                if (response.getStatus() != requestSuccessfulCode) {
-                    System.err.println(
-                            "Failed to sync tags with server. Status: "
-                                    + response.getStatus()
-                    );
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Error syncing tags: " + e.getMessage());
-        }
-    }
-
-
     /**
      * This method calls the keyboard shortcuts, separately when noteListView is
      * in focus because it did not work normally
@@ -941,7 +785,7 @@ public class HomeScreenCtrl {
         // Shift + T to open up the tags edit
         if (event.isShiftDown()
                 && event.getCode() == KeyCode.T) {
-            handleTagsButtonAction();
+            // todo - the way tags are handeled
             event.consume();
         }
         // Shift + E to open up edit collections
@@ -1227,16 +1071,13 @@ public class HomeScreenCtrl {
                     .map(tagName -> new Tag("#" + tagName))
                     .collect(Collectors.toSet());
 
-            // Update the note's tags if there is a change
-            if (!newTags.equals(currentNote.getTags())) {
-                currentNote.setTags(newTags);
-                syncNoteTagsWithServer(currentNote); // Sync tags with server
-            }
+            System.out.println("Converted tags: " + newTags);
+            System.out.println("Note : " + currentNote.getNoteId() + currentNote.getTags().toString());
 
             // Process #tags to make them clickable
             String processedContent = newValue.replaceAll("#(\\w+)",
                     "<button style=\"background-color: #e43e38; color: white; border: none; padding: 2px 6px; border-radius: 4px; cursor: pointer;\" " +
-                            "onclick=\"javaApp.filterByTag('$1')\">#$1</button>");
+                            "onclick=\"javaApp.filterByTag('#$1')\">#$1</button>");
 
             // Process [[Note]] references
             Matcher matcher = Pattern.compile("\\[\\[(.*?)\\]\\]").matcher(processedContent);
@@ -1266,6 +1107,156 @@ public class HomeScreenCtrl {
             // Load the combined title and content into the WebView
             String titleAndContent = showTitle + showContent;
             markDownOutput.getEngine().loadContent(titleAndContent);
+        });
+    }
+
+    /**
+     * Filters notes by the given tag.
+     * @param tag The tag to filter by.
+     */
+    @FXML
+    public void filterByTag(String tag) {
+        System.out.println("Filtering by tag: " + tag);
+        Platform.runLater(() -> {
+            refreshNotesAndTags();
+            System.out.println("Latest notes and tags fetched for filtering.");
+
+            // Check if the tag already exists
+            boolean tagExists = selectedTagsContainer.getChildren().stream()
+                    .anyMatch(node -> node instanceof ChoiceBox &&
+                            ((ChoiceBox<String>) node).getValue().equals(tag));
+
+            if (!tagExists) {
+                // Remove the placeholder if it exists
+                selectedTagsContainer.getChildren().removeIf(node -> node instanceof Text);
+
+                // Add the new tag
+                ChoiceBox<String> tagChoiceBox = new ChoiceBox<>();
+                tagChoiceBox.setItems(FXCollections.observableArrayList(getAllTags()));
+                tagChoiceBox.setValue(tag);
+
+                // Style and set up the tag dynamically
+                adjustChoiceBoxWidth(tagChoiceBox, tag);
+                tagChoiceBox.getSelectionModel().selectedItemProperty().addListener((obs, oldTag, newTag) -> {
+                    if (newTag != null) {
+                        adjustChoiceBoxWidth(tagChoiceBox, newTag);
+                        filterNotesBySelectedTags();
+                    }
+                });
+
+                selectedTagsContainer.getChildren().add(tagChoiceBox);
+            }
+
+            // Reapply filtering and hide placeholder
+            filterNotesBySelectedTags();
+            togglePlaceholderText();
+        });
+    }
+
+    private void refreshNotesAndTags() {
+        // Example: Replace this with the actual code to fetch the latest state
+        notes = FXCollections.observableArrayList(
+                currentServer.getCollections().stream()
+                        .flatMap(collection -> collection.getNotes().stream())
+                        .collect(Collectors.toList())
+        );
+
+
+        List<String> latestTags = getAllTags();
+    }
+
+
+    private void togglePlaceholderText() {
+        Platform.runLater(() -> {
+            // Check if the container has any tags
+            boolean hasTags = selectedTagsContainer.getChildren().stream()
+                    .anyMatch(node -> node instanceof ChoiceBox);
+
+            if (!hasTags) {
+                // Show placeholder text if no tags are present
+                if (selectedTagsContainer.getChildren().stream().noneMatch(node -> node instanceof Text)) {
+                    Text placeholderText = new Text("Filter by tag...");
+                    placeholderText.setStyle("-fx-fill: lightgray; -fx-font-size: 12; -fx-font-style: italic;");
+                    selectedTagsContainer.getChildren().add(placeholderText);
+                }
+            } else {
+                // Remove placeholder text if tags are present
+                selectedTagsContainer.getChildren().removeIf(node -> node instanceof Text);
+            }
+        });
+    }
+
+
+    private void adjustChoiceBoxWidth(ChoiceBox<String> choiceBox, String tag) {
+        // Calculate the approximate text width for the tag
+        double textWidth = computeTextWidth(tag, 12); // 12 is the font size
+
+        // Define the maximum allowable width
+        double maxWidth = 150; // Adjust this value as needed
+        double padding = 20; // Space for dropdown arrow
+
+        // Set the ChoiceBox width to the smaller of the calculated width or maxWidth
+        choiceBox.setPrefWidth(Math.min(textWidth + padding, maxWidth));
+    }
+
+
+
+    private double computeTextWidth(String text, int fontSize) {
+        // Create a temporary Text node to calculate the width
+        Text tempText = new Text(text);
+        tempText.setStyle("-fx-font-size: " + fontSize + "px;"); // Set the font size
+
+        // Use a dummy scene to accurately calculate the layout bounds
+        new Scene(new Group(tempText));
+        return tempText.getLayoutBounds().getWidth();
+    }
+
+
+
+    private List<String> getAllTags() {
+        return currentServer.getCollections().stream()
+                .flatMap(collection -> collection.getNotes().stream())
+                .flatMap(note -> note.getTags().stream())
+                .map(Tag::getName)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+
+    private void filterNotesBySelectedTags() {
+        Set<String> selectedTags = selectedTagsContainer.getChildren().stream()
+                .filter(node -> node instanceof ChoiceBox)
+                .map(node -> ((ChoiceBox<String>) node).getValue())
+                .collect(Collectors.toSet());
+
+        if (selectedTags.isEmpty()) {
+            notesListView.setItems(FXCollections.observableArrayList(notes));
+            return;
+        }
+
+        ObservableList<Note> filteredNotes = FXCollections.observableArrayList(
+                notes.stream()
+                        .filter(note -> note.getTags().stream()
+                                .map(Tag::getName)
+                                .collect(Collectors.toSet())
+                                .containsAll(selectedTags)) // Match ALL tags
+                        .collect(Collectors.toList())
+        );
+
+        notesListView.setItems(filteredNotes);
+
+        if (filteredNotes.isEmpty()) {
+            System.out.println("No notes found matching tags: " + selectedTags);
+        }
+    }
+
+    @FXML
+    private void clearTags() {
+        Platform.runLater(() -> {
+            selectedTagsContainer.getChildren().clear(); // Remove all tags
+            togglePlaceholderText(); // Show the placeholder text
+            notesListView.setItems(FXCollections.observableArrayList(notes)); // Reset notes list
+            System.out.println("All tags cleared and notes list reset.");
         });
     }
 
@@ -1319,70 +1310,6 @@ public class HomeScreenCtrl {
                 }
             }
         }
-    }
-
-    /**
-     * Filter all the notes, making only those with the tag visible
-     * @param tag - the tag to be filtered by
-     */
-    @FXML
-    public void filterByTag(String tag) {
-        Platform.runLater(() -> {
-            // Check if the tag is already in the container
-            boolean tagExists = selectedTagsContainer.getChildren().stream()
-                    .anyMatch(node -> node instanceof Button && ((Button) node).getText().equals("#" + tag));
-
-            if (!tagExists) {
-                // Add the tag to the selected tags container
-                Button tagButton = new Button("#" + tag);
-                tagButton.setStyle("-fx-background-color: #e43e38; -fx-text-fill: white; -fx-background-radius: 5;");
-                tagButton.setOnAction(event -> {
-                    selectedTagsContainer.getChildren().remove(tagButton);
-                    refresh(); // Reset filtering
-                });
-                selectedTagsContainer.getChildren().add(tagButton);
-            }
-
-            // Filter notes containing the selected tag
-            ObservableList<Note> filteredNotes = notes.filtered(note ->
-                    note.getTags().stream().anyMatch(t -> t.getName().equals("#" + tag))
-            );
-            notesListView.setItems(filteredNotes);
-
-            System.out.println("Filtered notes by tag: #" + tag);
-        });
-    }
-
-
-    /**
-     * clear all the tags selected for filtering
-     */
-    @FXML
-    public void clearTags() {
-        selectedTagsContainer.getChildren().clear();
-        notesListView.setItems(notes); // Reset to the full notes list
-        System.out.println("All tags cleared. Displaying all notes.");
-    }
-
-    public void addTag(String tagName) {
-        Platform.runLater(() -> {
-            // Create a new Button for the tag
-            Button tagButton = new Button("#" + tagName);
-            tagButton.setStyle("-fx-background-color: #e43e38; -fx-text-fill: white; -fx-background-radius: 5;");
-
-            // Allow removing the tag when clicked
-            tagButton.setOnAction(event -> selectedTagsContainer.getChildren().remove(tagButton));
-
-            // Add the tag to the container
-            selectedTagsContainer.getChildren().add(tagButton);
-
-            // Ensure the ScrollPane scrolls to the bottom
-            tagsScrollPane.layout(); // Trigger layout update
-            tagsScrollPane.setHvalue(1.0); // Scroll to the far right (if horizontal scrolling is needed)
-            tagsScrollPane.setVvalue(1.0); // Scroll to the bottom (if vertical scrolling is needed)
-
-            System.out.println("Tag added: #" + tagName);
-        });
     }
 
     /**
@@ -1655,6 +1582,8 @@ public class HomeScreenCtrl {
                         // If not duplicate, update title and sync with the server (Invoke command for editing title)
                         Command editTitleCommand = new EditTitleCommand( currentNote,originalTitle, newTitle,HomeScreenCtrl.this);
                         invoker.executeCommand(editTitleCommand);
+                        // Notify the backend to update references
+                        updateReferencesInNotes(originalTitle, newTitle);
                         originalTitle = newTitle;
                     }
                 } catch (Exception e) {

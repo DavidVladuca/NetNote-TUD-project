@@ -1,50 +1,43 @@
 package server.api;
 
+import commons.Note;
 import commons.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import jakarta.transaction.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import server.database.NoteRepository;
 import server.database.TagRepository;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/tags")
 public class TagController {
-
     private final TagRepository tagRepository;
+    private final NoteRepository noteRepository;
 
-    @PostMapping("/create")
-    public ResponseEntity<Tag> createTag(@RequestBody Tag tag) {
-        if (tag == null || tag.getName() == null || tag.getName().trim().isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        tagRepository.save(tag);
-        return ResponseEntity.status(HttpStatus.CREATED).body(tag);
-    }
-
-    @GetMapping("/test")
-    public String testEndpoint() {
-        return "TagController is working!";
-    }
-
-
-    @Autowired
-    public TagController(TagRepository tagRepository) {
+    public TagController(TagRepository tagRepository, NoteRepository noteRepository) {
         this.tagRepository = tagRepository;
-        System.out.println("TagController initialized");
+        this.noteRepository = noteRepository;
     }
 
-    @GetMapping
-    public List<Tag> getAllTags() {
-        List<Tag> tags = tagRepository.findAll();
-        // Ensure notes are fetched for each tag to avoid lazy-loading issues
-        for (Tag tag : tags) {
-            tag.getNotes().size(); // Trigger loading of notes
-        }
-        return tags;
+    // Rename Tag
+    @Transactional
+    @PutMapping("/rename/{id}")
+    public ResponseEntity<Void> renameTag(@PathVariable Long id, @RequestBody String newName) {
+        Tag tag = tagRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tag not found"));
+        tag.setName(newName);
+        tagRepository.save(tag);
+        return ResponseEntity.ok().build();
     }
+
+    @Transactional
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<Void> deleteTag(@PathVariable Long id) {
+        tagRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+
 }
-
