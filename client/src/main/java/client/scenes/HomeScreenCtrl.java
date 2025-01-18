@@ -1181,9 +1181,7 @@ public class HomeScreenCtrl {
             // Extract tags from the note body
             Set<String> extractedTags = new HashSet<>();
             Matcher tagMatcher = Pattern.compile("#(\\w+)").matcher(newValue);
-            while (tagMatcher.find()) {
-                extractedTags.add(tagMatcher.group(1));
-            }
+            while (tagMatcher.find()) {extractedTags.add(tagMatcher.group(1));}
 
             // Convert extracted tags to Tag objects
             Set<Tag> newTags = extractedTags.stream()
@@ -1215,13 +1213,7 @@ public class HomeScreenCtrl {
                     + "</h1>";
             String showContent = renderer.render(parser.parse(processedImages));
 
-            // Combine title and body content
             String titleAndContent = showTitle + showContent;
-
-            // Debug: Log the final HTML being passed to the WebView
-            System.out.println("Processed HTML: " + titleAndContent);
-
-            // Load the combined title and content into the WebView
             markDownOutput.getEngine().loadContent(titleAndContent);
         });
     }
@@ -1241,9 +1233,11 @@ public class HomeScreenCtrl {
             System.out.println("Generated Image URL for " + image.getName() + ": " + imageUrl);
 
             // Match the specific Markdown syntax for this image
-            String markdownPattern = String.format("!\\[(.*?)\\]\\(%s\\)", Pattern.quote(image.getName()));
+            String markdownPattern = String.format("!\\[(.*?)\\]\\(%s\\)",
+                    Pattern.quote(image.getName()));
             content = content.replaceAll(markdownPattern, Matcher.quoteReplacement(
-                    String.format("<img src=\"%s\" alt=\"$1\" style=\"max-width: 100%%; height: auto;\"/>", imageUrl)
+                    String.format("<img src=\"%s\" alt=\"$1\" " +
+                            "style=\"max-width: 100%%; height: auto;\"/>", imageUrl)
             ));
         }
 
