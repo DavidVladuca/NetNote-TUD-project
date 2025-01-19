@@ -1943,7 +1943,12 @@ public class HomeScreenCtrl {
     }
 
     /**
-     * Processes #tags and [[note]] references in the provided text.
+     * Processes text to identify and format `#tags` and `[[note]]` references
+     * into clickable elements. Tags are converted to buttons, and note references
+     * are converted to links or placeholders.
+     *
+     * @param text - the text containing tags and note references
+     * @return the processed text with formatted tags and references
      */
     private String processTagsAndReferences(String text) {
         // Process #tags
