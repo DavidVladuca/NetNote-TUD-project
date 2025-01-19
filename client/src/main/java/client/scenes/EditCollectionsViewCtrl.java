@@ -1,5 +1,6 @@
 package client.scenes;
 
+import client.utils.ServerUtils;
 import com.google.inject.Inject;
 import commons.Collection;
 import javafx.application.Platform;
@@ -16,6 +17,8 @@ import javafx.scene.control.Alert.AlertType;
 
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+
+import java.io.IOException;
 import java.util.Optional;
 
 public class EditCollectionsViewCtrl {
@@ -25,6 +28,8 @@ public class EditCollectionsViewCtrl {
     private ScreenCtrl sc;
 
     private final HomeScreenCtrl homeScreenCtrl;
+
+    private final ServerUtils localServerUtils;
 
     /**
      * Button to add a collection.
@@ -71,11 +76,15 @@ public class EditCollectionsViewCtrl {
      * Constructor for EditCollectionsViewCtrl.
      * @param screenCtrl       the ScreenCtrl for navigation
      * @param homeScreenCtrl   the HomeScreenCtrl to access the current server
+     * @param localServerUtils the localServerUtils to access its methods
      */
     @Inject
-    public EditCollectionsViewCtrl(ScreenCtrl screenCtrl, HomeScreenCtrl homeScreenCtrl) {
+    public EditCollectionsViewCtrl(ScreenCtrl screenCtrl,
+                                   HomeScreenCtrl homeScreenCtrl,
+                                   ServerUtils localServerUtils) {
         this.sc = screenCtrl;
         this.homeScreenCtrl = homeScreenCtrl;
+        this.localServerUtils = localServerUtils;
     }
 
     /**
@@ -85,6 +94,13 @@ public class EditCollectionsViewCtrl {
         collections.setAll(homeScreenCtrl.currentServer.getCollections());
         setupCollectionsListView();
         collectionKeyboardShortcuts();
+
+        Platform.runLater(() -> {
+            if (serverTextF != null && (serverTextF.getText() == null ||
+                    serverTextF.getText().trim().isEmpty())) {
+                serverTextF.setText("http://localhost:8080");
+            }
+        });
     }
 
     /**
@@ -138,15 +154,65 @@ public class EditCollectionsViewCtrl {
             System.err.println("No collection selected to set as default.");
             // TODO: implement pop-up
         } else {
-            // TODO: implement functionality
+            // TODO: implement functionality +
+            //  pop-up to announce that the new default collection is "blabla"
         }
     }
     /**
      * Adds a collection.
      */
+    @FXML
     public void addCollection() {
+        // Check if any of the fields are empty
+        if (titleTextF.getText().trim().isEmpty()) {
+            showAlert(AlertType.WARNING, "Missing field",  "The Title is missing.");
+            return;
+        }
+        if (serverTextF.getText().trim().isEmpty()) {
+            showAlert(AlertType.WARNING, "Missing Field", "The Server is missing.");
+            return;
+        }
+        if (collectionTextF.getText().trim().isEmpty()) {
+            showAlert(AlertType.WARNING, "Missing Field", "The Collection Path is missing.");
+            return;
+        }
 
+        // If all fields are filled, we proceed with collection creation
+        String collectionTitle = titleTextF.getText().trim();
+        String collectionPath = collectionTextF.getText().trim();
+
+        Collection newCollection = new Collection(
+                homeScreenCtrl.currentServer, collectionTitle,
+                collectionPath, false
+        );
+
+        // Saving the collection to the server
+        try {
+            Collection savedCollection = localServerUtils.saveCollectionToServer(newCollection);
+            if (savedCollection != null) {
+                homeScreenCtrl.loadCollectionsFromServer();
+                homeScreenCtrl.setUpCollections();
+
+                // Show an information pop-up
+                Platform.runLater(() -> {
+                    showAlert(Alert.AlertType.INFORMATION,
+                            "Success", "Collection saved successfully.");
+                    collections.add(savedCollection);
+                });
+
+
+                System.out.println("Collection " + savedCollection.getCollectionTitle()
+                        + " has been added to the server.");
+            } else {
+                System.out.println("Failed to add collection. " +
+                        "The server was unable to save the new collection->returned empty");
+            }
+        } catch (IOException e) {
+            System.err.println("An error occurred while saving the collection: "
+                    + e.getMessage());
+        }
     }
+
     /**
      * Deletes a collection.
      */
@@ -158,6 +224,7 @@ public class EditCollectionsViewCtrl {
             System.err.println("No collection selected to delete."); //testing
             return;
         }
+        // TODO: pop-up if you want to delete the default_collection: not allowed
 
         // Pop-up for the confirmation of deletion
         Alert confirmationAlert = new Alert(AlertType.CONFIRMATION);
@@ -177,6 +244,9 @@ public class EditCollectionsViewCtrl {
                 Platform.runLater(() -> {
                     collections.remove(selectedCollection);
                     collectionsListView.getSelectionModel().clearSelection();
+                    homeScreenCtrl.currentServer.getCollections().remove(selectedCollection);
+                    homeScreenCtrl.loadCollectionsFromServer();
+                    homeScreenCtrl.setUpCollections();
                 });
 
                 showAlert(AlertType.INFORMATION,
