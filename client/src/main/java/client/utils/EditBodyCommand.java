@@ -12,8 +12,10 @@ public class EditBodyCommand implements Command {
     /**
      * Constructor for the EditBodyCommand class
      * @param note - note provided
+     * @param oldBody - the old body represented as a String
      * @param newBody - the new body represented as a String
      * @param controller - the HomeScreenCtrl
+     *
      */
     public EditBodyCommand(Note note, String oldBody, String newBody, HomeScreenCtrl controller) {
         this.note = note;
