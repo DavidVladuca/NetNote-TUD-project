@@ -15,6 +15,8 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -39,8 +41,12 @@ import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 
 import java.io.*;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
@@ -197,6 +203,11 @@ public class HomeScreenCtrl {
      */
 
     private Button refreshB;
+
+    /**
+     * Downloads images
+     */
+    private Button downloadImageB;
 
     /**
      * Button for editing collections.
@@ -2134,6 +2145,20 @@ public class HomeScreenCtrl {
         File file = fileChooser.showOpenDialog(uploadImageB.getScene().getWindow());
 
         if (file != null) {
+            String fileName = file.getName();
+
+            // Check for duplicate names
+            List<String> existingNames = fetchImagesForNote().stream()
+                    .map(Images::getName)
+                    .collect(Collectors.toList());
+            if (existingNames.contains(fileName)) {
+                showErrorDialog("Duplicate Image Name",
+                        "An image with the name \"" + fileName +
+                                "\" already exists in this note. " +
+                                "Please rename the file and try again.");
+                return;
+            }
+
             try {
                 byte[] imageData = Files.readAllBytes(file.toPath());
 
@@ -2242,6 +2267,17 @@ public class HomeScreenCtrl {
                 return;
             }
 
+            // Check for duplicate names
+            List<String> existingNames = fetchImagesForNote().stream()
+                    .map(Images::getName)
+                    .collect(Collectors.toList());
+            if (existingNames.contains(newName)) {
+                showErrorDialog("Duplicate Name",
+                        "An image with the name \"" + newName +
+                                "\" already exists. Please choose a different name.");
+                return;
+            }
+
             Images imageToRename = fetchImageByName(currentName);
             if(imageToRename != null) {
                 imageToRename.setName(newName);
@@ -2333,6 +2369,106 @@ public class HomeScreenCtrl {
                         "An error occurred while deleting the image: " + e.getMessage());
             }
         }
+    }
+
+    /**
+     * Shows an image download screen
+     */
+    @FXML
+    public void showDownloadImageScreen() {
+        Stage downloadStage = new Stage();
+        downloadStage.setTitle("Download Image");
+
+        // Layout
+        VBox layout = new VBox(10);
+        layout.setPadding(new Insets(20));
+        layout.setAlignment(Pos.CENTER);
+
+        // Input field for the image name
+        TextField imageNameField = new TextField();
+        imageNameField.setPromptText("Enter image name");
+
+        // Download button
+        Button downloadButton = new Button("Download");
+        downloadButton.setOnAction(event -> {
+            String imageName = imageNameField.getText().trim();
+            if (!imageName.isEmpty()) {
+                downloadImage(imageName);
+            } else {
+                showErrorDialog("Invalid Input", "Please enter a valid image name.");
+            }
+        });
+
+        layout.getChildren().addAll(new Label("Download an Image"), imageNameField, downloadButton);
+
+        // Scene setup
+        Scene downloadScene = new Scene(layout, 300, 150);
+        downloadStage.setScene(downloadScene);
+        downloadStage.show();
+    }
+
+    /**
+     * Downloads an image to the device
+     * @param imageName
+     */
+    private void downloadImage(String imageName) {
+        if (currentNote == null || currentNote.getNoteId() <= 0) {
+            showErrorDialog("No Note Selected",
+                    "Please select a note to download images from.");
+            return;
+        }
+
+        try {
+            // Construct the image URL
+            String encodedNoteTitle = URLEncoder.encode(currentNote.getTitle(),
+                    StandardCharsets.UTF_8);
+            String encodedImageName = URLEncoder.encode(imageName, StandardCharsets.UTF_8);
+            String imageUrl = String.format("http://localhost:8080/api/images/files/notes/%s/%s",
+                    encodedNoteTitle, encodedImageName);
+
+            // Fetch the image data from the server
+            HttpResponse<byte[]> response = HttpClient.newHttpClient()
+                    .send(HttpRequest.newBuilder()
+                            .uri(URI.create(imageUrl))
+                            .GET()
+                            .build(), HttpResponse.BodyHandlers.ofByteArray());
+
+            if (response.statusCode() == 200) {
+                byte[] imageData = response.body();
+
+                // Save the image locally
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.setInitialFileName(imageName);
+                fileChooser.getExtensionFilters().add(
+                        new FileChooser.ExtensionFilter("All Files", "*.*"));
+
+                File saveFile = fileChooser.showSaveDialog(null);
+                if (saveFile != null) {
+                    Files.write(saveFile.toPath(), imageData);
+                    showInfoDialog("Download Successful",
+                            "Image downloaded successfully to: " + saveFile.getAbsolutePath());
+                }
+            } else {
+                showErrorDialog("Download Failed",
+                        "Image not found or server error occurred.");
+            }
+        } catch (Exception e) {
+            showErrorDialog("Error",
+                    "An error occurred while downloading the image: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Information dialog
+     * @param title
+     * @param message
+     */
+    private void showInfoDialog(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }
 
