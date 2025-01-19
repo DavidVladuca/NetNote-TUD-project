@@ -458,15 +458,13 @@ public class HomeScreenCtrl {
             //auto-set to the Default collection
             int defaultIndex = IntStream.range(0, collectionOptions.size())
                     .filter(i -> collectionOptions.get(i).getCollectionTitle().equals("Default"))
-                    .findFirst()
-                    .orElse(0);
+                    .findFirst().orElse(0);
             selectCollectionBox.setValue(collectionOptions.get(defaultIndex));
             ok=0;
             // Show a pop-up informing the user about the default collection
-            // Delay the execution of the popup
             PauseTransition delay = new PauseTransition(Duration.seconds(2));
             delay.setOnFinished(event -> Platform.runLater(this::showDefaultCollectionPopup));
-            delay.play();
+            delay.play(); // Delayed the execution of the popup
         }
 
         // Setting up the converter for displaying collection titles
@@ -495,7 +493,6 @@ public class HomeScreenCtrl {
                         }
                     }
                 });
-
     }
 
     /**
