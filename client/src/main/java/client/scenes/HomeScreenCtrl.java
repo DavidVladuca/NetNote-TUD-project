@@ -534,31 +534,6 @@ public class HomeScreenCtrl {
     }
 
     /**
-     * Syncs a specific collection with the server to ensure consistency
-     */
-    private void syncCollectionWithServer(Collection collection) {
-        Collection updatedCollection = serverUtils.syncCollectionWithServer(collection);
-
-        if (updatedCollection != null) {
-            // Replacing the collection in place to maintain order
-            for (int i = 0; i < currentServer.getCollections().size(); i++) {
-                if (currentServer.getCollections().get(i).getCollectionId()
-                        == updatedCollection.getCollectionId()) {
-                    currentServer.getCollections().set(i, updatedCollection);
-                    break;
-                }
-            }
-
-            // Refreshing the UI collections
-            Platform.runLater(() -> {
-                setUpCollections();
-            });
-        } else {
-            System.err.println("Failed to sync collection.");
-        }
-    }
-
-    /**
      * Updates "notes" based on the chosen collection in selectCollectionBox
      *
      * @param selectedCollection (chosen collection)

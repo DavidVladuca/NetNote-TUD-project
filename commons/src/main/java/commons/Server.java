@@ -16,7 +16,7 @@ public class Server {
     @JsonManagedReference
     private List<Collection> collections;
 
-    private String URL = "localhost:8080";
+    private String URL = "http://localhost:8080";
 
     /**
      * The default constructor for JPA

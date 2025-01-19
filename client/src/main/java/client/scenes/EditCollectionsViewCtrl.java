@@ -96,11 +96,17 @@ public class EditCollectionsViewCtrl {
         collectionKeyboardShortcuts();
 
         Platform.runLater(() -> {
+            clearFields();
             if (serverTextF != null && (serverTextF.getText() == null ||
                     serverTextF.getText().trim().isEmpty())) {
                 serverTextF.setText("http://localhost:8080");
             }
         });
+    }
+
+    private void clearFields() {
+        titleTextF.clear();
+        collectionTextF.clear();
     }
 
     /**
@@ -125,8 +131,7 @@ public class EditCollectionsViewCtrl {
                 .addListener((observable, oldCollection, newCollection) -> {
                     if (newCollection != null) {
                         titleTextF.setText(newCollection.getCollectionTitle());
-                        serverTextF.setText(newCollection.getServer().getURL());
-                        // TODO: if we want multiple servers -> make it not hard-coded
+                        serverTextF.setText("http://localhost:8080");
                         collectionTextF.setText(newCollection.getCollectionPath());
                         Platform.runLater(() -> collectionsListView.getSelectionModel());
                     }
@@ -137,14 +142,76 @@ public class EditCollectionsViewCtrl {
      * Saves all collections.
      */
     public void save() {
-        //todo - implement save
+        Collection selectedCollection = collectionsListView.getSelectionModel().getSelectedItem();
 
-//        homeScreenCtrl.loadCollectionsFromServer();
-//        homeScreenCtrl.setUpCollections();
+        if (selectedCollection != null) {
+            String newTitle = titleTextF.getText().trim();
+            String newPath = collectionTextF.getText().trim();
+
+            boolean changes = false; //check if changes were made
+            if (!selectedCollection.getCollectionTitle().equals(newTitle)) {
+                selectedCollection.setCollectionTitle(newTitle);
+                changes = true;
+            }
+            if (!selectedCollection.getCollectionPath().equals(newPath)) {
+                selectedCollection.setCollectionPath(newPath);
+                changes = true;
+            }
+            if(!serverTextF.getText().trim().equals("http://localhost:8080")){
+                showAlert(AlertType.ERROR, "Server not found",
+                        "The server you selected can't be found," +
+                                " please choose the default sever");
+                return;
+            }
+
+            if(changes == true) {
+                // Save the updated collection to the server
+                syncCollectionWithServer(selectedCollection);
+            }
+        } else {
+            showAlert(AlertType.INFORMATION, "Status",
+                    "No collection was selected for changes....Saving....");
+        }
+
         System.out.println("Saving");
-
         sc.showHome();
     }
+
+    /**
+     * Syncs a specific collection with the server to ensure consistency
+     */
+    private void syncCollectionWithServer(Collection collection) {
+        try {
+            Collection updatedCollection = localServerUtils.syncCollectionWithServer(collection);
+            if (updatedCollection != null) {
+                // Replacing the collection in place to maintain order
+                for (int i = 0; i < homeScreenCtrl.currentServer.getCollections().size(); i++) {
+                    if (homeScreenCtrl.currentServer.getCollections().get(i).getCollectionId()
+                            == updatedCollection.getCollectionId()) {
+                        homeScreenCtrl.currentServer.getCollections().set(i, updatedCollection);
+                        showAlert(Alert.AlertType.INFORMATION, "Changes",
+                                "Changes to the Collection: " +
+                                        collection.getCollectionTitle() + " have been saved.");
+                        break;
+                    }
+                }
+
+                // Refreshing the UI collections
+                Platform.runLater(() -> {
+                    homeScreenCtrl.loadCollectionsFromServer();
+                    homeScreenCtrl.setUpCollections();
+                });
+            } else {
+                System.err.println("Failed to sync collection " +
+                        collection.getCollectionTitle() + ".");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "Error",
+                    "An error occurred while saving: " + e.getMessage());
+        }
+    }
+
     /**
      * Sets a collection to be the default.
      */
@@ -174,6 +241,12 @@ public class EditCollectionsViewCtrl {
         }
         if (collectionTextF.getText().trim().isEmpty()) {
             showAlert(AlertType.WARNING, "Missing Field", "The Collection Path is missing.");
+            return;
+        }
+        if (!serverTextF.getText().trim().equals("http://localhost:8080")) {
+            showAlert(AlertType.ERROR, "Server not found",
+                    "The server you selected can't be found," +
+                            " please choose the default sever");
             return;
         }
 
