@@ -358,8 +358,8 @@ public class HomeScreenCtrl {
     private String lastSyncedBody = "";
 
     /**
-     *  A queue that holds commands to be processed one at a time in a separate thread.
-     *  * This ensures commands are executed in the order they are added to the queue.
+     * A queue that holds commands to be processed one at a time in a separate thread.
+     * * This ensures commands are executed in the order they are added to the queue.
      */
     private final BlockingQueue<Command> commandQueue = new LinkedBlockingQueue<>();
 
@@ -417,7 +417,7 @@ public class HomeScreenCtrl {
     /**
      * Method which handles upcoming edits in the title
      */
-    private void handleTitleEdits(){
+    private void handleTitleEdits() {
         // Listener for focus changes on the title field
         noteTitleF.focusedProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue) { // Gaining focus
@@ -446,7 +446,7 @@ public class HomeScreenCtrl {
     /**
      * Method which handles upcoming edits in the body
      */
-    private void handleBodyEdits(){
+    private void handleBodyEdits() {
         // Listener for focus changes on the body field
         noteBodyF.focusedProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue) { // Gaining focus
@@ -475,32 +475,33 @@ public class HomeScreenCtrl {
 
     /**
      * Handles changing the currently selected note (Important for finalizing editing operations)
-     *
      */
     private void handleNoteChanges() {
         // Listener for note selection changes in the ListView
-        notesListView.getSelectionModel().selectedItemProperty().addListener((observable, oldNote, newNote) -> {
-            // Finalizes edits for the previously selected note
-            if (currentEditState == EditState.TITLE && isTitleEditInProgress) {
-                titleEdit(); // Save title changes
-                isTitleEditInProgress = false; // Reset the edit flag
-            } else if (currentEditState == EditState.BODY && isBodyEditInProgress) {
-                bodyEdit(); // Save body changes
-                isBodyEditInProgress = false; // Reset the edit flag
-            }
-            // Loads the new note's data
-            if (newNote != null) {
-                originalTitle = newNote.getTitle();
-                originalBody = newNote.getBody();
-                noteTitleF.setText(originalTitle);
-                noteBodyF.setText(originalBody);
+        notesListView.
+                getSelectionModel().
+                selectedItemProperty().addListener((observable, oldNote, newNote) -> {
+                    // Finalizes edits for the previously selected note
+                    if (currentEditState == EditState.TITLE && isTitleEditInProgress) {
+                        titleEdit(); // Save title changes
+                        isTitleEditInProgress = false; // Reset the edit flag
+                    } else if (currentEditState == EditState.BODY && isBodyEditInProgress) {
+                        bodyEdit(); // Save body changes
+                        isBodyEditInProgress = false; // Reset the edit flag
+                    }
+                    // Loads the new note's data
+                    if (newNote != null) {
+                        originalTitle = newNote.getTitle();
+                        originalBody = newNote.getBody();
+                        noteTitleF.setText(originalTitle);
+                        noteBodyF.setText(originalBody);
 
-                // Reset edit flags and state
-                isTitleEditInProgress = false;
-                isBodyEditInProgress = false;
-                currentEditState = EditState.NONE;
-            }
-        });
+                        // Reset edit flags and state
+                        isTitleEditInProgress = false;
+                        isBodyEditInProgress = false;
+                        currentEditState = EditState.NONE;
+                    }
+                });
     }
 
     /**
@@ -1473,6 +1474,7 @@ public class HomeScreenCtrl {
 
     /**
      * This method shows the 'toast' pop up when a note is added
+     *
      * @param message - the message to be displayed
      */
     private void showAddInfo(String message) {
@@ -1671,7 +1673,7 @@ public class HomeScreenCtrl {
     /**
      * Method that edits the body of the currently selected note
      */
-    public void bodyEdit(){
+    public void bodyEdit() {
         if (!isBodyEditInProgress) { // Check if a body edit is in progress
             return;
         }
@@ -1682,12 +1684,12 @@ public class HomeScreenCtrl {
 
             if (!newBody.equals(originalBody)) {
                 try {
-                        // If different from original body, update body and sync with the server
-                        // (Invoke command for editing body)
-                        Command editBodyCommand = new EditBodyCommand(
-                                currentNote,originalBody, newBody, HomeScreenCtrl.this);
-                        commandQueue.offer(editBodyCommand);
-                        originalBody = newBody; // Update the original body to the new body
+                    // If different from original body, update body and sync with the server
+                    // (Invoke command for editing body)
+                    Command editBodyCommand = new EditBodyCommand(
+                            currentNote, originalBody, newBody, HomeScreenCtrl.this);
+                    commandQueue.offer(editBodyCommand);
+                    originalBody = newBody; // Update the original body to the new body
                 } catch (Exception e) {
                     errorLogger.log(
                             Level.INFO,
@@ -1695,7 +1697,7 @@ public class HomeScreenCtrl {
                     );
                 }
             }
-            isBodyEditInProgress=false;
+            isBodyEditInProgress = false;
         }
     }
 
@@ -1745,7 +1747,7 @@ public class HomeScreenCtrl {
                                     + e.getMessage());
                 }
             }
-            isTitleEditInProgress=false;
+            isTitleEditInProgress = false;
         }
     }
 
@@ -2264,7 +2266,7 @@ public class HomeScreenCtrl {
      */
     private void setupImageListView() {
         imageListView.setOnMouseClicked(event -> {
-            if(event.getClickCount() == 2) {
+            if (event.getClickCount() == 2) {
                 String selectedImageName = imageListView.getSelectionModel().getSelectedItem();
                 if (selectedImageName != null) {
                     renameImage(selectedImageName);
@@ -2276,6 +2278,7 @@ public class HomeScreenCtrl {
     /**
      * Changes the name of an image and ensures the name
      * cannot be empty/file extension cant be changed
+     *
      * @param currentName
      */
     private void renameImage(String currentName) {
@@ -2286,14 +2289,14 @@ public class HomeScreenCtrl {
 
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(newName -> {
-            if(!isValidNameChange(currentName, newName)) {
+            if (!isValidNameChange(currentName, newName)) {
                 showErrorDialog("Invalid Name",
                         "The name must not be empty and must retain the same file extension");
                 return;
             }
 
             Images imageToRename = fetchImageByName(currentName);
-            if(imageToRename != null) {
+            if (imageToRename != null) {
                 imageToRename.setName(newName);
 
                 try {
@@ -2315,6 +2318,7 @@ public class HomeScreenCtrl {
 
     /**
      * Checks for the validity of the changed image name
+     *
      * @param oldName
      * @param newName
      * @return boolean value for validity
@@ -2330,6 +2334,7 @@ public class HomeScreenCtrl {
 
     /**
      * Retrieves the image based on its name
+     *
      * @param name
      * @return
      */
@@ -2362,7 +2367,6 @@ public class HomeScreenCtrl {
         commandProcessorThread.setDaemon(true); // Ensure the thread exits with the application
         commandProcessorThread.start();
     }
-
 
 
 }
