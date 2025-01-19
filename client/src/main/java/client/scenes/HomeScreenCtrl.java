@@ -2,7 +2,6 @@ package client.scenes;
 
 import client.HomeScreen;
 import client.utils.*;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import commons.Collection;
@@ -33,7 +32,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.text.Text;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.VBox;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -43,8 +41,6 @@ import javafx.util.StringConverter;
 import netscape.javascript.JSObject;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
-import org.springframework.beans.factory.annotation.Autowired;
-import server.database.TagRepository;
 
 import java.io.*;
 import java.net.URL;
@@ -385,6 +381,10 @@ public class HomeScreenCtrl {
         Platform.runLater(this::refresh); // Ensure tags and notes sync correctly
     }
 
+    /**
+     * Configures the placeholder text for the tag filter container.
+     * Ensures placeholder visibility when no tags are selected.
+     */
     private void configureTextFiltering() {
         // Placeholder Text for "Filter by tag..."
         Text placeholderText = new Text("Filter by tag...");
@@ -394,6 +394,10 @@ public class HomeScreenCtrl {
         selectedTagsContainer.getChildren().add(placeholderText);
     }
 
+    /**
+     * Initializes the horizontal scroll bar for the tags display.
+     * Links the ScrollPane and ScrollBar to ensure proper scrolling behavior.
+     */
     private void scrollBarInitialize() {
         Platform.runLater(() -> {
             // Set initial ScrollBar range
@@ -419,6 +423,10 @@ public class HomeScreenCtrl {
         });
     }
 
+    /**
+     * Updates the visibility and size of the horizontal scroll bar
+     * based on the content width and viewport size of the tags container.
+     */
     private void updateScrollBar() {
         double contentWidth = selectedTagsContainer.getBoundsInParent().getWidth();
         double viewportWidth = tagsScrollPane.getViewportBounds().getWidth();
@@ -439,6 +447,11 @@ public class HomeScreenCtrl {
         horizontalScrollBar.setMax(1.0); // Normalized to ScrollPane hvalue range (0 to 1)
     }
 
+    /**
+     * Configures the ScrollPane for horizontal scrolling
+     * and disables vertical scrolling for the tags container.
+     * Intercepts scroll events to handle horizontal scrolling behavior.
+     */
     private void configureScrollPane() {
         // Ensure that the ScrollPane allows horizontal scrolling based on content width
         selectedTagsContainer.setPrefWidth(Region.USE_COMPUTED_SIZE);
@@ -920,7 +933,12 @@ public class HomeScreenCtrl {
     }
 
 
-
+    /**
+     * Refreshes the note in the ListView to reflect any updates.
+     * Also updates the filtered notes list.
+     *
+     * @param updatedNote - the note to be refreshed
+     */
     private void refreshNotesInListView(Note updatedNote) {
         for (int i = 0; i < notes.size(); i++) {
             if (notes.get(i).getNoteId() == updatedNote.getNoteId()) {
@@ -941,6 +959,9 @@ public class HomeScreenCtrl {
         }
     }
 
+    /**
+     * Updates the Markdown display for the current note's title and body.
+     */
     private void updateMarkdownView() {
         String titleHtml = "<h1>" + renderer.render(parser.parse(currentNote.getTitle())) + "</h1>";
         String bodyHtml = renderer.render(parser.parse(currentNote.getBody()));
@@ -956,7 +977,10 @@ public class HomeScreenCtrl {
         sc.showEditCollection();
     }
 
-
+    /**
+     * Fetches all notes from the server and updates the local notes list.
+     * Logs errors if fetching fails.
+     */
     private void loadNotesFromServer() {
         try {
             var response = ClientBuilder.newClient()
@@ -1106,6 +1130,10 @@ public class HomeScreenCtrl {
         });
     }
 
+    /**
+     * Refreshes the display of tags in the tag filter container.
+     * Updates the UI based on the available tags and ensures placeholder visibility.
+     */
     private void refreshTagsDisplay() {
         Platform.runLater(() -> {
             selectedTagsContainer.getChildren().clear();
@@ -1182,7 +1210,13 @@ public class HomeScreenCtrl {
         });
     }
 
-
+    /**
+     * Collects all currently selected tags from the tag filter container.
+     *
+     * @param newTag - the newly selected tag
+     * @param oldTag - the previously selected tag being replaced
+     * @return a set of all currently selected tags
+     */
     private Set<String> collectSelectedTags(String newTag, String oldTag) {
         // Collect currently selected tags
         Set<String> selectedTags = selectedTagsContainer.getChildren().stream()
@@ -1197,6 +1231,12 @@ public class HomeScreenCtrl {
         return selectedTags;
     }
 
+    /**
+     * Refreshes the list of available tags for selection in a specific ChoiceBox.
+     * Excludes tags that are already selected in other ChoiceBoxes.
+     *
+     * @param choiceBox - the ChoiceBox for which the available tags are refreshed
+     */
     private void refreshAvailableTags(ChoiceBox<String> choiceBox) {
         // Get all tags except the ones already selected in other ChoiceBoxes
         Set<String> selectedTags = selectedTagsContainer.getChildren().stream()
@@ -1213,7 +1253,10 @@ public class HomeScreenCtrl {
     }
 
 
-
+    /**
+     * Toggles the visibility of the placeholder text in the tag filter container.
+     * Ensures the placeholder is visible when no tags are selected and hidden otherwise.
+     */
     private void togglePlaceholderText() {
         Platform.runLater(() -> {
             boolean hasTags = selectedTagsContainer.getChildren().stream()
@@ -1233,6 +1276,12 @@ public class HomeScreenCtrl {
         });
     }
 
+    /**
+     * Adjusts the width of a ChoiceBox based on the length of the tag it displays.
+     *
+     * @param choiceBox - the ChoiceBox whose width needs adjustment
+     * @param tag       - the tag being displayed in the ChoiceBox
+     */
     private void adjustChoiceBoxWidth(ChoiceBox<String> choiceBox, String tag) {
         // Calculate the approximate text width for the tag
         double textWidth = computeTextWidth(tag, 12); // 12 is the font size
@@ -1245,6 +1294,13 @@ public class HomeScreenCtrl {
         choiceBox.setPrefWidth(Math.min(textWidth + padding, maxWidth));
     }
 
+    /**
+     * Computes the width of a given text string based on a specified font size.
+     *
+     * @param text     - the text whose width is to be computed
+     * @param fontSize - the font size used for the computation
+     * @return the computed width of the text in pixels
+     */
     private double computeTextWidth(String text, int fontSize) {
         // Create a temporary Text node to calculate the width
         Text tempText = new Text(text);
@@ -1255,6 +1311,11 @@ public class HomeScreenCtrl {
         return tempText.getLayoutBounds().getWidth();
     }
 
+    /**
+     * Retrieves a list of all unique tags across all notes.
+     *
+     * @return a list of distinct tag names from all notes
+     */
     private List<String> getAllTags() {
         return notes.stream()
                 .flatMap(note -> note.getTags().stream())
@@ -1264,7 +1325,10 @@ public class HomeScreenCtrl {
     }
 
 
-
+    /**
+     * Filters the notes displayed in the ListView based on the selected tags.
+     * Updates the UI to show only notes that match all selected tags.
+     */
     private void filterNotesByTags() {
         // Collect the currently selected tags
         Set<String> selectedTags = selectedTagsContainer.getChildren().stream()
@@ -1306,6 +1370,11 @@ public class HomeScreenCtrl {
         syncFilteredNotes(filteredNotes);
     }
 
+    /**
+     * Syncs changes in the filtered notes list back to the main notes list.
+     *
+     * @param filteredNotes - the filtered list of notes
+     */
     private void syncFilteredNotes(ObservableList<Note> filteredNotes) {
         for (Note note : filteredNotes) {
             int index = notes.indexOf(note);
@@ -1315,6 +1384,12 @@ public class HomeScreenCtrl {
         }
     }
 
+    /**
+     * Displays an alert dialog with the specified title and message.
+     *
+     * @param title   - the title of the alert dialog
+     * @param message - the message to be displayed in the alert dialog
+     */
     private void showAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.WARNING);
         alert.setTitle(title);
@@ -1323,6 +1398,12 @@ public class HomeScreenCtrl {
         alert.showAndWait();
     }
 
+    /**
+     * Validates whether the selected combination of tags matches any existing notes.
+     *
+     * @param selectedTags - the set of selected tags to validate
+     * @return true if the combination matches at least one note, false otherwise
+     */
     private boolean isCombinationValid(Set<String> selectedTags) {
         // Check if there are any notes matching the selected tags
         return notes.stream()
@@ -1334,6 +1415,9 @@ public class HomeScreenCtrl {
                 });
     }
 
+    /**
+     * Refreshes the notes and tags by reloading data from the server and updating the UI.
+     */
     public void refresh() {
         Platform.runLater(() -> {
             System.out.println("Refreshing notes and tags...");
@@ -1358,6 +1442,10 @@ public class HomeScreenCtrl {
         });
     }
 
+    /**
+     * Clears all selected tags from the filter and resets the ListView to display all notes.
+     * Displays an alert if no tags are present to clear.
+     */
     @FXML
     private void clearTags() {
         // Check if there are any tags in the filter box

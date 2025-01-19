@@ -9,9 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import server.database.NoteRepository;
 import server.database.TagRepository;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/api/tags")
