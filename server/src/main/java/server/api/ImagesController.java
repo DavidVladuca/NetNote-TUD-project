@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.*;
 import server.database.ImageRepository;
 import server.database.NoteRepository;
 
+import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,7 +39,7 @@ public class ImagesController {
      * @return - ResponseEntity with the saved image
      */
     @PostMapping("/{noteId}/addImage")
-    public ResponseEntity<Images> addImageToNote(@PathVariable Long noteId,
+    public ResponseEntity<String> addImageToNote(@PathVariable Long noteId,
                                                  @RequestBody Images image) {
         Optional<Note> noteOptional = noteRepository.findById(noteId);
         if (noteOptional.isEmpty()) {
@@ -45,8 +48,14 @@ public class ImagesController {
 
         Note note = noteOptional.get();
         image.setNote(note);
+        image.setMimeType(determineMimeType(image.getName())); // Set MIME type
         Images savedImage = imageRepository.save(image);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedImage);
+
+        String encodedTitle = URLEncoder.encode(note.getTitle(), StandardCharsets.UTF_8);
+        String encodedName = URLEncoder.encode(savedImage.getName(), StandardCharsets.UTF_8);
+        String fileUrl = String.format("http://server/api/images/files/notes/%s/%s", encodedTitle, encodedName);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(fileUrl);
     }
 
     /**
@@ -115,4 +124,32 @@ public class ImagesController {
         imageRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * Displays the selected image on an url
+     * @param noteTitle
+     * @param fileName
+     * @return image view on localhost:8080
+     */
+    @GetMapping("/files/notes/{noteTitle}/{fileName}")
+    public ResponseEntity<byte[]> serveImage(@PathVariable String noteTitle,
+                                             @PathVariable String fileName) {
+        List<Images> images = imageRepository.findAll();
+        for (Images image : images) {
+            if (image.getNote().getTitle().equals(noteTitle) && image.getName().equals(fileName)) {
+                String mimeType = determineMimeType(fileName);
+                return ResponseEntity.ok()
+                        .header("Content-Type", mimeType)
+                        .header("Content-Disposition", "inline; filename=\"" + fileName + "\"")
+                        .body(image.getData());
+            }
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
+    private String determineMimeType(String fileName) {
+        String mimeType = URLConnection.guessContentTypeFromName(fileName);
+        return mimeType != null ? mimeType : "application/octet-stream";
+    }
+
 }
