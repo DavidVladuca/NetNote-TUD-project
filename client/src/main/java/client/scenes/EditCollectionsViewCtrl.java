@@ -260,8 +260,12 @@ public class EditCollectionsViewCtrl {
         );
 
         // Saving the collection to the server
+        saveCollectiontoServer(newCollection);
+    }
+
+    private void saveCollectiontoServer(Collection collection) {
         try {
-            Collection savedCollection = localServerUtils.saveCollectionToServer(newCollection);
+            Collection savedCollection = localServerUtils.saveCollectionToServer(collection);
             if (savedCollection != null) {
                 homeScreenCtrl.loadCollectionsFromServer();
                 homeScreenCtrl.setUpCollections();
@@ -272,7 +276,6 @@ public class EditCollectionsViewCtrl {
                             "Success", "Collection saved successfully.");
                     collections.add(savedCollection);
                 });
-
 
                 System.out.println("Collection " + savedCollection.getCollectionTitle()
                         + " has been added to the server.");
