@@ -474,7 +474,6 @@ public class HomeScreenCtrl {
             public String toString(Collection collection) {
                 return collection.getCollectionTitle();
             }
-
             @Override
             public Collection fromString(String s) {
                 return null;
