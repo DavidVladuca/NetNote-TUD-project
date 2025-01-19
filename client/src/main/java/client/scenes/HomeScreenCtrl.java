@@ -462,9 +462,10 @@ public class HomeScreenCtrl {
             selectCollectionBox.setValue(collectionOptions.get(defaultIndex));
             ok=0;
             // Show a pop-up informing the user about the default collection
-            PauseTransition delay = new PauseTransition(Duration.seconds(2));
+            PauseTransition delay = new PauseTransition(Duration.seconds(2.5));
             delay.setOnFinished(event -> Platform.runLater(this::showDefaultCollectionPopup));
             delay.play(); // Delayed the execution of the popup
+            updateDefaultCollection();
         }
 
         // Setting up the converter for displaying collection titles
@@ -496,6 +497,20 @@ public class HomeScreenCtrl {
     }
 
     /**
+     * Updates the default_collection locally
+     */
+    private void updateDefaultCollection(){
+        loadCollectionsFromServer();
+
+        for (int i = 0; i < currentServer.getCollections().size(); i++) {
+            if (currentServer.getCollections().get(i).getCollectionTitle().equals("Default")) {
+                default_collection = currentServer.getCollections().get(i);
+                break;
+            }
+        }
+    }
+
+    /**
      * Ensures the default collection exists in the server
      * for the first run of the session.
      */
@@ -520,7 +535,6 @@ public class HomeScreenCtrl {
         try {
             Collection savedCollection = serverUtils.saveCollectionToServer(default_collection);
             if (savedCollection != null) {
-
                 System.out.println("Collection " + savedCollection.getCollectionTitle()
                         + " has been added to the server.");
             } else {

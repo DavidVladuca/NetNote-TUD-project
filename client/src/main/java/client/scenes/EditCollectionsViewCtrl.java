@@ -104,6 +104,10 @@ public class EditCollectionsViewCtrl {
         });
     }
 
+    /**
+     * Clears the fields in EditCollectionsView scene +
+     * (except the server field - it's standard)
+     */
     private void clearFields() {
         titleTextF.clear();
         collectionTextF.clear();
@@ -167,6 +171,9 @@ public class EditCollectionsViewCtrl {
             if(changes == true) {
                 // Save the updated collection to the server
                 syncCollectionWithServer(selectedCollection);
+                showAlert(Alert.AlertType.INFORMATION, "Changes",
+                        "Changes to the Collection: " +
+                                selectedCollection.getCollectionTitle() + " have been saved.");
             }
         } else {
             showAlert(AlertType.INFORMATION, "Status",
@@ -178,7 +185,8 @@ public class EditCollectionsViewCtrl {
     }
 
     /**
-     * Syncs a specific collection with the server to ensure consistency
+     * Syncs (updates) a specific collection with the server to ensure consistency
+     * @param collection - the collection that needs to be synced(updated) in the server
      */
     private void syncCollectionWithServer(Collection collection) {
         try {
@@ -189,9 +197,6 @@ public class EditCollectionsViewCtrl {
                     if (homeScreenCtrl.currentServer.getCollections().get(i).getCollectionId()
                             == updatedCollection.getCollectionId()) {
                         homeScreenCtrl.currentServer.getCollections().set(i, updatedCollection);
-                        showAlert(Alert.AlertType.INFORMATION, "Changes",
-                                "Changes to the Collection: " +
-                                        collection.getCollectionTitle() + " have been saved.");
                         break;
                     }
                 }
@@ -213,18 +218,38 @@ public class EditCollectionsViewCtrl {
     }
 
     /**
-     * Sets a collection to be the default.
+     * Sets a collection to be the default_collection.
      */
     public void makeDefault() {
-        String collectionTitle = titleTextF.getText();
-        if (collectionTitle == null || collectionTitle.isEmpty()) {
-            System.err.println("No collection selected to set as default.");
-            // TODO: implement pop-up
-        } else {
-            // TODO: implement functionality +
-            //  pop-up to announce that the new default collection is "blabla"
+        Collection selectedCollection = collectionsListView.getSelectionModel().getSelectedItem();
+
+        if (selectedCollection == null) {
+            showAlert(Alert.AlertType.WARNING, "No collection selected",
+                    "Please select a collection to make default.");
+            return;
         }
+
+        // Updating the previous default_collection in the server
+        homeScreenCtrl.default_collection.setDefaultCollection(false);
+        syncCollectionWithServer(homeScreenCtrl.default_collection);
+
+        // Updating the new default_collection
+        homeScreenCtrl.default_collection = selectedCollection;
+        homeScreenCtrl.default_collection.setDefaultCollection(true);
+        syncCollectionWithServer(selectedCollection);
+
+        // Refresh UI
+        Platform.runLater(() -> {
+            collectionsListView.refresh();
+            homeScreenCtrl.loadCollectionsFromServer();
+            homeScreenCtrl.setUpCollections();
+        });
+
+        showAlert(Alert.AlertType.INFORMATION, "Default Collection Set",
+                "The default collection has been set to: " +
+                        selectedCollection.getCollectionTitle() + ".");
     }
+
     /**
      * Adds a collection.
      */
@@ -263,6 +288,11 @@ public class EditCollectionsViewCtrl {
         saveCollectiontoServer(newCollection);
     }
 
+    /**
+     * Saves the collection given as a param to the server
+     * - connector between frontend and backend
+     * @param collection - the collection that needs to be saved
+     */
     private void saveCollectiontoServer(Collection collection) {
         try {
             Collection savedCollection = localServerUtils.saveCollectionToServer(collection);
@@ -300,7 +330,12 @@ public class EditCollectionsViewCtrl {
             System.err.println("No collection selected to delete."); //testing
             return;
         }
-        // TODO: pop-up if you want to delete the default_collection: not allowed
+
+        if(selectedCollection.equals(homeScreenCtrl.default_collection)){
+            showAlert(AlertType.ERROR, "Deleting the default collection", "The default collection "+
+                    "can't be deleted, please select a different collection!");
+            return;
+        }
 
         // Pop-up for the confirmation of deletion
         Alert confirmationAlert = new Alert(AlertType.CONFIRMATION);
@@ -350,27 +385,6 @@ public class EditCollectionsViewCtrl {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
-    }
-
-    /**
-     * IDK - todo.
-     */
-    public void titleEntry() {
-
-    }
-
-    /**
-     * IDK - todo.
-     */
-    public void serverEntry() {
-
-    }
-
-    /**
-     * IDK - todo.
-     */
-    public void collectionEntry() {
-
     }
 
     /**
