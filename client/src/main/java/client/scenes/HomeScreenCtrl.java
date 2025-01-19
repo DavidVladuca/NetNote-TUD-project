@@ -382,6 +382,7 @@ public class HomeScreenCtrl {
         scrollBarInitialize();
         configureScrollPane();
         configureTextFiltering();
+        Platform.runLater(this::refresh); // Ensure tags and notes sync correctly
     }
 
     private void configureTextFiltering() {
@@ -502,6 +503,7 @@ public class HomeScreenCtrl {
                     if (!newValue && isTitleEditInProgress) {
                         titleEdit();
                         syncNoteWithServer(currentNote);
+                        //updateMarkdownView();
                     }
                 });
 
@@ -928,6 +930,15 @@ public class HomeScreenCtrl {
         }
         notesListView.refresh(); // Refresh UI display
         //updateMarkdownView();
+
+        // Also update filtered list to be sure
+        ObservableList<Note> filteredNotes = notesListView.getItems();
+        for (int i = 0; i < filteredNotes.size(); i++) {
+            if (filteredNotes.get(i).getNoteId() == updatedNote.getNoteId()) {
+                filteredNotes.set(i, updatedNote);
+                break;
+            }
+        }
     }
 
     private void updateMarkdownView() {
@@ -1013,6 +1024,7 @@ public class HomeScreenCtrl {
                         noteTitleF.setText(newNote.getTitle());
                         noteBodyF.setText(newNote.getBody());
                         loadImagesForCurrentNote();
+                        //updateMarkdownView(); // Refresh the Markdown display
                         Platform.runLater(() -> notesListView.getSelectionModel());
                     }
                 });
@@ -1289,6 +1301,17 @@ public class HomeScreenCtrl {
             noteBodyF.setText(firstNote.getBody());
             loadImagesForCurrentNote();
         }
+
+        syncFilteredNotes(filteredNotes);
+    }
+
+    private void syncFilteredNotes(ObservableList<Note> filteredNotes) {
+        for (Note note : filteredNotes) {
+            int index = notes.indexOf(note);
+            if (index != -1) {
+                notes.set(index, note); // Sync changes back to the original list
+            }
+        }
     }
 
     private void showAlert(String title, String message) {
@@ -1336,13 +1359,24 @@ public class HomeScreenCtrl {
 
     @FXML
     private void clearTags() {
+        // Check if there are any tags in the filter box
+        boolean hasTags = selectedTagsContainer.getChildren().stream()
+                .anyMatch(node -> node instanceof ChoiceBox);
+
+        if (!hasTags) {
+            // Show alert if no tags are present
+            showAlert("No Tags to Clear", "There are no tags in the filter box to clear.");
+            return;
+        }
+
         Platform.runLater(() -> {
-            selectedTagsContainer.getChildren().clear(); // Remove all tags
-            togglePlaceholderText(); // Show the placeholder text
-            notesListView.setItems(FXCollections.observableArrayList(notes)); // Reset notes list
+            selectedTagsContainer.getChildren().clear(); // Clear selected tags
+            togglePlaceholderText(); // Show placeholder text
+            notesListView.setItems(FXCollections.observableArrayList(notes)); // Reset to full notes list
             System.out.println("All tags cleared and notes list reset.");
         });
     }
+
 
     /**
      * Find the referenced note and open it
@@ -1817,33 +1851,41 @@ public class HomeScreenCtrl {
     }
 
     /**
-     * Searches through collection and displays notes that match search.
+     * Searches through the notes and respects the current filters, including tags.
      */
     public void searchCollection() {
-        String searchText = searchCollectionF.textProperty().getValue();
-        ArrayList<ArrayList<Long>> collectionMatchIndices = currentCollection
-                .getSearch(searchText);
+        String searchText = searchCollectionF.getText().trim().toLowerCase(); // Normalize search text
 
-        ObservableList<Note> displayNotes = FXCollections.observableArrayList();
-        if (!collectionMatchIndices.isEmpty()) {
-            if (collectionMatchIndices.getFirst().getFirst() == -1) {
-                System.out.println("There are no matches for " + searchText);
-                displayNotes.clear(); //gives an empty display
-            } else {
+        // Determine the base list to filter (current filtered notes or all notes)
+        ObservableList<Note> baseList = notesListView.getItems(); // Start with the currently displayed notes
 
-                for (ArrayList<Long> collectionMatchIndex
-                        : collectionMatchIndices) {
-                    displayNotes.add(currentCollection
-                            .getNoteByID(Math
-                                    .toIntExact(collectionMatchIndex
-                                            .getFirst())));
-                }
-            }
-        } else {
-            displayNotes = notes;
+        if (searchText.isEmpty()) {
+            // If the search is cleared, reapply the tag filtering
+            filterNotesByTags(); // Reapply tag filtering to refresh the view
+            return;
         }
-        notesListView.setItems(displayNotes);
+
+        // Filter the base list of notes based on the search text
+        ObservableList<Note> filteredNotes = FXCollections.observableArrayList(
+                baseList.stream()
+                        .filter(note -> note.getTitle().toLowerCase().contains(searchText) ||
+                                note.getBody().toLowerCase().contains(searchText))
+                        .toList()
+        );
+
+        // Update the ListView with the filtered notes
+        notesListView.setItems(filteredNotes);
+
+        // Handle no matches
+        if (filteredNotes.isEmpty()) {
+            System.out.println("No matches found for: " + searchText);
+        } else {
+            // Optionally, select the first match
+            notesListView.getSelectionModel().selectFirst();
+        }
     }
+
+
 
     /**
      * Sets up the languages (adds them to the collection box).

@@ -95,7 +95,7 @@ public class NoteController {
         Matcher tagMatcher = Pattern.compile("#(\\w+)").matcher(note.getBody());
         Set<Tag> updatedTags = new HashSet<>();
 
-        System.out.println("Note : " + note.getNoteId());
+        //System.out.println("Note : " + note.getNoteId());
         while (tagMatcher.find()) {
             String tagName = tagMatcher.group(1);
 
@@ -105,7 +105,7 @@ public class NoteController {
                         Tag newTag = new Tag(tagName);
                         return tagRepository.save(newTag);
                     });
-            System.out.println(tag.toString());
+            //System.out.println(tag.toString());
             updatedTags.add(tag);
         }
 
