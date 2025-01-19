@@ -94,12 +94,12 @@ public class ServerTest {
 
     @Test
     void getURL() {
-        assertEquals(server1.getURL(), "localhost:8080");
+        assertEquals(server1.getURL(), "http://localhost:8080");
     }
 
     @Test
     void setURL() {
-        server1.setURL("localhost:8081");
-        assertEquals(server1.getURL(), "localhost:8081");
+        server1.setURL("http://localhost:8081");
+        assertEquals(server1.getURL(), "http://localhost:8081");
     }
 }
