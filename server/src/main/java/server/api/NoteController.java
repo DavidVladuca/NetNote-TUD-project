@@ -222,10 +222,16 @@ public class NoteController {
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteNote(@PathVariable Long id) {
         if (!noteRepository.existsById(id)) {
-            return ResponseEntity.notFound().build(); // Return Not Found if the note does not exist
+            return ResponseEntity.notFound().build();
         }
-        noteRepository.deleteById(id); // Delete the note from the database
-        return ResponseEntity.noContent().build(); // Return no content
+
+        Note note = noteRepository.findById(id).orElse(null);
+        if (note != null) {
+            System.out.println("Deleting note and associated images for Note ID: " + id);
+        }
+
+        noteRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 
     /**
