@@ -1035,16 +1035,17 @@ public class HomeScreenCtrl {
      * converts the content to a heading of type h1, because it is a title
      */
     public void markDownTitle() {
-        noteTitleF.textProperty().addListener((observable, oldValue, newValue)
-                -> {
+        noteTitleF.textProperty().addListener((observable, oldValue, newValue) -> {
             currentNote.setTitle(newValue);
+
+            // Process #tags and [[notes]] in the body
+            String processedContent = processTagsAndReferences(noteBodyF.getText());
 
             // Convert the title and body to HTML
             String showTitle = "<h1>"
                     + renderer.render(parser.parse(newValue))
                     + "</h1>";
-            String showContent = renderer.render(
-                    parser.parse(noteBodyF.getText()));
+            String showContent = renderer.render(parser.parse(processedContent));
 
             // Load the combined title and content into the WebView
             String titleAndContent = showTitle + showContent;
@@ -1840,6 +1841,9 @@ public class HomeScreenCtrl {
                 }
             }
         }
+        // Process #tags and [[notes]] after highlighting
+        String processedBody = processTagsAndReferences(bodyHighlighted);
+
         titleHighlighted = "<h1>"
                 + renderer.render(parser.parse(titleHighlighted))
                 + "</h1>";
@@ -1849,6 +1853,39 @@ public class HomeScreenCtrl {
 
 
     }
+
+    /**
+     * Processes #tags and [[note]] references in the provided text.
+     */
+    private String processTagsAndReferences(String text) {
+        // Process #tags
+        String processedContent = text.replaceAll("#(\\w+)",
+                "<button style=\"background-color: #e43e38; color: white; border: none; padding: 2px 6px; border-radius: 4px; cursor: pointer;\" " +
+                        "onclick=\"javaApp.filterByTag('#$1')\">#$1</button>");
+
+        // Process [[note]] references
+        Matcher matcher = Pattern.compile("\\[\\[(.*?)\\]\\]").matcher(processedContent);
+        StringBuffer result = new StringBuffer();
+
+        while (matcher.find()) {
+            String title = matcher.group(1);
+            boolean noteExists = notes.stream().anyMatch(note -> note.getTitle().equals(title));
+            String replacement;
+
+            if (noteExists) {
+                replacement = "<a href=\"#\" style=\"color: blue; text-decoration: underline;\" onclick=\"javaApp.openNoteByTitle('" + title.replace("'", "\\'") + "')\">" + title + "</a>";
+            } else {
+                replacement = "<span style=\"color: red; font-style: italic;\">" + title + "</span>";
+            }
+
+            matcher.appendReplacement(result, replacement);
+        }
+        matcher.appendTail(result);
+
+        return result.toString();
+    }
+
+
 
     /**
      * Searches through the notes and respects the current filters, including tags.
