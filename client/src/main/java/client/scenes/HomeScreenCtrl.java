@@ -296,7 +296,7 @@ public class HomeScreenCtrl {
      * makes a default collection.
      */
     public Collection default_collection = new Collection(
-            currentServer, "Default", "default");
+            currentServer, "Default", "default", true);
     public Collection currentCollection = default_collection;
 
 
@@ -440,8 +440,13 @@ public class HomeScreenCtrl {
      */
     public void setUpCollections() {
         ObservableList<Collection> collectionOptions = FXCollections.observableArrayList();
-        collectionOptions.add(default_collection);
-        collectionOptions.add(new Collection(currentServer, "All", "all"));
+        if (currentServer.getCollections().stream().noneMatch(
+                Collection::isDefaultCollection)) {
+            collectionOptions.add(default_collection);
+            // TODO: add default_collection to the server
+        }
+//        collectionOptions.add(default_collection);
+        collectionOptions.add(new Collection(currentServer, "All", "all", false));
         collectionOptions.addAll(currentServer.getCollections());
 
         selectCollectionBox.setItems(collectionOptions);
