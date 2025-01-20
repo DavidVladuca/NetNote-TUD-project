@@ -15,6 +15,7 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.web.WebView?>
 
+<?import javafx.scene.control.ScrollBar?>
 <Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="607.0" prefWidth="1000.0" style="-fx-background-color: #1E1E1E;" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <HBox layoutY="62.0" prefHeight="546.0" prefWidth="1000.0" style="-fx-background-color: #1E1E1E;" styleClass="bordered" stylesheets="@../css/style.css">
@@ -41,14 +42,23 @@
 
                   <HBox alignment="CENTER_LEFT" spacing="10.0" style="-fx-padding: 5; -fx-background-color: white; -fx-background-radius: 5;">
                      <!-- Scrollable Tag Box -->
-                     <ScrollPane fx:id="tagsScrollPane" fitToWidth="true" hbarPolicy="NEVER" prefHeight="50.0" prefWidth="400.0" style="-fx-background: white; -fx-border-color: transparent;" vbarPolicy="AS_NEEDED">
-                        <content>
-                           <HBox fx:id="selectedTagsContainer" spacing="5.0" />
-                        </content>
-                     </ScrollPane>
+                     <VBox spacing="0" style="-fx-background-color: transparent;" prefWidth="400.0">
+                        <ScrollPane fx:id="tagsScrollPane" hbarPolicy="NEVER" vbarPolicy="NEVER" fitToHeight="false" fitToWidth="true" prefHeight="50.0" prefWidth="400.0" style="-fx-background: white; -fx-border-color: transparent;">
+                           <content>
+                              <HBox fx:id="selectedTagsContainer" spacing="5.0" alignment="CENTER" style="-fx-padding: 5; -fx-background-color: white;" prefHeight="50.0">
+                                 <!-- Dynamic ChoiceBox elements and placeholder text will be added here -->
+                              </HBox>
+                           </content>
+                        </ScrollPane>
+
+                        <HBox alignment="CENTER" prefHeight="20.0" prefWidth="400.0" style="-fx-background: #D3D3D3;">
+                           <ScrollBar fx:id="horizontalScrollBar" orientation="HORIZONTAL" prefWidth="400.0" />
+                        </HBox>
+                     </VBox>
+
 
                      <!-- Clear Tags Button -->
-                     <Button fx:id="clearTagsB" onAction="#clearTags" style="-fx-background-color: #e43e38; -fx-text-fill: white; -fx-background-radius: 5;" text="Clear Tags" />
+                     <Button fx:id="clearTagsB" onAction="#clearTags" text="Clear Tags" style="-fx-background-color: #e43e38; -fx-text-fill: white; -fx-background-radius: 5;" />
                   </HBox>
 
                   <TextField fx:id="noteTitleF" promptText="%Untitled">
@@ -92,7 +102,6 @@
          <font>
             <Font name="Plus Jakarta Sans Bold" size="12.0" />
          </font></Button>
-      <Button fx:id="tagsButton" layoutX="176.0" layoutY="19.0" onAction="#handleTagsButtonAction" text="Tags" />
       <ImageView fitHeight="19.0" fitWidth="19.0" layoutX="58.0" layoutY="20.0">
          <image>
             <Image url="@../icons/logo1.png" />

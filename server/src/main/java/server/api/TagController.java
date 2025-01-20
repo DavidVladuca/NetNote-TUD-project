@@ -1,10 +1,12 @@
 package server.api;
 
+import commons.Note;
 import commons.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import server.database.NoteRepository;
 import server.database.TagRepository;
 
 import java.util.List;
@@ -12,55 +14,69 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/tags")
 public class TagController {
-
     private final TagRepository tagRepository;
+    private final NoteRepository noteRepository;
 
-    /**
-     * This method creates the tag via the /create endpoint
-     * @param tag - the tag to be created
-     * @return a response entity with the tag
-     */
-    @PostMapping("/create")
-    public ResponseEntity<Tag> createTag(@RequestBody Tag tag) {
-        if (tag == null || tag.getName() == null || tag.getName().trim().isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
 
-        tagRepository.save(tag);
-        return ResponseEntity.status(HttpStatus.CREATED).body(tag);
-    }
-
-    /**
-     * This method is just for testing if the endpoint is working
-     * @return a String sasying the TagController is working
-     */
-    @GetMapping("/test")
-    public String testEndpoint() {
-        return "TagController is working!";
-    }
-
-    /**
-     * the constructor for the TagController
-     * @param tagRepository - the repository of the tags
-     */
-    @Autowired
-    public TagController(TagRepository tagRepository) {
+    public TagController(TagRepository tagRepository, NoteRepository noteRepository) {
         this.tagRepository = tagRepository;
-        System.out.println("TagController initialized");
+        this.noteRepository = noteRepository;
     }
+
+    @Transactional
+    @PutMapping("/rename/{id}")
+    public ResponseEntity<Tag> renameTag(@PathVariable Long id, @RequestBody String newName) {
+        Tag tag = tagRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tag not found"));
+        tag.setName(newName);
+        tagRepository.save(tag);
+
+        List<Note> affectedNotes = noteRepository.findAll().stream()
+                .filter(note -> note.getTags().contains(tag))
+                .toList();
+
+        for (Note note : affectedNotes) {
+            noteRepository.save(note); // Trigger note update
+        }
+
+        return ResponseEntity.ok(tag);
+    }
+
+
+
+    @Transactional
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<String> deleteTag(@PathVariable Long id) {
+        if (!tagRepository.existsById(id)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Tag not found");
+        }
+
+        // Remove the tag from associated notes
+        Tag tag = tagRepository.findById(id).orElseThrow();
+        List<Note> notesWithTag = noteRepository.findAll().stream()
+                .filter(note -> note.getTags().contains(tag))
+                .toList();
+
+        for (Note note : notesWithTag) {
+            note.getTags().remove(tag);
+            noteRepository.save(note);
+        }
+
+        tagRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+
+
 
     /**
-     * the getter for all the tags
-     * @return - all tags in the repository
+     * Endpoint to fetch all tags from the database.
+     * @return List of tags.
      */
-    @GetMapping
-    public List<Tag> getAllTags() {
-        List<Tag> tags = tagRepository.findAll();
-        // Ensure notes are fetched for each tag to avoid lazy-loading issues
-        for (Tag tag : tags) {
-            tag.getNotes().size(); // Trigger loading of notes
-        }
-        return tags;
+    @GetMapping("/fetch")
+    public List<Note> getAllNotes() {
+        List<Note> notes = noteRepository.findAll();
+        notes.forEach(note -> System.out.println("Note: " + note.getTitle() + " Tags: " + note.getTags()));
+        return notes; // Spring automatically serializes this into JSON
     }
-}
 
+}
