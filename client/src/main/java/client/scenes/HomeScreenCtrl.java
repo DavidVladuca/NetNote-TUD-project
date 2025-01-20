@@ -1201,7 +1201,6 @@ public class HomeScreenCtrl {
                     .filter(node -> node instanceof ChoiceBox)
                     .map(node -> ((ChoiceBox<String>) node).getValue())
                     .anyMatch(existingTag -> existingTag.equals(cleanTag));
-
             if (!tagExists) {
                 // Create the ChoiceBox for the new tag
                 ChoiceBox<String> tagChoiceBox = new ChoiceBox<>();
@@ -1213,26 +1212,28 @@ public class HomeScreenCtrl {
                 // Revert to the original value if the dropdown is closed without selecting anything
                 tagChoiceBox.setOnHiding(event -> {
                     if (tagChoiceBox.getValue() == null) {
-                        Platform.runLater(() -> tagChoiceBox.setValue(originalValue[0])); // Revert to the original value
+                        Platform.runLater(()
+                                -> tagChoiceBox.setValue(originalValue[0]));
                     }
                 });
                 // Validate the new tag combination when a tag is selected
-                tagChoiceBox.getSelectionModel().selectedItemProperty()
+                tagChoiceBox.getSelectionModel()
+                        .selectedItemProperty()
                         .addListener((obs, oldTag, newTag) -> {
-                    if (newTag != null) {
-                        Set<String> selectedTags = collectSelectedTags(newTag, oldTag);
-                        if (isCombinationValid(selectedTags)) {
-                            adjustChoiceBoxWidth(tagChoiceBox, newTag);
-                            filterNotesByTags();
-                            originalValue[0] = newTag; // Update the original value
-                        } else {
-                            showAlert("Invalid Tag Combination",
-                                    "No notes match the selected tag " +
-                                            "combination. Please try again.");
-                            Platform.runLater(() -> tagChoiceBox.setValue(originalValue[0])); // Revert selection
-                        }
-                    }
-                });
+                            if (newTag != null) {
+                                Set<String> selectedTags = collectSelectedTags(newTag, oldTag);
+                                if (isCombinationValid(selectedTags)) {
+                                    adjustChoiceBoxWidth(tagChoiceBox, newTag);
+                                    filterNotesByTags();
+                                    originalValue[0] = newTag; // Update the original value
+                                } else {
+                                    showAlert("Invalid Tag Combination",
+                                            "No notes match the selected tag " +
+                                                    "combination. Please try again.");
+                                    Platform.runLater(() -> tagChoiceBox.setValue(originalValue[0])); // Revert selection
+                                }
+                            }
+                        });
                 adjustChoiceBoxWidth(tagChoiceBox, cleanTag);
                 togglePlaceholderText();// Remove placeholder text when tags are added
                 selectedTagsContainer.getChildren().add(tagChoiceBox);
@@ -1500,7 +1501,7 @@ public class HomeScreenCtrl {
         Platform.runLater(() -> {
             selectedTagsContainer.getChildren().clear(); // Clear selected tags
             togglePlaceholderText(); // Show placeholder text
-            notesListView.setItems(FXCollections.observableArrayList(notes)); // Reset to full notes list
+            notesListView.setItems(FXCollections.observableArrayList(notes));
             System.out.println("All tags cleared and notes list reset.");
         });
     }
@@ -2052,10 +2053,12 @@ public class HomeScreenCtrl {
      * Searches through the notes and respects the current filters, including tags.
      */
     public void searchCollection() {
-        String searchText = searchCollectionF.getText().trim().toLowerCase(); // Normalize search text
+        // Normalize search text
+        String searchText = searchCollectionF.getText().trim().toLowerCase();
 
         // Determine the base list to filter (current filtered notes or all notes)
-        ObservableList<Note> baseList = notesListView.getItems(); // Start with the currently displayed notes
+        // Start with the currently displayed notes
+        ObservableList<Note> baseList = notesListView.getItems();
 
         if (searchText.isEmpty()) {
             // If the search is cleared, reapply the tag filtering
