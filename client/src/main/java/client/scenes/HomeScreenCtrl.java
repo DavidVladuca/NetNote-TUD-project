@@ -425,8 +425,10 @@ public class HomeScreenCtrl {
             horizontalScrollBar.setMax(1); // ScrollBar value ranges from 0 to 1 (normalized)
 
             // Update the ScrollBar's visibility and size dynamically
-            tagsScrollPane.viewportBoundsProperty().addListener((obs, oldBounds, newBounds) -> updateScrollBar());
-            selectedTagsContainer.boundsInParentProperty().addListener((obs, oldBounds, newBounds) -> updateScrollBar());
+            tagsScrollPane.viewportBoundsProperty().addListener((obs, oldBounds, newBounds)
+                    -> updateScrollBar());
+            selectedTagsContainer.boundsInParentProperty().addListener((obs, oldBounds, newBounds)
+                    -> updateScrollBar());
 
             // Bind ScrollPane's hvalue to ScrollBar's value
             horizontalScrollBar.valueProperty().addListener((obs, oldVal, newVal) ->
@@ -1077,11 +1079,14 @@ public class HomeScreenCtrl {
                 e.printStackTrace();
 
             }
-            System.out.println("Note (MD): " + currentNote.getNoteId() + currentNote.getTags().toString());
+            System.out.println("Note (MD): " + currentNote.getNoteId()
+                    + currentNote.getTags().toString());
 
             // Process #tags to make them clickable
             String processedContent = newValue.replaceAll("#(\\w+)",
-                    "<button style=\"background-color: #e43e38; color: white; border: none; padding: 2px 6px; border-radius: 4px; cursor: pointer;\" " +
+                    "<button style=\"background-color: #e43e38; color: white; " +
+                            "border: none; padding: 2px 6px; border-radius: " +
+                            "4px; cursor: pointer;\" " +
                             "onclick=\"javaApp.filterByTag('#$1')\">#$1</button>");
 
             // Process [[Note References]]
@@ -1179,13 +1184,18 @@ public class HomeScreenCtrl {
         });
     }
 
-
+    /**
+     * Filters notes by the specified tag and updates the tag selection UI.
+     * Adds a new tag to the filter if it doesn't exist, validates tag combinations,
+     * and applies filtering to the notes.
+     *
+     * @param tag The tag to filter by. "#" is removed if present.
+     */
     @FXML
     public void filterByTag(String tag) {
         Platform.runLater(() -> {
             // Clean the tag (remove # if present)
             String cleanTag = tag.startsWith("#") ? tag.substring(1) : tag;
-
             // Check if the tag already exists in the filtering box
             boolean tagExists = selectedTagsContainer.getChildren().stream()
                     .filter(node -> node instanceof ChoiceBox)
@@ -1196,49 +1206,37 @@ public class HomeScreenCtrl {
                 // Create the ChoiceBox for the new tag
                 ChoiceBox<String> tagChoiceBox = new ChoiceBox<>();
                 tagChoiceBox.setValue(cleanTag);
-
                 // Store the original value to revert if the selection is canceled
                 final String[] originalValue = {cleanTag};
-
                 // Refresh the available tags when the ChoiceBox is opened
                 tagChoiceBox.setOnShowing(event -> refreshAvailableTags(tagChoiceBox));
-
                 // Revert to the original value if the dropdown is closed without selecting anything
                 tagChoiceBox.setOnHiding(event -> {
                     if (tagChoiceBox.getValue() == null) {
                         Platform.runLater(() -> tagChoiceBox.setValue(originalValue[0])); // Revert to the original value
                     }
                 });
-
                 // Validate the new tag combination when a tag is selected
-                tagChoiceBox.getSelectionModel().selectedItemProperty().addListener((obs, oldTag, newTag) -> {
+                tagChoiceBox.getSelectionModel().selectedItemProperty()
+                        .addListener((obs, oldTag, newTag) -> {
                     if (newTag != null) {
                         Set<String> selectedTags = collectSelectedTags(newTag, oldTag);
-
                         if (isCombinationValid(selectedTags)) {
-                            // Valid tag: adjust UI and apply filtering
                             adjustChoiceBoxWidth(tagChoiceBox, newTag);
                             filterNotesByTags();
                             originalValue[0] = newTag; // Update the original value
                         } else {
-                            // Invalid tag: show alert and revert to the previous tag
                             showAlert("Invalid Tag Combination",
-                                    "No notes match the selected tag combination. Please try again.");
+                                    "No notes match the selected tag " +
+                                            "combination. Please try again.");
                             Platform.runLater(() -> tagChoiceBox.setValue(originalValue[0])); // Revert selection
                         }
                     }
                 });
-
                 adjustChoiceBoxWidth(tagChoiceBox, cleanTag);
-
-                // Remove placeholder text when tags are added
-                togglePlaceholderText();
-
-                // Add the new ChoiceBox to the UI
+                togglePlaceholderText();// Remove placeholder text when tags are added
                 selectedTagsContainer.getChildren().add(tagChoiceBox);
-
-                // Apply filtering with the initial tag
-                filterNotesByTags();
+                filterNotesByTags();// Apply filtering with the initial tag
             }
         });
     }
@@ -1252,7 +1250,8 @@ public class HomeScreenCtrl {
      */
     private Set<String> collectSelectedTags(String newTag, String oldTag) {
         // Collect currently selected tags
-        Set<String> selectedTags = selectedTagsContainer.getChildren().stream()
+        Set<String> selectedTags = selectedTagsContainer
+                .getChildren().stream()
                 .filter(node -> node instanceof ChoiceBox)
                 .map(node -> ((ChoiceBox<String>) node).getValue())
                 .collect(Collectors.toSet());
@@ -1272,7 +1271,8 @@ public class HomeScreenCtrl {
      */
     private void refreshAvailableTags(ChoiceBox<String> choiceBox) {
         // Get all tags except the ones already selected in other ChoiceBoxes
-        Set<String> selectedTags = selectedTagsContainer.getChildren().stream()
+        Set<String> selectedTags = selectedTagsContainer
+                .getChildren().stream()
                 .filter(node -> node instanceof ChoiceBox)
                 .map(node -> ((ChoiceBox<String>) node).getValue())
                 .collect(Collectors.toSet());
@@ -1282,7 +1282,8 @@ public class HomeScreenCtrl {
                 .collect(Collectors.toList());
 
         // Update the available options in the ChoiceBox
-        choiceBox.setItems(FXCollections.observableArrayList(availableTags));
+        choiceBox.setItems(FXCollections
+                .observableArrayList(availableTags));
     }
 
 
@@ -1297,14 +1298,17 @@ public class HomeScreenCtrl {
 
             if (!hasTags) {
                 // Show placeholder text if no tags are present
-                if (selectedTagsContainer.getChildren().stream().noneMatch(node -> node instanceof Text)) {
+                if (selectedTagsContainer.getChildren().stream()
+                        .noneMatch(node -> node instanceof Text)) {
                     Text placeholderText = new Text("Filter by tag...");
-                    placeholderText.setStyle("-fx-fill: lightgray; -fx-font-size: 12; -fx-font-style: italic;");
+                    placeholderText.setStyle("-fx-fill: lightgray; " +
+                            "-fx-font-size: 12; -fx-font-style: italic;");
                     selectedTagsContainer.getChildren().add(placeholderText);
                 }
             } else {
                 // Remove placeholder text if tags are present
-                selectedTagsContainer.getChildren().removeIf(node -> node instanceof Text);
+                selectedTagsContainer.getChildren()
+                        .removeIf(node -> node instanceof Text);
             }
         });
     }
@@ -1470,7 +1474,8 @@ public class HomeScreenCtrl {
 
                 System.out.println("Refresh completed.");
             } catch (Exception e) {
-                errorLogger.log(Level.SEVERE, "Error during refresh: " + e.getMessage(), e);
+                errorLogger.log(Level.SEVERE,
+                        "Error during refresh: " + e.getMessage(), e);
             }
         });
     }
@@ -1487,7 +1492,8 @@ public class HomeScreenCtrl {
 
         if (!hasTags) {
             // Show alert if no tags are present
-            showAlert("No Tags to Clear", "There are no tags in the filter box to clear.");
+            showAlert("No Tags to Clear",
+                    "There are no tags in the filter box to clear.");
             return;
         }
 
@@ -1529,7 +1535,8 @@ public class HomeScreenCtrl {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Referenced Note Not Found");
             alert.setHeaderText("Cannot Open Referenced Note");
-            alert.setContentText("The referenced note \"" + title + "\" is not in the current filtered list.");
+            alert.setContentText("The referenced note \""
+                    + title + "\" is not in the current filtered list.");
             alert.showAndWait();
         }
     }
@@ -1610,7 +1617,8 @@ public class HomeScreenCtrl {
 
         // Wrap the toast in a temporary StackPane
         StackPane toastContainer = new StackPane(toastLabel);
-        toastContainer.setStyle("-fx-alignment: center; -fx-background-color: transparent;");
+        toastContainer.setStyle("-fx-alignment: center; " +
+                "-fx-background-color: transparent;");
         toastContainer.setMouseTransparent(true);
 
         // Add the StackPane to the root node
@@ -2007,7 +2015,9 @@ public class HomeScreenCtrl {
     private String processTagsAndReferences(String text) {
         // Process #tags
         String processedContent = text.replaceAll("#(\\w+)",
-                "<button style=\"background-color: #e43e38; color: white; border: none; padding: 2px 6px; border-radius: 4px; cursor: pointer;\" " +
+                "<button style=\"background-color: #e43e38; color: " +
+                        "white; border: none; padding: 2px 6px; border-radius:" +
+                        " 4px; cursor: pointer;\" " +
                         "onclick=\"javaApp.filterByTag('#$1')\">#$1</button>");
 
         // Process [[note]] references
@@ -2020,9 +2030,13 @@ public class HomeScreenCtrl {
             String replacement;
 
             if (noteExists) {
-                replacement = "<a href=\"#\" style=\"color: blue; text-decoration: underline;\" onclick=\"javaApp.openNoteByTitle('" + title.replace("'", "\\'") + "')\">" + title + "</a>";
+                replacement = "<a href=\"#\" style=\"color: blue; " +
+                        "text-decoration: underline;\" onclick=\"javaApp" +
+                        ".openNoteByTitle('" + title.replace("'", "\\'")
+                        + "')\">" + title + "</a>";
             } else {
-                replacement = "<span style=\"color: red; font-style: italic;\">" + title + "</span>";
+                replacement = "<span style=\"color: red; font-style: italic;\">"
+                        + title + "</span>";
             }
 
             matcher.appendReplacement(result, replacement);
