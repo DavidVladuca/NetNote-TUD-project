@@ -1845,6 +1845,7 @@ public class HomeScreenCtrl {
                                 "Please enter a valid title!");
                         // Revert to the original title
                         Platform.runLater(() -> noteTitleF.setText(originalTitle));
+                        updateUIAfterChange();
                     } else {
                         // If not duplicate, update title and sync with the server
                         Command editTitleCommand = new EditTitleCommand(currentNote,
