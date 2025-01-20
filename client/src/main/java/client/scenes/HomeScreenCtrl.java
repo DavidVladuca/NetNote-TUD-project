@@ -1666,6 +1666,8 @@ public class HomeScreenCtrl {
         currentNote = savedNote;
         noteTitleF.setText(savedNote.getTitle());
         noteBodyF.setText(savedNote.getBody());
+
+        updateUIAfterChange();
     }
 
     /**
@@ -1784,6 +1786,7 @@ public class HomeScreenCtrl {
         boolean success = serverUtils.deleteRequest(noteId);
 
         if (success) {
+            updateUIAfterChange();
             System.out.println("Note with ID " + noteId + " deleted successfully.");
         } else {
             System.err.println("Failed to delete note with ID " + noteId + ".");
@@ -1807,6 +1810,7 @@ public class HomeScreenCtrl {
             String titleAndContent = title + currentNote.getBody();
             markDownOutput.getEngine().loadContent(titleAndContent);
         }
+        updateUIAfterChange();
     }
 
     /**
@@ -2048,7 +2052,15 @@ public class HomeScreenCtrl {
         return result.toString();
     }
 
-
+    /**
+     * Refreshes the ListView to display the latest state of the notes list.
+     */
+    public void updateUIAfterChange() {
+        Platform.runLater(() -> {
+            notesListView.refresh(); // Refresh the ListView
+            notesListView.setItems(FXCollections.observableArrayList(notes));
+        });
+    }
 
     /**
      * Searches through the notes and respects the current filters, including tags.

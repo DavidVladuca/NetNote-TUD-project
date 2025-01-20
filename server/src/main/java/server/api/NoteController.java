@@ -170,14 +170,19 @@ public class NoteController {
         if (!noteRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
+        try {
+            Note note = noteRepository.findById(id).orElse(null);
+            if (note != null) {
+                System.out.println("Deleting note and associated images for Note ID: " + id);
+            }
 
-        Note note = noteRepository.findById(id).orElse(null);
-        if (note != null) {
-            System.out.println("Deleting note and associated images for Note ID: " + id);
+            noteRepository.deleteById(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            System.err.println("Error while deleting note: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-
-        noteRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
     }
 
     /**
