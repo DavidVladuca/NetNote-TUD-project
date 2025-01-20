@@ -27,6 +27,7 @@
         - Discuss how existing functionalities could be improved or reworked (taking into account that we don't have much time).
         - Is everything working as it is expected to?
         - What bugs have we discovered?
+        - Discuss about changing readme.
     - < Agenda - item 3> Brainstorm ( 8 mins ): Discuss what features could be added - design and functionality:
         - Discuss the state of the UI and additional features : What is our progress for now and what is to be done.
         - Discuss what we can manage in the short time until the code freeze.
