@@ -183,30 +183,7 @@ public class NoteControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.title").value("Test Note"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.body").value("Test Note"));
     }
-/*
 
-     * Tests the getter for the tags of a note by its ID
-     *
-     * @throws Exception
-
-    @Test
-    public void testGetTagsByNoteId() throws Exception {
-        Note tagNote = new Note();
-        tagNote.setNoteId(20L);
-        Tag tag1 = new Tag("Tag1");
-        Tag tag2 = new Tag("Tag2");
-        Set<Tag> tags = new HashSet<>(Set.of(tag1, tag2));
-        note.setTags(tags);
-
-        when(noteRepository.findById(20L)).thenReturn(Optional.of(note));
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/notes/{id}/tags", 20L))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.length()").value(2)) // Check number of tags
-                .andExpect(MockMvcResultMatchers.jsonPath("$[?(@.name == 'Tag1')]").exists())
-                .andExpect(MockMvcResultMatchers.jsonPath("$[?(@.name == 'Tag2')]").exists());
-    }
-*/
     @Test
     public void testValidateTitleDuplicate() throws Exception {
         when(noteRepository.existsByCollectionCollectionIdAndTitle(0L, "Test Note")).thenReturn(true);
