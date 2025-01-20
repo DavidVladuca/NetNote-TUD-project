@@ -123,6 +123,7 @@ public class NoteController {
      * @param oldTitle - the original title
      * @param newTitle - the new title
      */
+    @PutMapping("/updateRefs")
     private void updateReferences(String oldTitle, String newTitle) {
         System.out.println("Starting reference update: [" + oldTitle + "] -> [" + newTitle + "]");
         List<Note> allNotes = noteRepository.findAll();
@@ -154,6 +155,7 @@ public class NoteController {
 
 
 
+    @PutMapping("/updateTags")
     private void handleTags(@RequestBody Note note) {
         Set<Tag> managedTags = new HashSet<>();
         for (Tag tag : note.getTags()) {
@@ -164,14 +166,14 @@ public class NoteController {
         note.setTags(managedTags);
     }
 
-    @GetMapping("/{id}/tags")
+    @GetMapping("/{id}/tagsGetter")
     public ResponseEntity<Set<Tag>> getTagsForNote(@PathVariable Long id) {
         return noteRepository.findById(id)
                 .map(note -> ResponseEntity.ok(note.getTags()))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PutMapping("/{id}/tags")
+    @PutMapping("/{id}/tagsUpdate")
     public ResponseEntity<Note> updateTagsForNote(@PathVariable Long id, @RequestBody Set<String> tagNames) {
         Note note = noteRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Note not found for ID: " + id));

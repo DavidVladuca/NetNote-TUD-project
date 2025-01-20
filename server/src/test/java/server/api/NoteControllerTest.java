@@ -1,6 +1,8 @@
 package server.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import commons.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mockito;
@@ -19,12 +21,15 @@ import commons.Note;
 import commons.Server;
 import server.database.TagRepository;
 
-import static org.mockito.Mockito.when;
+import java.util.*;
+
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.*;
 
 @WebMvcTest(NoteController.class)
 public class NoteControllerTest {
-    //Class that simulates HTTP requests, executes them, and verifies the responses
-    //All without needing a real database
+    //Class that simulates HTTP requests, executes them, and
+    // verifies the responses, all without needing a real database
     @Autowired
     private MockMvc mockMvc;
 
@@ -41,8 +46,14 @@ public class NoteControllerTest {
     private TagRepository tagRepository;
 
     private Note note;
+    private Note note2;
+
+    private Note noteWithReference1;
     private Collection collection;
     private Server server;
+    private Tag tag1;
+
+    private Tag tag2;
 
     @BeforeEach
     public void setup() {
@@ -60,18 +71,39 @@ public class NoteControllerTest {
         note.setTitle("Test Note");
         note.setBody("Test Note");
         note.setCollection(collection);
+
+        note2 = new Note();
+        note2.setNoteId(2L);
+        note2.setTitle("Test Note Num 2");
+        note2.setBody("Other note body");
+        note2.setCollection(collection);
+
+        noteWithReference1 = new Note();
+        noteWithReference1.setNoteId(3L);
+        noteWithReference1.setTitle("Note w. Ref 1");
+        noteWithReference1.setBody("Note with reference to [[Test Note]]");
+        noteWithReference1.setCollection(collection);
+
+        tag1 = new Tag();
+        tag1.setName("Tag 1");
+
+        tag2 = new Tag();
+        tag2.setName("Tag 2");
+
     }
 
     /**
-     * Tests the createNote endpoint, mocking the database behaviour
+     * Tests the createNote endpoint, mocking the database behaviour.
      *
      * @throws Exception
      */
     @Test
     public void testCreateNote() throws Exception {
         //Mock the database operations (simulate)
-        when(serverRepository.findById(0L)).thenReturn(java.util.Optional.of(server));
-        when(collectionRepository.findById(0L)).thenReturn(java.util.Optional.of(collection));
+        when(serverRepository.findById(0L))
+                .thenReturn(java.util.Optional.of(server));
+        when(collectionRepository.findById(0L))
+                .thenReturn(java.util.Optional.of(collection));
         when(noteRepository.save(Mockito.any(Note.class))).thenReturn(note);
         when(tagRepository.findByName(Mockito.anyString())).thenReturn(null);
 
@@ -83,13 +115,18 @@ public class NoteControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(MockMvcResultMatchers.status().isCreated())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.title").value("Test Note"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.body").value("Test Note"));
+                .andExpect(MockMvcResultMatchers.jsonPath("$.title")
+                        .value("Test Note"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.body")
+                        .value("Test Note"));
     }
 
     @Test
     public void testValidateTitleDuplicate() throws Exception {
-        when(noteRepository.existsByCollectionCollectionIdAndTitle(0L, "Test Note")).thenReturn(true);
+        when(noteRepository.existsByCollectionCollectionIdAndTitle(
+                0L,
+                "Test Note"))
+                .thenReturn(true);
         mockMvc.perform(MockMvcRequestBuilders.get("/api/notes/validate-title")
                         .param("title", "Test Note"))
                 .andExpect(MockMvcResultMatchers.status().isConflict());
@@ -97,9 +134,178 @@ public class NoteControllerTest {
 
     @Test
     public void testValidateTitleDifferent() throws Exception {
-        when(noteRepository.existsByCollectionCollectionIdAndTitle(0L, "Test Note")).thenReturn(true);
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/notes/validate-title")
+        when(noteRepository.existsByCollectionCollectionIdAndTitle(
+                0L, "Test Note"))
+                .thenReturn(true);
+        mockMvc.perform(MockMvcRequestBuilders
+                        .get("/api/notes/validate-title")
                         .param("title", "Test Note 2"))
                 .andExpect(MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void testUpdateNoteInvalidId() throws Exception {
+        note.setNoteId(-1L); //setting invalid ID
+        var json = new ObjectMapper().writeValueAsString(note);
+
+        mockMvc.perform(MockMvcRequestBuilders
+                        .put("/api/notes/update")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+
+    @Test
+    public void testUpdateNoteExceptionWhileUpdating() throws Exception {
+        when(noteRepository.findById(1L)).thenReturn(java.util.Optional.of(note));
+        when(noteRepository.save(Mockito.any(Note.class)))
+                .thenThrow(new RuntimeException("Database error"));
+
+        var json = new ObjectMapper().writeValueAsString(note);
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/notes/update")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(MockMvcResultMatchers.status().isInternalServerError());
+    }
+
+    @Test
+    public void testUpdateChangedName() throws Exception {
+        when(noteRepository.findById(note.getNoteId())).thenReturn(Optional.of(note));
+        when(noteRepository.save(Mockito.any(Note.class))).thenReturn(note);
+        note.setTitle("Changed title");
+        var json = new ObjectMapper().writeValueAsString(note);
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/notes/update")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.title")
+                        .value("Changed title"));
+    }
+
+    @Test
+    void testUpdateReferencesSuccessful() throws Exception {
+        when(noteRepository.findAll()).thenReturn(Arrays.asList(note, note2, noteWithReference1));
+        when(noteRepository.save(Mockito.any(Note.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        note.setTitle("Some changed title");
+        var json = new ObjectMapper().writeValueAsString(note);
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/notes/updateRefs")
+                        .param("oldTitle", "Test Note")
+                        .param("newTitle", "NewTitle")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk());
+        verify(noteRepository).save(argThat(any_note ->
+                any_note.getBody().equals("Note with reference to [[NewTitle]]")
+        ));
+        verify(noteRepository, never()).save(argThat(any_note ->
+                any_note.getBody().equals("Other note body")
+        ));
+
+    }
+
+    @Test
+    void testUpdateReferencesBodyUpdated() throws Exception {
+        noteWithReference1.setBody("changed body");
+
+        when(noteRepository.findAll()).thenReturn(Arrays.asList(note, note2));
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/notes/updateRefs")
+                                .param("oldTitle", "Test Note")
+                                .param("newTitle", "NewTitle")
+                                .contentType(MediaType.APPLICATION_JSON))
+                        .andExpect(MockMvcResultMatchers.status().isOk());
+        verify(noteRepository, never()).save(argThat(some_note ->
+                some_note.getBody().equals("No references to OldTitle here.")
+        ));
+    }
+    @Test
+    void testUpdateTagsNotFound() throws Exception {
+        when(noteRepository.findById(99999L)).thenThrow(new IllegalArgumentException("Note not found for ID: " + 99999L));
+        Set<String> tagNames = new HashSet<>(Arrays.asList("Tag 1", "Tag 2"));
+        var json = new ObjectMapper().writeValueAsString(tagNames);
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/notes/{id}/tags", 99999L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(MockMvcResultMatchers.status().isNotFound());
+    }
+
+    @Test
+    void testUpdateTagsNewTags() throws Exception {
+        when(tagRepository.findByName("Tag 1")).thenReturn(null);
+        when(tagRepository.save(Mockito.any(Tag.class))).thenReturn(tag1);
+        when(tagRepository.findByName("Tag 2")).thenReturn(tag2);
+        when(noteRepository.findById(1L)).thenReturn(Optional.of(note));
+        when(noteRepository.save(Mockito.any(Note.class))).thenReturn(note);
+
+        Set<String> tagNames= new HashSet<>(Arrays.asList("Tag 1", "Tag 2"));
+        var json = new ObjectMapper().writeValueAsString(tagNames);
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/notes/{id}/tagsUpdate", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.tags.length()").value(2))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.tags[0].name").value("Tag 2"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.tags[1].name").value("Tag 1"));
+    }
+
+    @Test
+    void testUpdateTagsInternalServerError() throws Exception {
+        when(noteRepository.findById(1L)).thenReturn(Optional.of(note));
+        when(tagRepository.findByName("Tag 1")).thenReturn(tag1);
+        when(tagRepository.findByName("Tag 2")).thenReturn(tag2);
+
+        when(noteRepository.save(Mockito.any(Note.class)))
+                .thenThrow(new RuntimeException("Database error"));
+
+        Set<String> tagNams = new HashSet<>(Arrays.asList("Tag 1","Tag 2"));
+        var json = new ObjectMapper().writeValueAsString(tagNams);
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/notes/{id}/tagsUpdate", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(MockMvcResultMatchers.status().isInternalServerError());
+    }
+
+    @Test
+    void testGetAllNotes() throws Exception {
+        List<Note> notes = Arrays.asList(note, note2);
+        when(noteRepository.findAll()).thenReturn(notes);
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/notes/fetch"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.length()").value(2))
+                .andExpect(MockMvcResultMatchers.jsonPath("$[0].title").value("Test Note"));
+    }
+
+    @Test
+    void testDeleteNoteSuccess() throws Exception{
+        when(noteRepository.existsById(1L)).thenReturn(true);
+
+        when(noteRepository.existsById(1L)).thenReturn(true);
+        //this simulates successful delete. doNothing() essentially indicates
+        //to Mockito that nothing needs to be done for the action to be triggered.
+        //it is as if it was a regular line in the code (but only done in mocking).
+        doNothing().when(noteRepository).deleteById(1L);
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/notes/delete/{id}", 1L))
+                .andExpect(MockMvcResultMatchers.status().isNoContent());
+    }
+
+    @Test
+    void testDeleteNoteNotFound() throws Exception {
+        when(noteRepository.existsById(99999L)).thenReturn(false);
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/notes/delete/{id}", 99999L))
+                .andExpect(MockMvcResultMatchers.status().isNotFound());
+    }
+
+    @Test
+    void testGetNoteByIdSuccessful() throws Exception{
+        when(noteRepository.findById(1L)).thenReturn(Optional.of(note));
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/notes/{id}", 1L))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.title").value("Test Note"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.body").value("Test Note"));
     }
 }
