@@ -94,7 +94,8 @@ public class TagController {
     @GetMapping("/fetch")
     public List<Note> getAllNotes() {
         List<Note> notes = noteRepository.findAll();
-        notes.forEach(note -> System.out.println("Note: " + note.getTitle() + " Tags: " + note.getTags()));
+        notes.forEach(note -> System.out.println("Note: "
+                + note.getTitle() + " Tags: " + note.getTags()));
         return notes; // Spring automatically serializes this into JSON
     }
 
