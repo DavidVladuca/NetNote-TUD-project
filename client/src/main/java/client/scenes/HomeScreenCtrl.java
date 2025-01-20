@@ -1230,7 +1230,8 @@ public class HomeScreenCtrl {
                                     showAlert("Invalid Tag Combination",
                                             "No notes match the selected tag " +
                                                     "combination. Please try again.");
-                                    Platform.runLater(() -> tagChoiceBox.setValue(originalValue[0])); // Revert selection
+                                    Platform.runLater(() -> tagChoiceBox
+                                            .setValue(originalValue[0])); // Revert selection
                                 }
                             }
                         });
