@@ -226,11 +226,11 @@ public class HomeScreenCtrl {
     /**
      * Bundle containing all languages.
      */
-    private ResourceBundle bundle;
+    private static ResourceBundle bundle;
     /**
      * current locale.
      */
-    private Locale locale;
+    private static Locale locale;
     /**
      * Language selection box in JavaFX.
      */
@@ -2349,6 +2349,15 @@ public class HomeScreenCtrl {
             currentSearchIndex = Math.toIntExact(noteMatchIndices.size() - 1);
             searchNote();
         }
+    }
+
+    /**
+     * Bundle getter.
+     * @return bundle for the current (updated) language.
+     */
+    public static ResourceBundle getBundle() {
+        bundle = ResourceBundle.getBundle("MyBundle", locale);
+        return bundle;
     }
 
     /**
