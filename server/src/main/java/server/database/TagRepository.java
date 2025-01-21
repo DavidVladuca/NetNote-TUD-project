@@ -4,13 +4,14 @@ import commons.Tag;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface TagRepository extends JpaRepository<Tag, Long> {
-
     /**
-     * This method finds the Tag by its name
-     * @param name - the name of the Tag
-     * @return the Tag found by the name
+     * Finds a tag by its name.
+     * @param name the name of the tag to search for.
+     * @return an Optional containing the Tag if found, or empty otherwise.
      */
-    Tag findByName(String name);
+    Optional<Tag> findByName(String name);
 }
