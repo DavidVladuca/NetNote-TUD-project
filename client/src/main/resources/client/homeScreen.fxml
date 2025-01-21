@@ -58,7 +58,7 @@
 
 
                      <!-- Clear Tags Button -->
-                     <Button fx:id="clearTagsB" onAction="#clearTags" text="Clear Tags" style="-fx-background-color: #e43e38; -fx-text-fill: white; -fx-background-radius: 5;" />
+                     <Button fx:id="clearTagsB" onAction="#clearTags" style="-fx-background-color: #e43e38; -fx-text-fill: white; -fx-background-radius: 5;" text="%ClearTags" />
                   </HBox>
 
                   <TextField fx:id="noteTitleF" promptText="%Untitled">
@@ -68,7 +68,7 @@
                   <TextArea fx:id="noteBodyF" prefHeight="500.0" prefWidth="522.0" promptText="%Text_Area" stylesheets="@../css/style.css" />
                   <Pane prefHeight="137.0" prefWidth="502.0">
                      <children>
-                        <Button fx:id="uploadImageB" layoutX="425.0" layoutY="6.0" minWidth="53.0" mnemonicParsing="false" onAction="#uploadImage" prefHeight="44.0" prefWidth="78.0" style="-fx-background-color: #e43e38;" text="Upload" textFill="WHITE" />
+                        <Button fx:id="uploadImageB" layoutX="425.0" layoutY="6.0" minWidth="53.0" mnemonicParsing="false" onAction="#uploadImage" prefHeight="44.0" prefWidth="78.0" style="-fx-background-color: #e43e38;" text="%Upload" textFill="WHITE" />
                         <ListView fx:id="imageListView" layoutX="8.0" layoutY="6.0" orientation="HORIZONTAL" prefHeight="44.0" prefWidth="307.0" />
                         <Button id="deleteB" fx:id="deleteImageB" layoutX="317.0" layoutY="6.0" mnemonicParsing="false" onAction="#deleteImage" styleClass="down-button" stylesheets="@../css/style.css" />
                         <Button fx:id="downloadImageB" layoutX="371.0" layoutY="6.0" minWidth="53.0" mnemonicParsing="false" onAction="#showDownloadImageScreen" prefHeight="44.0" prefWidth="53.0" styleClass="down-button" stylesheets="@../css/style.css" text="D" />
@@ -80,7 +80,7 @@
                <children>
                   <WebView fx:id="markDownOutput" layoutY="33.0" onMouseClicked="#nextMatch" prefHeight="498.0" prefWidth="241.0" />
                   <TextField fx:id="searchNoteF" layoutX="1.0" layoutY="3.0" onKeyReleased="#searchNote" prefHeight="29.0" prefWidth="142.0" promptText="%Search" styleClass="searchNote" stylesheets="@../css/style.css" />
-                  <Button fx:id="dropDownSearchNoteB" blendMode="SCREEN" layoutX="144.0" layoutY="4.0" minWidth="32.0" mnemonicParsing="false" prefHeight="27.0" prefWidth="32.0" text="∨" />
+                  <Button fx:id="searchNoteB" blendMode="SCREEN" layoutX="144.0" layoutY="4.0" minWidth="32.0" mnemonicParsing="false" onMouseClicked="#searchNote" prefHeight="27.0" prefWidth="32.0" text="⌕" />
                   <Button fx:id="nextMatchB" blendMode="SCREEN" layoutX="209.0" layoutY="4.0" mnemonicParsing="false" onMouseClicked="#nextMatch" prefHeight="27.0" prefWidth="29.0" text="→" textAlignment="CENTER" wrapText="true" />
                   <Button fx:id="prevMatchB" blendMode="SCREEN" layoutX="178.0" layoutY="4.0" mnemonicParsing="false" onMouseClicked="#prevMatch" prefHeight="27.0" prefWidth="29.0" text="←" textAlignment="CENTER" wrapText="true" />
                </children>
