@@ -1117,8 +1117,10 @@ public class HomeScreenCtrl {
 
         for (Images image : availableImages) {
             // Construct the image URL
-            String encodedTitle = URLEncoder.encode(currentNote.getTitle(), StandardCharsets.UTF_8);
-            String encodedName = URLEncoder.encode(image.getName(), StandardCharsets.UTF_8);
+            String encodedTitle = URLEncoder.encode(currentNote.getTitle(), StandardCharsets.UTF_8)
+                    .replace("+", "%20");
+            String encodedName = URLEncoder.encode(image.getName(), StandardCharsets.UTF_8)
+                    .replace("+", "%20");
             String imageUrl = String.format("http://127.0.0.1:8080/api/images/files/notes/%s/%s", encodedTitle, encodedName);
 
             // Log the constructed image URL

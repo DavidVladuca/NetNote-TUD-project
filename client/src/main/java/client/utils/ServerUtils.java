@@ -26,7 +26,6 @@ import commons.Tag;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientConfig;
@@ -392,7 +391,8 @@ public class ServerUtils {
             try {
                 // Attempt to parse the response as JSON
                 ObjectMapper objectMapper = new ObjectMapper();
-                Map<String, String> responseBody = objectMapper.readValue(rawResponse, new TypeReference<>() {});
+                Map<String, String> responseBody = objectMapper
+                        .readValue(rawResponse, new TypeReference<>() {});
                 String fileUrl = responseBody.get("fileUrl");
                 image.setFileUrl(fileUrl);
             } catch (JsonParseException e) {
