@@ -12,7 +12,9 @@ import server.database.NoteRepository;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -39,8 +41,8 @@ public class ImagesController {
      * @return - ResponseEntity with the saved image
      */
     @PostMapping("/{noteId}/addImage")
-    public ResponseEntity<String> addImageToNote(@PathVariable Long noteId,
-                                                 @RequestBody Images image) {
+    public ResponseEntity<Map<String, String>> addImageToNote(@PathVariable Long noteId,
+                                                              @RequestBody Images image) {
         Optional<Note> noteOptional = noteRepository.findById(noteId);
         if (noteOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -55,8 +57,13 @@ public class ImagesController {
         String encodedName = URLEncoder.encode(savedImage.getName(), StandardCharsets.UTF_8);
         String fileUrl = String.format("http://server/api/images/files/notes/%s/%s", encodedTitle, encodedName);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(fileUrl);
+        Map<String, String> responseBody = new HashMap<>();
+        responseBody.put("fileUrl", fileUrl);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseBody); // Return JSON
     }
+
+
 
     /**
      * Endpoint to retrieve all images for a specific note

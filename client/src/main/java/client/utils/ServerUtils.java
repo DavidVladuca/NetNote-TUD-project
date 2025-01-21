@@ -16,6 +16,8 @@
  */
 package client.utils;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import commons.Collection;
 import commons.Images;
@@ -24,6 +26,7 @@ import commons.Tag;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientConfig;
@@ -31,6 +34,7 @@ import java.util.List;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -278,7 +282,6 @@ public class ServerUtils {
         String endpoint = "api/notes/update";
         try {
             String json = new ObjectMapper().writeValueAsString(note);
-            System.out.println("Serialized JSON: " + json);  // For testing
 
             var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
             try (var response = ClientBuilder.newClient()
@@ -375,31 +378,36 @@ public class ServerUtils {
      * @return an Image
      * @throws IOException - Exception
      */
-    public Images saveImageToServer(final Images image, final long noteId) throws IOException {
-        // Convert the image object to JSON
-        String json = new ObjectMapper().writeValueAsString(image);
-        var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
-
-        // Construct the URL with the noteId
-        String endpoint = "api/images/" + noteId + "/addImage";
-
-        // Send a POST request to the server
-        try (var response = ClientBuilder.newClient()
-                .target(SERVER)
-                .path(endpoint)
+    public Images saveImageToServer(Images image, long noteId) throws IOException {
+        Response response = ClientBuilder.newClient()
+                .target("http://localhost:8080/api/images/" + noteId + "/addImage")
                 .request(MediaType.APPLICATION_JSON)
-                .post(requestBody)) {
+                .post(Entity.entity(image, MediaType.APPLICATION_JSON));
 
-            if (response.getStatus() == Response.Status.CREATED.getStatusCode()) {
-                System.out.println("Image saved successfully");
-                return response.readEntity(Images.class);
-            } else if (response.getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
-                throw new IOException("Server returned 404: Note not found");
-            } else {
-                throw new IOException("Server returned status: " + response.getStatus());
+        System.out.println("Response Status: " + response.getStatus());
+        String rawResponse = response.readEntity(String.class); // Get raw response
+        System.out.println("Raw Response: " + rawResponse);
+
+        if (response.getStatus() == Response.Status.CREATED.getStatusCode()) {
+            try {
+                // Attempt to parse the response as JSON
+                ObjectMapper objectMapper = new ObjectMapper();
+                Map<String, String> responseBody = objectMapper.readValue(rawResponse, new TypeReference<>() {});
+                String fileUrl = responseBody.get("fileUrl");
+                image.setFileUrl(fileUrl);
+            } catch (JsonParseException e) {
+                // Handle case where response is plain text (fallback)
+                image.setFileUrl(rawResponse.trim());
             }
+
+            return image;
+        } else {
+            throw new IOException("Failed to upload image: " + response.getStatus());
         }
     }
+
+
+
 
     /**
      * This method fetches the images for a certain note

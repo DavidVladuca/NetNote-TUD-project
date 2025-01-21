@@ -1109,7 +1109,11 @@ public class HomeScreenCtrl {
     private String processImageMarkdown(String content) {
         // Fetch the images for the current note
         List<Images> availableImages = fetchImagesForNote();
-        System.out.println("Available Images: " + availableImages);
+        String list = "";
+        for (Images images : availableImages) {
+            list+=images.getName()+" ";
+        }
+        System.out.println("Available Images: " + list);
 
         for (Images image : availableImages) {
             // Construct the image URL
