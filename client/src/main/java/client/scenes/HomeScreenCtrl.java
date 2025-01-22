@@ -1223,12 +1223,18 @@ public class HomeScreenCtrl {
     private String processImageMarkdown(String content) {
         // Fetch the images for the current note
         List<Images> availableImages = fetchImagesForNote();
-        System.out.println("Available Images: " + availableImages);
+        String list = "";
+        for (Images images : availableImages) {
+            list+=images.getName()+" ";
+        }
+        System.out.println("Available Images: " + list);
 
         for (Images image : availableImages) {
             // Construct the image URL
-            String encodedTitle = URLEncoder.encode(currentNote.getTitle(), StandardCharsets.UTF_8);
-            String encodedName = URLEncoder.encode(image.getName(), StandardCharsets.UTF_8);
+            String encodedTitle = URLEncoder.encode(currentNote.getTitle(), StandardCharsets.UTF_8)
+                    .replace("+", "%20");
+            String encodedName = URLEncoder.encode(image.getName(), StandardCharsets.UTF_8)
+                    .replace("+", "%20");
             String imageUrl = String.format("http://127.0.0.1:8080/api/images/files/notes/%s/%s", encodedTitle, encodedName);
 
             // Log the constructed image URL

@@ -14,6 +14,7 @@ public class Images {
     private Long id;
 
     private String name;
+    private String url;
 
     @Lob
     private byte[] data;
@@ -155,5 +156,21 @@ public class Images {
                 ", data=" + Arrays.toString(data) +
                 ", note=" + note +
                 '}';
+    }
+
+    /**
+     * Sets the url of a file
+     * @param fileUrl
+     */
+    public void setFileUrl(String fileUrl) {
+        this.url = fileUrl;
+    }
+
+    /**
+     * Retrieves the url of a file
+     * @return String of url
+     */
+    public String getFileUrl() {
+        return url;
     }
 }
