@@ -113,6 +113,39 @@ public class ServerUtils {
     }
 
     /**
+     * This method saves a specific collection to the server
+     * @param collection - the collection to be saved(created)
+     * @return the saved collection
+     * @throws IOException
+     */
+    public Collection saveCollectionToServer(Collection collection)
+            throws IOException {
+        String json = new ObjectMapper().writeValueAsString(collection);
+        String endpoint = "api/collections/create";
+        var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
+
+        try (var response = ClientBuilder.newClient()
+                .target(SERVER)
+                .path(endpoint)
+                .request(MediaType.APPLICATION_JSON)
+                .post(requestBody)) {
+
+            if (response.getStatus() == Response.Status.CREATED.getStatusCode()) {
+                String responseJson = response.readEntity(String.class);
+                return new ObjectMapper().readValue(responseJson, Collection.class);
+            } else {
+                throw new IOException("Failed to save collection. Server returned status: "
+                        + response.getStatus());
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to save collection: " + e.getMessage());
+            e.printStackTrace();
+            throw new IOException("An error occurred while saving the collection", e);
+        }
+    }
+
+
+    /**
      * This method loads the collections from the server when starting the client
      * @return a list of collections on the server
      */
