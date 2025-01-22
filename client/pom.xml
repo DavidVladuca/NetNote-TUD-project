@@ -126,7 +126,10 @@
 				<version>3.13.0</version>
 				<configuration>
 					<release>23</release>
-				</configuration>
+                    <source>23</source>
+                    <target>23</target>
+                    <compilerArgs>--enable-preview</compilerArgs>
+                </configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.openjfx</groupId>
