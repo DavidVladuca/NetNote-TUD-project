@@ -15,7 +15,8 @@ public class ServerTest {
     public void setUp() {
         server1 = new Server();
         server2 = new Server();
-        collection1 = new Collection(server1, "Test Collection 1", "collection-1");
+        collection1 = new Collection(server1, "Test Collection 1",
+                "collection-1", false);
     }
 
     @Test
@@ -73,6 +74,8 @@ public class ServerTest {
                 "Collection ID: 0\n" +
                 "Server ID: 3\n" +
                 "Collection Title: Test Collection 1\n" +
+                "Collection Path: collection-1\n" +
+                "Default Collection: false\n" +
                 "Notes:\n" +
                 "\n" +
                 "No Notes\n" +
@@ -81,6 +84,8 @@ public class ServerTest {
                 "Collection ID: 0\n" +
                 "Server ID: 3\n" +
                 "Collection Title: Test Collection 1\n" +
+                "Collection Path: collection-1\n" +
+                "Default Collection: false\n" +
                 "Notes:\n" +
                 "\n" +
                 "No Notes";
@@ -89,12 +94,12 @@ public class ServerTest {
 
     @Test
     void getURL() {
-        assertEquals(server1.getURL(), "localhost:8080");
+        assertEquals(server1.getURL(), "http://localhost:8080");
     }
 
     @Test
     void setURL() {
-        server1.setURL("localhost:8081");
-        assertEquals(server1.getURL(), "localhost:8081");
+        server1.setURL("http://localhost:8081");
+        assertEquals(server1.getURL(), "http://localhost:8081");
     }
 }

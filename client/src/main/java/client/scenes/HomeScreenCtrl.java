@@ -59,6 +59,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class HomeScreenCtrl {
     /**
@@ -304,7 +305,7 @@ public class HomeScreenCtrl {
      * makes a default collection.
      */
     public Collection default_collection = new Collection(
-            currentServer, "Default", "default");
+            currentServer, "Default", "default", true);
     public Collection currentCollection = default_collection;
 
 
@@ -370,6 +371,11 @@ public class HomeScreenCtrl {
      * Body of note in last sync to server.
      */
     private String lastSyncedBody = "";
+
+    /**
+     * Value that asserts if it's the first run in the session
+     */
+    private int ok = 1;
 
     /**
      * A queue that holds commands to be processed one at a time in a separate thread.
@@ -625,13 +631,27 @@ public class HomeScreenCtrl {
      */
     public void setUpCollections() {
         ObservableList<Collection> collectionOptions = FXCollections.observableArrayList();
-        collectionOptions.add(default_collection);
-        collectionOptions.add(new Collection(currentServer, "All", "all"));
-        collectionOptions.addAll(currentServer.getCollections());
 
+        // check if it's the first run and no defaultCollection is on the server
+        ensureDefaultCollectionExists();
+        collectionOptions.add(new Collection(currentServer, "All",
+                "all", false));
+        collectionOptions.addAll(currentServer.getCollections());
         selectCollectionBox.setItems(collectionOptions);
 
-        selectCollectionBox.setValue(collectionOptions.get(0)); //auto-set to the Default collection
+        if(ok==1) { // check if it's the first run in the session
+            //auto-set to the Default collection
+            int defaultIndex = IntStream.range(0, collectionOptions.size())
+                    .filter(i -> collectionOptions.get(i).getCollectionTitle().equals("Default"))
+                    .findFirst().orElse(0);
+            selectCollectionBox.setValue(collectionOptions.get(defaultIndex));
+            ok=0;
+            // Show a pop-up informing the user about the default collection
+            PauseTransition delay = new PauseTransition(Duration.seconds(2.5));
+            delay.setOnFinished(event -> Platform.runLater(this::showDefaultCollectionPopup));
+            delay.play(); // Delayed the execution of the popup
+            updateDefaultCollection();
+        }
 
         // Setting up the converter for displaying collection titles
         selectCollectionBox.setConverter(new StringConverter<>() {
@@ -639,7 +659,6 @@ public class HomeScreenCtrl {
             public String toString(Collection collection) {
                 return collection.getCollectionTitle();
             }
-
             @Override
             public Collection fromString(String s) {
                 return null;
@@ -659,31 +678,56 @@ public class HomeScreenCtrl {
                         }
                     }
                 });
-
     }
 
     /**
-     * Syncs a specific collection with the server to ensure consistency
+     * Updates the default_collection locally
      */
-    private void syncCollectionWithServer(Collection collection) {
-        Collection updatedCollection = serverUtils.syncCollectionWithServer(collection);
+    private void updateDefaultCollection(){
+        loadCollectionsFromServer();
 
-        if (updatedCollection != null) {
-            // Replacing the collection in place to maintain order
-            for (int i = 0; i < currentServer.getCollections().size(); i++) {
-                if (currentServer.getCollections().get(i).getCollectionId()
-                        == updatedCollection.getCollectionId()) {
-                    currentServer.getCollections().set(i, updatedCollection);
-                    break;
-                }
+        for (int i = 0; i < currentServer.getCollections().size(); i++) {
+            if (currentServer.getCollections().get(i).getCollectionTitle().equals("Default")) {
+                default_collection = currentServer.getCollections().get(i);
+                break;
             }
+        }
+    }
 
-            // Refreshing the UI collections
-            Platform.runLater(() -> {
-                setUpCollections();
-            });
-        } else {
-            System.err.println("Failed to sync collection.");
+    /**
+     * Ensures the default collection exists in the server
+     * for the first run of the session.
+     */
+    private void ensureDefaultCollectionExists() {
+        if (ok == 1 && currentServer.getCollections().stream().noneMatch(
+                collection -> collection.getCollectionTitle().equals("Default"))) {
+            currentServer.addCollection(default_collection);
+            saveDefaultCollectionToServer();
+        }
+    }
+
+    private void showDefaultCollectionPopup() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Default Collection Set");
+        alert.setHeaderText(null);
+        alert.setContentText("The default collection is set to 'Default'. " +
+                "All the notes that will be created while in 'Default' will be saved there.");
+        alert.showAndWait();
+    }
+
+    private void saveDefaultCollectionToServer() {
+        try {
+            Collection savedCollection = serverUtils.saveCollectionToServer(default_collection);
+            if (savedCollection != null) {
+                System.out.println("Collection " + savedCollection.getCollectionTitle()
+                        + " has been added to the server.");
+            } else {
+                System.out.println("Failed to add collection. " +
+                        "The server was unable to save the new collection->returned empty");
+            }
+        } catch (IOException e) {
+            System.err.println("An error occurred while saving the collection: "
+                    + e.getMessage());
         }
     }
 
@@ -716,9 +760,9 @@ public class HomeScreenCtrl {
         if (!fetchedCollections.isEmpty()) {
             currentServer.getCollections().clear(); // Clear existing collections
             currentServer.getCollections().addAll(fetchedCollections);
-            System.out.println("Collections updated in the current server.");
+            System.out.println("Collections loading status from the current server: not empty.");
         } else {
-            System.err.println("No collections loaded. Server returned an error.");
+            System.err.println("No collections loaded. Server is empty.");
         }
     }
 
