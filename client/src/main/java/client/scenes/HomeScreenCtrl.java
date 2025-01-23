@@ -164,6 +164,9 @@ public class HomeScreenCtrl {
      */
     private final int creationSuccessfulCode = 201;
 
+    private final String webviewCSSPath =
+            getClass().getResource("/css/webview.css").toExternalForm();
+
 
     /**
      * Button for adding a new note.
@@ -1158,14 +1161,18 @@ public class HomeScreenCtrl {
             // Process #tags and [[notes]] in the body
             String processedContent = processTagsAndReferences(noteBodyF.getText());
 
+            String processedImages = processImageMarkdown(processedContent);
+
             // Convert the title and body to HTML
-            String showTitle = "<h1>"
+            String showTitle = "<h1 class=\"title\">"
                     + renderer.render(parser.parse(newValue))
                     + "</h1>";
-            String showContent = renderer.render(parser.parse(processedContent));
+            String showContent = renderer.render(parser.parse(processedImages));
 
             // Load the combined title and content into the WebView
-            String titleAndContent = showTitle + showContent;
+            String titleAndContent = showTitle + "<hr>" + showContent;
+            titleAndContent = "<link rel='stylesheet' type='text/css' href='"
+                    + webviewCSSPath + "'>" + titleAndContent;
             markDownOutput.getEngine().loadContent(titleAndContent);
         });
     }
@@ -1207,12 +1214,14 @@ public class HomeScreenCtrl {
             String processedImages = processImageMarkdown(processedReferences.toString());
 
             // Convert the title and body to HTML
-            String showTitle = "<h1>"
+            String showTitle = "<h1 class=\"title\">"
                     + renderer.render(parser.parse(noteTitleF.getText()))
                     + "</h1>";
             String showContent = renderer.render(parser.parse(processedImages));
 
-            String titleAndContent = showTitle + showContent;
+            String titleAndContent = showTitle + "<hr>" + showContent;
+            titleAndContent = "<link rel='stylesheet' type='text/css' href='"
+                    + webviewCSSPath + "'>" + titleAndContent;
             markDownOutput.getEngine().loadContent(titleAndContent);
         });
     }
