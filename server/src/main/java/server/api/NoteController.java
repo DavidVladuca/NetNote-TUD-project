@@ -11,6 +11,7 @@ import server.database.*;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -130,6 +131,7 @@ public class NoteController {
      * @param oldTitle - the original title
      * @param newTitle - the new title
      */
+    @PutMapping("/updateRefs")
     private void updateReferences(String oldTitle, String newTitle) {
         System.out.println("Starting reference update: [" + oldTitle + "] -> [" + newTitle + "]");
         List<Note> allNotes = noteRepository.findAll();
@@ -157,6 +159,65 @@ public class NoteController {
             }
         }
         System.out.println("Reference update completed.");
+    }
+
+
+
+
+    @PutMapping("/updateTags")
+    private void handleTags(@RequestBody Note note) {
+        Set<Tag> managedTags = new HashSet<>();
+        for (Tag tag : note.getTags()) {
+            // Find existing tags or create new ones
+            Tag existingTag = tagRepository.findByName(tag.getName()).get();
+            managedTags.add(Objects.requireNonNullElseGet(existingTag, ()
+                    -> tagRepository.save(new Tag(tag.getName()))));
+        }
+        note.setTags(managedTags);
+    }
+
+    /**
+     * getter for the tags within a note.
+     * @param id - id of the note id
+     * @return tags for that particular note
+     */
+    @GetMapping("/{id}/tagsGetter")
+    public ResponseEntity<Set<Tag>> getTagsForNote(@PathVariable Long id) {
+        return noteRepository.findById(id)
+                .map(note -> ResponseEntity.ok(note.getTags()))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /**
+     * updates tags for a particular note.
+     * @param id - ID of the note to update
+     * @param tagNames - set of new tags
+     * @return status code of operation.
+     */
+    @PutMapping("/{id}/tagsUpdate")
+    public ResponseEntity<Note> updateTagsForNote(
+            @PathVariable Long id, @RequestBody Set<String> tagNames) {
+        Note note = noteRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Note not found for ID: " + id));
+
+        Set<Tag> managedTags = new HashSet<>();
+        for (String tagName : tagNames) {
+            Tag existingTag = tagRepository.findByName(tagName).orElse(null);
+            if (existingTag == null) {
+                existingTag = tagRepository.save(new Tag(tagName));
+            }
+            managedTags.add(existingTag);
+        }
+
+        note.setTags(managedTags);
+
+        try {
+            Note updatedNote = noteRepository.save(note);
+            return ResponseEntity.ok(updatedNote);
+        } catch (Exception e) {
+            System.err.println("Error updating tags: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
 
