@@ -9,10 +9,18 @@ public class EditBodyCommand implements Command {
     private final String newBody;
     public final HomeScreenCtrl controller;
 
-    public EditBodyCommand(Note note, String newBody, HomeScreenCtrl controller) {
+    /**
+     * Constructor for the EditBodyCommand class
+     * @param note - note provided
+     * @param oldBody - the old body represented as a String
+     * @param newBody - the new body represented as a String
+     * @param controller - the HomeScreenCtrl
+     *
+     */
+    public EditBodyCommand(Note note, String oldBody, String newBody, HomeScreenCtrl controller) {
         this.note = note;
-        this.oldBody = note.getBody(); // Store the old body
-        this.newBody = newBody;       // Store the new body
+        this.oldBody = oldBody; // Store the old body
+        this.newBody = newBody; // Store the new body
         this.controller = controller;
     }
 

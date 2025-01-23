@@ -20,10 +20,10 @@ public class CollectionTest {
     public void setUp() {
         server1 = new Server();
         Server server2 = new Server();
-        collection1 = new Collection(server1, "Test Collection 1");
-        collection2 = new Collection(server1, "Test Collection 1");
-        differentCollection = new Collection(server2, "Test Collection 2");
-        emptyCollection = new Collection(server1, "Empty Collection");
+        collection1 = new Collection(server1, "Test Collection 1", "collection-1");
+        collection2 = new Collection(server1, "Test Collection 1","collection-1");
+        differentCollection = new Collection(server2, "Test Collection 2", "collection-2");
+        emptyCollection = new Collection(server1, "Empty Collection", "empty-collection");
 
     }
 
@@ -268,5 +268,16 @@ public class CollectionTest {
         assertEquals(2, collection1.getNotes().size(), "setNotes should correctly set the notes list");
         assertTrue(collection1.getNotes().contains(note1), "Notes list should contain note1");
         assertTrue(collection1.getNotes().contains(note2), "Notes list should contain note2");
+    }
+
+    @Test
+    void getCollectionPath() {
+        assertEquals(collection1.getCollectionPath(), "collection-1");
+    }
+
+    @Test
+    void setCollectionPath() {
+        collection1.setCollectionPath("collection-1-1");
+        assertEquals(collection1.getCollectionPath(), "collection-1-1");
     }
 }

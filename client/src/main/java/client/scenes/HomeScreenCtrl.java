@@ -2,51 +2,41 @@ package client.scenes;
 
 import client.HomeScreen;
 import client.utils.*;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import commons.Collection;
-import commons.Language;
-import commons.LanguageOptions;
-import commons.Note;
-import commons.Server;
-import commons.Tag;
-import commons.Images;
+import commons.*;
 import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
+import javafx.animation.SequentialTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.HBox;
-import javafx.scene.text.Text;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
+import javafx.scene.layout.Region;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+import javafx.util.Duration;
 import javafx.util.Pair;
 import javafx.util.StringConverter;
 import netscape.javascript.JSObject;
@@ -54,19 +44,16 @@ import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 
 import java.io.*;
+import java.net.URI;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -103,7 +90,6 @@ public class HomeScreenCtrl {
      */
     private javafx.scene.Scene editCollectionScene;
 
-
     /**
      * Initializes the whole scene.
      *
@@ -126,6 +112,7 @@ public class HomeScreenCtrl {
 
     /**
      * Sets the ScreenCtrl instance for managing scene transitions.
+     *
      * @param screenCtrl - the ScreenCtrl instance to be assigned
      */
     public void setScreenCtrl(ScreenCtrl screenCtrl) {
@@ -145,6 +132,7 @@ public class HomeScreenCtrl {
     /**
      * Triggers the edit collection viewer.
      */
+    //TODO: should this be used? if yes, call inside: initialise() from EditCollectionsViewCtrl
     public void showEditCollection() {
         if (primaryStage == null) {
             throw new IllegalStateException("Primary stage is not initialized");
@@ -155,6 +143,7 @@ public class HomeScreenCtrl {
 
     /**
      * Constructor for the home screen controller.
+     *
      * @param localScene       - scene used
      * @param localServerUtils - server to be used
      */
@@ -163,11 +152,6 @@ public class HomeScreenCtrl {
             final ScreenCtrl localScene, final ServerUtils localServerUtils) {
         this.sc = localScene;
         this.serverUtils = localServerUtils;
-        availableTags = FXCollections.observableArrayList(
-                new Tag("#Tag1"),
-                new Tag("#Tag2"),
-                new Tag("#Tag3")
-        );
     }
 
     /**
@@ -189,6 +173,11 @@ public class HomeScreenCtrl {
      * Button for deleting a note.
      */
     private Button deleteB;
+
+    /**
+     * Button for deleting a selected image
+     */
+    private Button deleteImageB;
     /**
      * Button for undo-ing last change.
      */
@@ -210,6 +199,11 @@ public class HomeScreenCtrl {
      */
 
     private Button refreshB;
+
+    /**
+     * Downloads images
+     */
+    private Button downloadImageB;
 
     /**
      * Button for editing collections.
@@ -277,25 +271,16 @@ public class HomeScreenCtrl {
     /**
      * Selection box for the working collection.
      */
-    public ChoiceBox<Collection> selectCollectionBox = new ChoiceBox<>();
+    public ComboBox<Collection> selectCollectionBox = new ComboBox<>();
     /**
      * Invoker for keeping history of commands and executing them.
      */
     private final CommandInvoker invoker = new CommandInvoker();
-    /**
-     * Keeps track of last note deleted.
-     * It is useful for the undo button.
-     */
-    private Note lastDeletedNote = null;
+
     /**
      * Button to show tags scene.
      */
     private Button tagsButton;
-
-    /**
-     * List of all available tags (replace with actual fetching logic).
-     */
-    private final ObservableList<Tag> availableTags;
 
     /**
      * List of filtered tags
@@ -306,17 +291,20 @@ public class HomeScreenCtrl {
     @FXML
     private ScrollPane tagsScrollPane;
 
+    @FXML
+    private ScrollBar horizontalScrollBar;
+
     /**
      * current server being used.
      */
-    private final Server currentServer = new Server();
+    public final Server currentServer = new Server();
 
     /**
      * Current collection. If just the program for the first time
      * makes a default collection.
      */
     public Collection default_collection = new Collection(
-            currentServer, "Default");
+            currentServer, "Default", "default");
     public Collection currentCollection = default_collection;
 
 
@@ -333,7 +321,7 @@ public class HomeScreenCtrl {
     /**
      * Display of all the notes in the application.
      */
-    private final ObservableList<Note> notes = FXCollections
+    private ObservableList<Note> notes = FXCollections
             .observableArrayList();
     /**
      * Button that allows for selection of images
@@ -366,7 +354,14 @@ public class HomeScreenCtrl {
      * Boolean that determines whether title is in progress or not.
      */
     private boolean isTitleEditInProgress = false;
-
+    /**
+     * The original body, prior to the change.
+     */
+    private String originalBody;
+    /**
+     * Boolean that determines whether body is in progress or not.
+     */
+    private boolean isBodyEditInProgress = false;
     /**
      * Title of note in last sync to server.
      */
@@ -375,6 +370,12 @@ public class HomeScreenCtrl {
      * Body of note in last sync to server.
      */
     private String lastSyncedBody = "";
+
+    /**
+     * A queue that holds commands to be processed one at a time in a separate thread.
+     * * This ensures commands are executed in the order they are added to the queue.
+     */
+    private final BlockingQueue<Command> commandQueue = new LinkedBlockingQueue<>();
 
 
     /**
@@ -391,17 +392,124 @@ public class HomeScreenCtrl {
                 this::syncIfChanged, 0, period, TimeUnit.SECONDS);
         setUpLanguages();
         loadSavedLanguageChoice();
+        loadCollectionsFromServer();
         setUpCollections();
         markDownTitle();
         markDownContent();
         loadNotesFromServer();
         setupNotesListView();
-        loadTagsFromServer();
+        setupImageListView();
         handleTitleEdits();
+        handleBodyEdits();
+        handleNoteChanges();
+        startCommandProcessor();
         prevMatch();
         nextMatch();
         enableJavaScript();
+        scrollBarInitialize();
+        configureScrollPane();
+        configureTextFiltering();
+        Platform.runLater(this::refresh); // Ensure tags and notes sync correctly
     }
+
+    /**
+     * Configures the placeholder text for the tag filter container.
+     * Ensures placeholder visibility when no tags are selected.
+     */
+    private void configureTextFiltering() {
+        // Placeholder Text for "Filter by tag..."
+        Text placeholderText = new Text("Filter by tag...");
+        placeholderText.setStyle("-fx-fill: lightgray; -fx-font-size: 12; -fx-font-style: italic;");
+
+        // Add the placeholder text to the container by default
+        selectedTagsContainer.getChildren().add(placeholderText);
+    }
+
+    /**
+     * Initializes the horizontal scroll bar for the tags display.
+     * Links the ScrollPane and ScrollBar to ensure proper scrolling behavior.
+     */
+    private void scrollBarInitialize() {
+        Platform.runLater(() -> {
+            // Set initial ScrollBar range
+            horizontalScrollBar.setMin(0);
+            horizontalScrollBar.setMax(1); // ScrollBar value ranges from 0 to 1 (normalized)
+
+            // Update the ScrollBar's visibility and size dynamically
+            tagsScrollPane.viewportBoundsProperty().addListener((obs, oldBounds, newBounds)
+                    -> updateScrollBar());
+            selectedTagsContainer.boundsInParentProperty().addListener((obs, oldBounds, newBounds)
+                    -> updateScrollBar());
+
+            // Bind ScrollPane's hvalue to ScrollBar's value
+            horizontalScrollBar.valueProperty().addListener((obs, oldVal, newVal) ->
+                    tagsScrollPane.setHvalue(newVal.doubleValue())
+            );
+
+            // Bind ScrollBar's value to ScrollPane's hvalue
+            tagsScrollPane.hvalueProperty().addListener((obs, oldVal, newVal) ->
+                    horizontalScrollBar.setValue(newVal.doubleValue())
+            );
+
+            // Ensure scrollbar state is correct at initialization
+            updateScrollBar();
+        });
+    }
+
+    /**
+     * Updates the visibility and size of the horizontal scroll bar
+     * based on the content width and viewport size of the tags container.
+     */
+    private void updateScrollBar() {
+        double contentWidth = selectedTagsContainer.getBoundsInParent().getWidth();
+        double viewportWidth = tagsScrollPane.getViewportBounds().getWidth();
+
+        if (contentWidth <= viewportWidth || contentWidth == 0) {
+            // No scrolling needed: ScrollBar spans the full width and is disabled
+            horizontalScrollBar.setVisibleAmount(1.0); // Full size
+            horizontalScrollBar.setDisable(true); // Disable interaction
+            horizontalScrollBar.setValue(0); // Reset position
+        } else {
+            // Scrolling needed: Adjust ScrollBar size based on visible area
+            double visibleRatio = viewportWidth / contentWidth;
+            horizontalScrollBar.setVisibleAmount(visibleRatio);
+            horizontalScrollBar.setDisable(false); // Enable interaction
+        }
+
+        // Update ScrollBar range to stay in sync
+        horizontalScrollBar.setMax(1.0); // Normalized to ScrollPane hvalue range (0 to 1)
+    }
+
+    /**
+     * Configures the ScrollPane for horizontal scrolling
+     * and disables vertical scrolling for the tags container.
+     * Intercepts scroll events to handle horizontal scrolling behavior.
+     */
+    private void configureScrollPane() {
+        // Ensure that the ScrollPane allows horizontal scrolling based on content width
+        selectedTagsContainer.setPrefWidth(Region.USE_COMPUTED_SIZE);
+        selectedTagsContainer.setMinWidth(Region.USE_PREF_SIZE);
+        selectedTagsContainer.setMaxWidth(Region.USE_COMPUTED_SIZE);
+
+        tagsScrollPane.setFitToHeight(true); // Ensure vertical fit
+        tagsScrollPane.setFitToWidth(false); // Disable automatic horizontal fit
+
+        // Intercept scroll events to allow only horizontal scrolling
+        tagsScrollPane.addEventFilter(ScrollEvent.SCROLL, event -> {
+            // Calculate horizontal scroll delta
+            double delta = event.getDeltaY(); // Mouse wheel scroll
+            double newHValue = tagsScrollPane.getHvalue() - delta / tagsScrollPane.getWidth();
+
+            // Constrain newHValue to valid range [0, 1]
+            newHValue = Math.max(0, Math.min(1, newHValue));
+            tagsScrollPane.setHvalue(newHValue);
+
+            // Consume the event to disable vertical scrolling
+            event.consume();
+        });
+    }
+
+
 
     /**
      * Enable JavaScript in the WebView and bind Java methods to JavaScript
@@ -411,43 +519,103 @@ public class HomeScreenCtrl {
         markDownOutput.getEngine().setJavaScriptEnabled(true);
 
         // Bind Java methods to JavaScript
-        markDownOutput.getEngine().getLoadWorker().stateProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue == Worker.State.SUCCEEDED) {
-                // Rebind `javaApp` after the WebView finishes loading
-                JSObject window = (JSObject) markDownOutput.getEngine().executeScript("window");
-                window.setMember("javaApp", this);
+        markDownOutput.getEngine().getLoadWorker().stateProperty()
+                .addListener((observable, oldValue, newValue) -> {
+                    if (newValue == Worker.State.SUCCEEDED) {
+                        // Rebind `javaApp` after the WebView finishes loading
+                        JSObject window =
+                                (JSObject) markDownOutput.getEngine().executeScript("window");
+                        window.setMember("javaApp", this);
+                    }
+                });
+    }
+
+    /**
+     * Method which handles upcoming edits in the title
+     */
+    private void handleTitleEdits() {
+        // Listener for focus changes on the title field
+        noteTitleF.focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue) { // Gaining focus
+                currentEditState = EditState.TITLE;// Set active edit state
+                System.out.println("NOW EDITING TITLE"); // For testing purposes
+            } else { // Losing focus
+                // Finalize title edits if they are in progress
+                if (isTitleEditInProgress) {
+                    System.out.println("FINALIZING TITLE EDITS"); // For testing purposes
+                    titleEdit(); // Save title changes
+                    isTitleEditInProgress = false; // Reset the edit flag
+                }
+                currentEditState = EditState.NONE; // Reset state
+            }
+        });
+        // Listener for text changes in the title field
+        noteTitleF.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null || newValue.equals(originalTitle)) {
+                isTitleEditInProgress = false;
+            } else {
+                isTitleEditInProgress = true;
             }
         });
     }
 
     /**
-     * Method to handle title edits.
+     * Method which handles upcoming edits in the body
      */
-    private void handleTitleEdits() {
-        notesListView.getSelectionModel()
-                .selectedItemProperty()
-                .addListener((observable, oldValue, newValue) -> {
-                    if (newValue != null) {
-                        originalTitle = newValue.getTitle();
+    private void handleBodyEdits() {
+        // Listener for focus changes on the body field
+        noteBodyF.focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue) { // Gaining focus
+                currentEditState = EditState.BODY;// Set active edit state
+                System.out.println("NOW EDITING BODY"); // For testing purposes
+            } else { // Losing focus
+                // Finalize body edits if they are in progress
+                if (isBodyEditInProgress) {
+                    System.out.println("FINALIZING BODY EDITS"); // For testing purposes
+                    bodyEdit(); // Save body changes
+                    isBodyEditInProgress = false; // Reset the edit flag
+                }
+                currentEditState = EditState.NONE; // Reset state
+            }
+        });
+
+        // Listener for text changes in the body field
+        noteBodyF.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null || newValue.equals(originalBody)) {
+                isBodyEditInProgress = false;
+            } else {
+                isBodyEditInProgress = true;
+            }
+        });
+    }
+
+    /**
+     * Handles changing the currently selected note (Important for finalizing editing operations)
+     */
+    private void handleNoteChanges() {
+        // Listener for note selection changes in the ListView
+        notesListView.
+                getSelectionModel().
+                selectedItemProperty().addListener((observable, oldNote, newNote) -> {
+                    // Finalizes edits for the previously selected note
+                    if (currentEditState == EditState.TITLE && isTitleEditInProgress) {
+                        titleEdit(); // Save title changes
+                        isTitleEditInProgress = false; // Reset the edit flag
+                    } else if (currentEditState == EditState.BODY && isBodyEditInProgress) {
+                        bodyEdit(); // Save body changes
+                        isBodyEditInProgress = false; // Reset the edit flag
+                    }
+                    // Loads the new note's data
+                    if (newNote != null) {
+                        originalTitle = newNote.getTitle();
+                        originalBody = newNote.getBody();
                         noteTitleF.setText(originalTitle);
-                        // Reset the flag when use selects a note
+                        noteBodyF.setText(originalBody);
+
+                        // Reset edit flags and state
                         isTitleEditInProgress = false;
-                    }
-                });
-
-        noteTitleF.focusedProperty()
-                .addListener((observable, oldValue, newValue) -> {
-                    // Only call if title was edited
-                    if (!newValue && isTitleEditInProgress) {
-                        titleEdit();
-                    }
-                });
-
-        noteTitleF
-                .textProperty()
-                .addListener((observable, oldValue, newValue) -> {
-                    if (!newValue.equals(originalTitle)) {
-                        isTitleEditInProgress = true; // Title is being edited
+                        isBodyEditInProgress = false;
+                        currentEditState = EditState.NONE;
                     }
                 });
     }
@@ -458,17 +626,17 @@ public class HomeScreenCtrl {
     public void setUpCollections() {
         ObservableList<Collection> collectionOptions = FXCollections.observableArrayList();
         collectionOptions.add(default_collection);
-        collectionOptions.add(new Collection(currentServer, "All"));
+        collectionOptions.add(new Collection(currentServer, "All", "all"));
         collectionOptions.addAll(currentServer.getCollections());
 
         selectCollectionBox.setItems(collectionOptions);
 
-        selectCollectionBox.setValue(collectionOptions.get(0));
+        selectCollectionBox.setValue(collectionOptions.get(0)); //auto-set to the Default collection
 
         // Setting up the converter for displaying collection titles
         selectCollectionBox.setConverter(new StringConverter<>() {
             @Override
-            public String toString(Collection collection){
+            public String toString(Collection collection) {
                 return collection.getCollectionTitle();
             }
 
@@ -478,74 +646,50 @@ public class HomeScreenCtrl {
             }
         });
 
-        selectCollectionBox.getSelectionModel().selectedItemProperty().addListener((obs, oldCollection, newCollection) -> {
-            if (!newCollection.equals(oldCollection)) {
-                updateNotesList(newCollection);
-                System.out.println("\nShow " + selectCollectionBox.getValue().getCollectionTitle());
+        selectCollectionBox.getSelectionModel()
+                .selectedItemProperty().addListener((obs, oldCollection, newCollection) -> {
+                    if (!newCollection.equals(oldCollection)) {
+                        updateNotesList(newCollection);
 
-                // Update current collection based on selection
-                if (newCollection.getCollectionTitle().equals("All")) {
-                    currentCollection = default_collection; // Resetting to Default
-                } else {
-                    currentCollection = newCollection; // Setting to the selected collection
-                }
-
-                System.out.println("\nCurrent collection: " + currentCollection.getCollectionTitle());
-            }
-        });
+                        // Update current collection based on selection
+                        if (newCollection.getCollectionTitle().equals("All")) {
+                            currentCollection = default_collection; // Resetting to Default
+                        } else {
+                            currentCollection = newCollection; // Setting to the selected collection
+                        }
+                    }
+                });
 
     }
 
     /**
-     * Syncs all collections with the server to ensure consistency
+     * Syncs a specific collection with the server to ensure consistency
      */
     private void syncCollectionWithServer(Collection collection) {
-        try {
-            // Serializing the collection to JSON
-            String json = new ObjectMapper().writeValueAsString(collection);
-            System.out.println("Serialized JSON for collection: " + json); // For testing
+        Collection updatedCollection = serverUtils.syncCollectionWithServer(collection);
 
-            // Creating a PUT request to update the specific collection
-            var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
-            var response = ClientBuilder.newClient()
-                    .target("http://localhost:8080/api/collections/update/" + collection.getCollectionId())
-                    .request(MediaType.APPLICATION_JSON)
-                    .put(requestBody);
-
-            System.out.println("Response Status: " + response.getStatus()); // For testing
-
-            if (response.getStatus() == 200) {
-                // Parsing the server's response into a Collection object
-                String updatedCollectionJson = response.readEntity(String.class);
-                System.out.println("Updated collection received from server: " + updatedCollectionJson); // For testing
-
-                ObjectMapper mapper = new ObjectMapper();
-                Collection updatedCollection = mapper.readValue(updatedCollectionJson, Collection.class);
-
-                // Replacing the collection in place to maintain order
-                for (int i = 0; i < currentServer.getCollections().size(); i++) {
-                    if (currentServer.getCollections().get(i).getCollectionId() == updatedCollection.getCollectionId()) {
-                        currentServer.getCollections().set(i, updatedCollection);
-                        break;
-                    }
+        if (updatedCollection != null) {
+            // Replacing the collection in place to maintain order
+            for (int i = 0; i < currentServer.getCollections().size(); i++) {
+                if (currentServer.getCollections().get(i).getCollectionId()
+                        == updatedCollection.getCollectionId()) {
+                    currentServer.getCollections().set(i, updatedCollection);
+                    break;
                 }
-
-                // Refreshing the UI collections
-                Platform.runLater(() -> {
-                    setUpCollections();
-                });
-
-            } else {
-                System.err.println("Failed to sync collection. Status code: " + response.getStatus());
             }
-        } catch (Exception e) {
-            System.err.println("Error syncing collection with the server: " + e.getMessage());
-            e.printStackTrace();
+
+            // Refreshing the UI collections
+            Platform.runLater(() -> {
+                setUpCollections();
+            });
+        } else {
+            System.err.println("Failed to sync collection.");
         }
     }
 
     /**
      * Updates "notes" based on the chosen collection in selectCollectionBox
+     *
      * @param selectedCollection (chosen collection)
      */
     private void updateNotesList(Collection selectedCollection) {
@@ -558,262 +702,46 @@ public class HomeScreenCtrl {
         }
     }
 
-
+    /**
+     * EditState enum for keeping track of the editing of the fields
+     */
+    private EditState currentEditState = EditState.NONE;
 
     /**
      * Fetches collections from the server and stores them locally
      */
-    private void loadCollectionsFromServer() {
-        try {
-            // Fetch collections from the server
-            var response = ClientBuilder.newClient()
-                    .target("http://localhost:8080/api/collections/fetch")
-                    .request(MediaType.APPLICATION_JSON)
-                    .get();
+    public void loadCollectionsFromServer() {
+        List<Collection> fetchedCollections = serverUtils.loadCollectionsFromServer();
 
-            if (response.getStatus() == 200) {
-                // Parse the JSON response into a List of Collection objects
-                String json = response.readEntity(String.class);
-                ObjectMapper mapper = new ObjectMapper();
-                List<Collection> fetchedCollections = mapper.readValue(json,
-                        mapper.getTypeFactory().constructCollectionType(List.class, Collection.class));
-
-                // Update the current server's collections
-                currentServer.getCollections().clear(); // Clear existing collections
-                currentServer.getCollections().addAll(fetchedCollections);
-
-                System.out.println("Collections loaded successfully from the server.");
-            } else {
-                System.err.println("Failed to fetch collections. Error code: " + response.getStatus());
-            }
-        } catch (Exception e) {
-            System.err.println("Error loading the collections: " + e.getMessage());
-            e.printStackTrace();
+        if (!fetchedCollections.isEmpty()) {
+            currentServer.getCollections().clear(); // Clear existing collections
+            currentServer.getCollections().addAll(fetchedCollections);
+            System.out.println("Collections updated in the current server.");
+        } else {
+            System.err.println("No collections loaded. Server returned an error.");
         }
     }
-
-
-    private void loadTagsFromServer() {
-        try (var response = ClientBuilder.newClient()
-                .target("http://localhost:8080/api/tags")
-                .request(MediaType.APPLICATION_JSON)
-                .get()) {
-
-            if (response.getStatus() == requestSuccessfulCode) {
-                String json = response.readEntity(String.class);
-                ObjectMapper mapper = new ObjectMapper();
-                List<Tag> fetchedTags = mapper
-                        .readValue(json, mapper
-                                .getTypeFactory()
-                                .constructCollectionType(List.class,
-                                        Tag.class));
-                availableTags.clear();
-                availableTags.addAll(fetchedTags);
-            } else {
-                System.err.println("Failed to fetch tags. Status: "
-                        + response.getStatus());
-            }
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    // todo edit and delete button for the tags
 
     /**
-     * Pops up the tags view.
+     * Sends a request to the server to delete a collection by a provided ID.
+     *
+     * @param collectionId - ID of the collection to be deleted
      */
-    @FXML
-    public void handleTagsButtonAction() {
-        final int tagProfileHeight = 100;
-        final int v = 10;
-        if (currentNote == null) {
-            System.err.println("No note selected. Cannot assign tags.");
-            return;
+    public static void deleteCollectionFromServer(long collectionId) {
+        Response response = ClientBuilder.newClient()
+                // Endpoint for deletion
+                .target("http://localhost:8080/api/collections/delete/" + collectionId)
+                .request()
+                .delete();
+        if (response.getStatus() == Response.Status.NO_CONTENT.getStatusCode()) {
+            System.out.println("Collection successfully deleted.");
+        } else if (response.getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
+            System.out.println("Collection not found.");
+        } else {
+            System.out.println("Failed to delete collection. Status: " + response.getStatus());
         }
-
-        // Log current tags
-        System.out.println(
-                "Current tags for note '" + currentNote.getTitle() + "':");
-        currentNote.getTags()
-                .forEach(tag -> System.out.println("- " + tag.getName()));
-
-        // Create the dialog
-        Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Manage Tags");
-        dialog.setHeaderText("Select or create tags for the note:");
-
-        // Container for tag checkboxes
-        VBox tagListContainer = new VBox(v);
-        List<CheckBox> tagCheckBoxes = new ArrayList<>();
-
-        // Populate the tag list with checkboxes
-        for (Tag tag : availableTags) {
-            CheckBox checkBox = new CheckBox(tag.getName());
-            checkBox.setSelected(currentNote.getTags().contains(tag));
-            tagCheckBoxes.add(checkBox);
-            tagListContainer.getChildren().add(checkBox);
-        }
-
-        // ScrollPane for tag list
-        ScrollPane scrollPane = new ScrollPane(tagListContainer);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setPrefHeight(tagProfileHeight);
-        // Limit to approx. 4 tags visible
-
-        // Add Tag Button
-        Button addTagButton = new Button("Add a Tag");
-        addTagButton.setOnAction(event -> {
-            TextInputDialog inputDialog = new TextInputDialog();
-            inputDialog.setTitle("Add Tag");
-            inputDialog.setHeaderText("Enter the name of the new tag:");
-            inputDialog.setContentText("Tag name:");
-
-            Optional<String> result = inputDialog.showAndWait();
-            result.ifPresent(tagName -> {
-                if (tagName.trim().isEmpty()) {
-                    showErrorDialog(
-                            "Invalid Tag Name",
-                            "The tag name cannot be empty.");
-                    return;
-                }
-
-                if (availableTags.stream()
-                        .anyMatch(tag -> tag
-                                .getName()
-                                .equals(tagName.trim()))) {
-                    showErrorDialog("Duplicate Tag",
-                            "A tag with the name '"
-                                    + tagName.trim()
-                                    + "' already exists.");
-                    return;
-                }
-
-                Tag newTag = new Tag(tagName.trim());
-                availableTags.add(newTag);
-
-                CheckBox newCheckBox = new CheckBox(newTag.getName());
-                tagCheckBoxes.add(newCheckBox);
-                tagListContainer.getChildren().add(newCheckBox);
-
-                try {
-                    saveTagToServer(newTag);
-                    System.out.println(
-                            "New tag saved to server: " + newTag.getName());
-                } catch (Exception e) {
-                    System.err.println(
-                            "Failed to save the new tag: " + e.getMessage());
-                }
-            });
-        });
-
-        // Layout for the dialog content
-        final int v2 = 15;
-        VBox dialogContent = new VBox(v2, scrollPane, addTagButton);
-        dialog.getDialogPane().setContent(dialogContent);
-        dialog.getDialogPane()
-                .getButtonTypes()
-                .addAll(ButtonType.OK, ButtonType.CANCEL);
-
-        // Handle dialog result
-        dialog.setResultConverter(button -> {
-            if (button == ButtonType.OK) {
-                Set<Tag> selectedTags = new HashSet<>();
-                for (int i = 0; i < tagCheckBoxes.size(); i++) {
-                    if (tagCheckBoxes.get(i).isSelected()) {
-                        selectedTags.add(availableTags.get(i));
-                    }
-                }
-                updateNoteTags(selectedTags);
-            }
-            return null;
-        });
-
-        dialog.showAndWait();
+        response.close();
     }
-
-    private void showErrorDialog(
-            final String currentTitle, final String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(currentTitle);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-
-    private void updateNoteTags(final Set<Tag> selectedTags) {
-        Set<Tag> currentTags = new HashSet<>(currentNote.getTags());
-        boolean tagsUpdated = false;
-
-        // Add new tags
-        for (Tag tag : selectedTags) {
-            if (!currentTags.contains(tag)) {
-                currentTags.add(tag);
-                System.out.println("Tag added to note: " + tag.getName());
-                tagsUpdated = true;
-            }
-        }
-
-        // Remove unselected tags
-        for (Tag tag : new HashSet<>(currentTags)) {
-            if (!selectedTags.contains(tag)) {
-                currentTags.remove(tag);
-                System.out.println("Tag removed from note: " + tag.getName());
-                tagsUpdated = true;
-            }
-        }
-
-        if (tagsUpdated) {
-            currentNote.setTags(currentTags);
-            syncNoteTagsWithServer(currentNote);
-        }
-    }
-
-    private void saveTagToServer(final Tag tag) throws IOException {
-        String json = new ObjectMapper().writeValueAsString(tag);
-        try (var response = ClientBuilder.newClient()
-                .target("http://localhost:8080/api/tags/create")
-                .request(MediaType.APPLICATION_JSON)
-                .post(Entity.entity(json, MediaType.APPLICATION_JSON))) {
-
-            if (response.getStatus() != creationSuccessfulCode) {
-                throw new IOException("Failed to save tag. Status: "
-                        + response.getStatus());
-            }
-        }
-    }
-
-
-    private void syncNoteTagsWithServer(final Note note) {
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            Set<String> tagNames = note
-                    .getTags()
-                    .stream()
-                    .map(Tag::getName)
-                    .collect(Collectors.toSet());
-            String json = mapper.writeValueAsString(tagNames);
-
-            try (Response response = ClientBuilder.newClient()
-                    .target("http://localhost:8080/api/notes/"
-                            + note.getNoteId()
-                            + "/tags")
-                    .request(MediaType.APPLICATION_JSON)
-                    .put(Entity.entity(json, MediaType.APPLICATION_JSON))) {
-
-                if (response.getStatus() != requestSuccessfulCode) {
-                    System.err.println(
-                            "Failed to sync tags with server. Status: "
-                                    + response.getStatus()
-                    );
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Error syncing tags: " + e.getMessage());
-        }
-    }
-
 
     /**
      * This method calls the keyboard shortcuts, separately when noteListView is
@@ -843,6 +771,7 @@ public class HomeScreenCtrl {
         handleNavigationShortcuts(event);
         handleUtilityShortcuts(event);
         handleChoiceShortcuts(event);
+        handleTagsAndEmbeddedShortcuts(event);
     }
 
     /**
@@ -920,12 +849,30 @@ public class HomeScreenCtrl {
         // Shift + T to open up the tags edit
         if (event.isShiftDown()
                 && event.getCode() == KeyCode.T) {
-            handleTagsButtonAction();
+            // todo - the way tags are handeled
             event.consume();
         }
         // Shift + E to open up edit collections
         if (event.isShiftDown() && event.getCode() == KeyCode.E) {
             editCollections();
+            event.consume();
+        }
+        // Shift + U to upload a file
+        if (event.isShiftDown() && event.getCode() == KeyCode.U) {
+            uploadImage();
+            event.consume();
+        }
+    }
+
+    private void handleTagsAndEmbeddedShortcuts(KeyEvent event) {
+        // Shift + U to upload a file
+        if (event.isShiftDown() && event.getCode() == KeyCode.U) {
+            uploadImage();
+            event.consume();
+        }
+        // Control + C to clear tags
+        if (event.isControlDown() && event.getCode() == KeyCode.C) {
+            clearTags();
             event.consume();
         }
     }
@@ -993,9 +940,17 @@ public class HomeScreenCtrl {
                         Shift + C: Show available collections
                         Shift + E: Edit collections
                         Shift + T: Edit Tags
+                        Shift + U: Upload a file
+                        Control + C: Clear Tags
                         F5: \t\tRefresh
                         Ctrl + F: Search within a note
                         ESC: Set/reset focus to the collection search
+                        
+                        COLLECTION VIEW:
+                        Control + A: Add a collection
+                        Control + Delete: Delete a collection
+                        Control + D: Make collection default
+                        Control + S: Save a collection
                         """
         );
         shortcuts.showAndWait();
@@ -1028,52 +983,58 @@ public class HomeScreenCtrl {
 
     /**
      * This method ensures the syncing with the server (database).
-     *
      * @param note - note provided - in syncIfChanged method to be specific
      */
     public void syncNoteWithServer(final Note note) {
-        try {
-            String json = new ObjectMapper().writeValueAsString(note);
-            System.out.println("Serialized JSON: " + json);  // for testing
-
-            var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
-            // the put request to actually update the content with json
-            try (var response = ClientBuilder.newClient()
-                    .target("http://localhost:8080/api/notes/update")
-                    .request(MediaType.APPLICATION_JSON)
-                    .put(requestBody)) {
-
-                // Refresh the notes list
-                Platform.runLater(() -> refreshNotesInListView(note));
-                // for testing
-                System.out.println("Response Status: " + response.getStatus());
-                System.out.println("Response Body: "
-                        + response.readEntity(String.class));
-                // if something screwed up :D
-                if (response.getStatus() != requestSuccessfulCode) {
-                    System.err.println(
-                            "Failed to update note on server. Status code: "
-                                    + response.getStatus()
-                    );
-                }
+        if (serverUtils.syncNoteWithServer(note)) {
+            // mabie try Platform.runLater()
+            Note updatedNote = fetchNoteById(note.getNoteId());
+            if (updatedNote != null) {
+                currentNote = updatedNote;
+                refreshNotesInListView(currentNote);
             }
-        } catch (Exception e) {
-            errorLogger.log(Level.INFO, e.getMessage(), e);
+            System.out.println("Note synced successfully with server.");
+        } else {
+            System.err.println("Failed to sync note with server.");
         }
     }
 
-    private void refreshNotesInListView(final Note note) {
+
+    /**
+     * Refreshes the note in the ListView to reflect any updates.
+     * Also updates the filtered notes list.
+     *
+     * @param updatedNote - the note to be refreshed
+     */
+    private void refreshNotesInListView(Note updatedNote) {
         for (int i = 0; i < notes.size(); i++) {
-            Note update = notes.get(i);
-            if (note.getNoteId() == update.getNoteId()) {
-                if (update.getTitle() != null && !update.getTitle().isEmpty()) {
-                    // Update the note's data in the ObservableList
-                    notes.set(i, update);
-                    break;
-                }
+            if (notes.get(i).getNoteId() == updatedNote.getNoteId()) {
+                notes.set(i, updatedNote); // Replace with updated note
+                break;
+            }
+        }
+        notesListView.refresh(); // Refresh UI display
+        //updateMarkdownView();
+
+        // Also update filtered list to be sure
+        ObservableList<Note> filteredNotes = notesListView.getItems();
+        for (int i = 0; i < filteredNotes.size(); i++) {
+            if (filteredNotes.get(i).getNoteId() == updatedNote.getNoteId()) {
+                filteredNotes.set(i, updatedNote);
+                break;
             }
         }
     }
+
+    /**
+     * Updates the Markdown display for the current note's title and body.
+     */
+    private void updateMarkdownView() {
+        String titleHtml = "<h1>" + renderer.render(parser.parse(currentNote.getTitle())) + "</h1>";
+        String bodyHtml = renderer.render(parser.parse(currentNote.getBody()));
+        markDownOutput.getEngine().loadContent(titleHtml + bodyHtml);
+    }
+
 
     /**
      * Edits the collections in the scene.
@@ -1083,42 +1044,26 @@ public class HomeScreenCtrl {
         sc.showEditCollection();
     }
 
-
+    /**
+     * Fetches all notes from the server and updates the local notes list.
+     * Logs errors if fetching fails.
+     */
     private void loadNotesFromServer() {
-        try {
-            // Fetch notes from the server
-            var response = ClientBuilder.newClient()
-                    // todo - Update with your server's API URL
-                    .target("http://localhost:8080/api/notes/fetch")
-                    .request(MediaType.APPLICATION_JSON)
-                    .get();
+        List<Note> fetchedNotes = serverUtils.loadNotesFromServer();
 
-            if (response.getStatus() == requestSuccessfulCode) {
-                // Parse the JSON response into a List of Note objects
-                String json = response.readEntity(String.class);
-                ObjectMapper mapper = new ObjectMapper();
-                List<Note> fetchedNotes = mapper.readValue(
-                        json,
-                        mapper.getTypeFactory()
-                                .constructCollectionType(
-                                        List.class, Note.class));
+        if (!fetchedNotes.isEmpty()) {
+            notes.clear();
+            notes.addAll(fetchedNotes);
 
-                // Add the fetched notes to the ObservableList
-                notes.clear(); // Clear existing notes
-                notes.addAll(fetchedNotes);
-                for (Note note : fetchedNotes) {
-                    currentCollection.addNote(note);
-                }
-            } else {
-                System.err.println(
-                        "Failed to fetch notes. Error code "
-                                + response.getStatus());
-            }
-        } catch (Exception e) {
-            System.err.println("Error loading the notes: " + e.getMessage());
+            currentCollection.getNotes().clear();
+            currentCollection.getNotes().addAll(fetchedNotes);
         }
     }
 
+
+    /**
+     * Sets up the ListView in the front-end
+     */
     private void setupNotesListView() {
         // Binding the ObservableList to the ListView
         notesListView.setItems(notes);
@@ -1155,6 +1100,7 @@ public class HomeScreenCtrl {
                         noteTitleF.setText(newNote.getTitle());
                         noteBodyF.setText(newNote.getBody());
                         loadImagesForCurrentNote();
+                        //updateMarkdownView(); // Refresh the Markdown display
                         Platform.runLater(() -> notesListView.getSelectionModel());
                     }
                 });
@@ -1165,16 +1111,17 @@ public class HomeScreenCtrl {
      * converts the content to a heading of type h1, because it is a title
      */
     public void markDownTitle() {
-        noteTitleF.textProperty().addListener((observable, oldValue, newValue)
-                -> {
+        noteTitleF.textProperty().addListener((observable, oldValue, newValue) -> {
             currentNote.setTitle(newValue);
+
+            // Process #tags and [[notes]] in the body
+            String processedContent = processTagsAndReferences(noteBodyF.getText());
 
             // Convert the title and body to HTML
             String showTitle = "<h1>"
                     + renderer.render(parser.parse(newValue))
                     + "</h1>";
-            String showContent = renderer.render(
-                    parser.parse(noteBodyF.getText()));
+            String showContent = renderer.render(parser.parse(processedContent));
 
             // Load the combined title and content into the WebView
             String titleAndContent = showTitle + showContent;
@@ -1189,70 +1136,457 @@ public class HomeScreenCtrl {
      */
     public void markDownContent() {
         noteBodyF.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (currentNote == null || currentNote.getNoteId() <= 0) {
+                System.err.println("No note selected or note ID is invalid");
+                return;
+            }
             currentNote.setBody(newValue);
 
-            // Extract tags from the note body
-            Set<String> extractedTags = new HashSet<>();
-            Matcher tagMatcher = Pattern.compile("#(\\w+)").matcher(newValue);
-            while (tagMatcher.find()) {
-                extractedTags.add(tagMatcher.group(1));
-            }
+            // Send the updated note to the server
+            try {
+                syncNoteWithServer(currentNote);
+            } catch (Exception e) {
+                e.printStackTrace();
 
-            // Convert extracted tags to Tag objects
-            Set<Tag> newTags = extractedTags.stream()
-                    .map(tagName -> new Tag("#" + tagName))
-                    .collect(Collectors.toSet());
-
-            // Update the note's tags if there is a change
-            if (!newTags.equals(currentNote.getTags())) {
-                currentNote.setTags(newTags);
-                syncNoteTagsWithServer(currentNote); // Sync tags with server
             }
+            System.out.println("Note (MD): " + currentNote.getNoteId()
+                    + currentNote.getTags().toString());
 
             // Process #tags to make them clickable
             String processedContent = newValue.replaceAll("#(\\w+)",
-                    "<button style=\"background-color: #e43e38; color: white; border: none; padding: 2px 6px; border-radius: 4px; cursor: pointer;\" " +
-                            "onclick=\"javaApp.filterByTag('$1')\">#$1</button>");
+                    "<button style=\"background-color: #e43e38; color: white; " +
+                            "border: none; padding: 2px 6px; border-radius: " +
+                            "4px; cursor: pointer;\" " +
+                            "onclick=\"javaApp.filterByTag('#$1')\">#$1</button>");
 
-            // Process [[Note]] references
-            Matcher matcher = Pattern.compile("\\[\\[(.*?)\\]\\]").matcher(processedContent);
-            StringBuffer result = new StringBuffer();
+            // Process [[Note References]]
+            StringBuffer processedReferences = processNoteReferences(processedContent);
 
-            while (matcher.find()) {
-                String title = matcher.group(1);
-                boolean noteExists = notes.stream().anyMatch(note -> note.getTitle().equals(title));
-                String replacement;
-
-                if (noteExists) {
-                    replacement = "<a href=\"#\" style=\"color: blue; text-decoration: underline;\" onclick=\"javaApp.openNoteByTitle('" + title.replace("'", "\\'") + "')\">" + title + "</a>";
-                } else {
-                    replacement = "<span style=\"color: red; font-style: italic;\">" + title + "</span>";
-                }
-
-                matcher.appendReplacement(result, replacement);
-            }
-            matcher.appendTail(result);
+            // Process Image Syntax (![alt-text](image-url))
+            String processedImages = processImageMarkdown(processedReferences.toString());
 
             // Convert the title and body to HTML
             String showTitle = "<h1>"
                     + renderer.render(parser.parse(noteTitleF.getText()))
                     + "</h1>";
-            String showContent = renderer.render(parser.parse(result.toString()));
+            String showContent = renderer.render(parser.parse(processedImages));
 
-            // Load the combined title and content into the WebView
             String titleAndContent = showTitle + showContent;
             markDownOutput.getEngine().loadContent(titleAndContent);
         });
     }
 
+    private String processImageMarkdown(String content) {
+        // Fetch the images for the current note
+        List<Images> availableImages = fetchImagesForNote();
+        System.out.println("Available Images: " + availableImages);
+
+        for (Images image : availableImages) {
+            // Construct the image URL
+            String encodedTitle = URLEncoder.encode(currentNote.getTitle(), StandardCharsets.UTF_8);
+            String encodedName = URLEncoder.encode(image.getName(), StandardCharsets.UTF_8);
+            String imageUrl = String.format("http://127.0.0.1:8080/api/images/files/notes/%s/%s", encodedTitle, encodedName);
+
+            // Log the constructed image URL
+            System.out.println("Generated Image URL for " + image.getName() + ": " + imageUrl);
+
+            // Match the specific Markdown syntax for this image
+            String markdownPattern = String.format("!\\[(.*?)\\]\\(%s\\)",
+                    Pattern.quote(image.getName()));
+            content = content.replaceAll(markdownPattern, Matcher.quoteReplacement(
+                    String.format("<img src=\"%s\" alt=\"$1\" " +
+                            "style=\"max-width: 100%%; height: auto;\"/>", imageUrl)
+            ));
+        }
+
+        // Log the final processed content
+        System.out.println("Final Processed Content: " + content);
+
+        return content;
+    }
+
+
+
+
+
+
+    /**
+     * This method processes the [[Other Note]] references
+     *
+     * @param processedContent - the content that is processed
+     * @return the StringBuffer representing the other note
+     */
+    private StringBuffer processNoteReferences(String processedContent) {
+        Matcher matcher = Pattern.compile("\\[\\[(.*?)\\]\\]").matcher(processedContent);
+        StringBuffer result = new StringBuffer();
+
+        while (matcher.find()) {
+            String title = matcher.group(1);
+            boolean noteExists = notes.stream().anyMatch(note -> note.getTitle().equals(title));
+            String replacement;
+
+            if (noteExists) {
+                replacement = "<a href=\"#\" style=\"color: blue; text-decoration: underline;\" onclick=\"javaApp.openNoteByTitle('" + title.replace("'", "\\'") + "')\">" + title + "</a>";
+            } else {
+                replacement = "<span style=\"color: red; font-style: italic;\">"
+                        + title + "</span>";
+            }
+
+            matcher.appendReplacement(result, replacement);
+        }
+        matcher.appendTail(result);
+        return result;
+    }
+
+    /**
+     * Refreshes the display of tags in the tag filter container.
+     * Updates the UI based on the available tags and ensures placeholder visibility.
+     */
+    private void refreshTagsDisplay() {
+        Platform.runLater(() -> {
+            selectedTagsContainer.getChildren().clear();
+            for (String tag : getAllTags()) {
+                ChoiceBox<String> tagBox = new ChoiceBox<>();
+                tagBox.setValue(tag);
+                selectedTagsContainer.getChildren().add(tagBox);
+            }
+            togglePlaceholderText(); // Handle placeholder visibility.
+        });
+    }
+
+    /**
+     * Filters notes by the specified tag and updates the tag selection UI.
+     * Adds a new tag to the filter if it doesn't exist, validates tag combinations,
+     * and applies filtering to the notes.
+     *
+     * @param tag The tag to filter by. "#" is removed if present.
+     */
+    @FXML
+    public void filterByTag(String tag) {
+        Platform.runLater(() -> {
+            // Clean the tag (remove # if present)
+            String cleanTag = tag.startsWith("#") ? tag.substring(1) : tag;
+            // Check if the tag already exists in the filtering box
+            boolean tagExists = selectedTagsContainer.getChildren().stream()
+                    .filter(node -> node instanceof ChoiceBox)
+                    .map(node -> ((ChoiceBox<String>) node).getValue())
+                    .anyMatch(existingTag -> existingTag.equals(cleanTag));
+            if (!tagExists) {
+                // Create the ChoiceBox for the new tag
+                ChoiceBox<String> tagChoiceBox = new ChoiceBox<>();
+                tagChoiceBox.setValue(cleanTag);
+                // Store the original value to revert if the selection is canceled
+                final String[] originalValue = {cleanTag};
+                // Refresh the available tags when the ChoiceBox is opened
+                tagChoiceBox.setOnShowing(event -> refreshAvailableTags(tagChoiceBox));
+                // Revert to the original value if the dropdown is closed without selecting anything
+                tagChoiceBox.setOnHiding(event -> {
+                    if (tagChoiceBox.getValue() == null) {
+                        Platform.runLater(()
+                                -> tagChoiceBox.setValue(originalValue[0]));
+                    }
+                });
+                // Validate the new tag combination when a tag is selected
+                tagChoiceBox.getSelectionModel()
+                        .selectedItemProperty()
+                        .addListener((obs, oldTag, newTag) -> {
+                            if (newTag != null) {
+                                Set<String> selectedTags = collectSelectedTags(newTag, oldTag);
+                                if (isCombinationValid(selectedTags)) {
+                                    adjustChoiceBoxWidth(tagChoiceBox, newTag);
+                                    filterNotesByTags();
+                                    originalValue[0] = newTag; // Update the original value
+                                } else {
+                                    showAlert("Invalid Tag Combination",
+                                            "No notes match the selected tag " +
+                                                    "combination. Please try again.");
+                                    Platform.runLater(() -> tagChoiceBox
+                                            .setValue(originalValue[0])); // Revert selection
+                                }
+                            }
+                        });
+                adjustChoiceBoxWidth(tagChoiceBox, cleanTag);
+                togglePlaceholderText();// Remove placeholder text when tags are added
+                selectedTagsContainer.getChildren().add(tagChoiceBox);
+                filterNotesByTags();// Apply filtering with the initial tag
+            }
+        });
+    }
+
+    /**
+     * Collects all currently selected tags from the tag filter container.
+     *
+     * @param newTag - the newly selected tag
+     * @param oldTag - the previously selected tag being replaced
+     * @return a set of all currently selected tags
+     */
+    private Set<String> collectSelectedTags(String newTag, String oldTag) {
+        // Collect currently selected tags
+        Set<String> selectedTags = selectedTagsContainer
+                .getChildren().stream()
+                .filter(node -> node instanceof ChoiceBox)
+                .map(node -> ((ChoiceBox<String>) node).getValue())
+                .collect(Collectors.toSet());
+
+        // Replace old tag with the new one in the tag set
+        if (oldTag != null) selectedTags.remove(oldTag);
+        if (newTag != null) selectedTags.add(newTag);
+
+        return selectedTags;
+    }
+
+    /**
+     * Refreshes the list of available tags for selection in a specific ChoiceBox.
+     * Excludes tags that are already selected in other ChoiceBoxes.
+     *
+     * @param choiceBox - the ChoiceBox for which the available tags are refreshed
+     */
+    private void refreshAvailableTags(ChoiceBox<String> choiceBox) {
+        // Get all tags except the ones already selected in other ChoiceBoxes
+        Set<String> selectedTags = selectedTagsContainer
+                .getChildren().stream()
+                .filter(node -> node instanceof ChoiceBox)
+                .map(node -> ((ChoiceBox<String>) node).getValue())
+                .collect(Collectors.toSet());
+
+        List<String> availableTags = getAllTags().stream()
+                .filter(tagName -> !selectedTags.contains(tagName))
+                .collect(Collectors.toList());
+
+        // Update the available options in the ChoiceBox
+        choiceBox.setItems(FXCollections
+                .observableArrayList(availableTags));
+    }
+
+
+    /**
+     * Toggles the visibility of the placeholder text in the tag filter container.
+     * Ensures the placeholder is visible when no tags are selected and hidden otherwise.
+     */
+    private void togglePlaceholderText() {
+        Platform.runLater(() -> {
+            boolean hasTags = selectedTagsContainer.getChildren().stream()
+                    .anyMatch(node -> node instanceof ChoiceBox);
+
+            if (!hasTags) {
+                // Show placeholder text if no tags are present
+                if (selectedTagsContainer.getChildren().stream()
+                        .noneMatch(node -> node instanceof Text)) {
+                    Text placeholderText = new Text("Filter by tag...");
+                    placeholderText.setStyle("-fx-fill: lightgray; " +
+                            "-fx-font-size: 12; -fx-font-style: italic;");
+                    selectedTagsContainer.getChildren().add(placeholderText);
+                }
+            } else {
+                // Remove placeholder text if tags are present
+                selectedTagsContainer.getChildren()
+                        .removeIf(node -> node instanceof Text);
+            }
+        });
+    }
+
+    /**
+     * Adjusts the width of a ChoiceBox based on the length of the tag it displays.
+     *
+     * @param choiceBox - the ChoiceBox whose width needs adjustment
+     * @param tag       - the tag being displayed in the ChoiceBox
+     */
+    private void adjustChoiceBoxWidth(ChoiceBox<String> choiceBox, String tag) {
+        // Calculate the approximate text width for the tag
+        double textWidth = computeTextWidth(tag, 12); // 12 is the font size
+
+        // Define the maximum allowable width
+        double maxWidth = 150; // Adjust this value as needed
+        double padding = 30; // Space for dropdown arrow
+
+        // Set the ChoiceBox width to the smaller of the calculated width or maxWidth
+        choiceBox.setPrefWidth(Math.min(textWidth + padding, maxWidth));
+    }
+
+    /**
+     * Computes the width of a given text string based on a specified font size.
+     *
+     * @param text     - the text whose width is to be computed
+     * @param fontSize - the font size used for the computation
+     * @return the computed width of the text in pixels
+     */
+    private double computeTextWidth(String text, int fontSize) {
+        // Create a temporary Text node to calculate the width
+        Text tempText = new Text(text);
+        tempText.setStyle("-fx-font-size: " + fontSize + "px;"); // Set the font size
+
+        // Use a dummy scene to accurately calculate the layout bounds
+        new Scene(new Group(tempText));
+        return tempText.getLayoutBounds().getWidth();
+    }
+
+    /**
+     * Retrieves a list of all unique tags across all notes.
+     *
+     * @return a list of distinct tag names from all notes
+     */
+    private List<String> getAllTags() {
+        return notes.stream()
+                .flatMap(note -> note.getTags().stream())
+                .map(Tag::getName)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Filters the notes displayed in the ListView based on the selected tags.
+     * Updates the UI to show only notes that match all selected tags.
+     */
+    private void filterNotesByTags() {
+        // Collect the currently selected tags
+        Set<String> selectedTags = selectedTagsContainer.getChildren().stream()
+                .filter(node -> node instanceof ChoiceBox)
+                .map(node -> ((ChoiceBox<String>) node).getValue())
+                .map(tag -> tag.startsWith("#") ? tag.substring(1) : tag)
+                .collect(Collectors.toSet());
+
+        System.out.println("Filtering by tags: " + selectedTags);
+
+        // Filter notes using the selected tags
+        ObservableList<Note> filteredNotes = FXCollections.observableArrayList(
+                notes.stream()
+                        .filter(note -> {
+                            Set<String> noteTags = note.getTags().stream()
+                                    .map(Tag::getName)
+                                    .collect(Collectors.toSet());
+                            return noteTags.containsAll(selectedTags);
+                        })
+                        .toList()
+        );
+
+        // Update the notes list view with the filtered notes
+        notesListView.setItems(filteredNotes);
+        System.out.println("Filtered notes: " + filteredNotes);
+
+        // Update the current note selection
+        if (!filteredNotes.contains(currentNote) && !filteredNotes.isEmpty()) {
+            Note firstNote = filteredNotes.get(0);
+            notesListView.getSelectionModel().select(firstNote);
+            currentNote = firstNote;
+
+            // Update UI fields to reflect the selected note
+            noteTitleF.setText(firstNote.getTitle());
+            noteBodyF.setText(firstNote.getBody());
+            loadImagesForCurrentNote();
+        }
+
+        syncFilteredNotes(filteredNotes);
+    }
+
+    /**
+     * Syncs changes in the filtered notes list back to the main notes list.
+     *
+     * @param filteredNotes - the filtered list of notes
+     */
+    private void syncFilteredNotes(ObservableList<Note> filteredNotes) {
+        for (Note note : filteredNotes) {
+            int index = notes.indexOf(note);
+            if (index != -1) {
+                notes.set(index, note); // Sync changes back to the original list
+            }
+        }
+    }
+
+    /**
+     * Displays an alert dialog with the specified title and message.
+     *
+     * @param title   - the title of the alert dialog
+     * @param message - the message to be displayed in the alert dialog
+     */
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    /**
+     * Validates whether the selected combination of tags matches any existing notes.
+     *
+     * @param selectedTags - the set of selected tags to validate
+     * @return true if the combination matches at least one note, false otherwise
+     */
+    private boolean isCombinationValid(Set<String> selectedTags) {
+        // Check if there are any notes matching the selected tags
+        return notes.stream()
+                .anyMatch(note -> {
+                    Set<String> noteTags = note.getTags().stream()
+                            .map(Tag::getName)
+                            .collect(Collectors.toSet());
+                    return noteTags.containsAll(selectedTags);
+                });
+    }
+
+    /**
+     * Refreshes the notes and tags by reloading data from the server and updating the UI.
+     */
+    public void refresh() {
+        Platform.runLater(() -> {
+            System.out.println("Refreshing notes and tags...");
+            try {
+                // Fetch updated notes from the server
+                loadNotesFromServer();
+
+                // Fetch updated collections (optional, if needed)
+                loadCollectionsFromServer();
+
+                // Refresh tags (if tag list UI is separate, ensure it's updated too)
+                selectedTagsContainer.getChildren().clear();
+                togglePlaceholderText();
+
+                // Update the notes list view
+                notesListView.setItems(FXCollections.observableArrayList(notes));
+
+                System.out.println("Refresh completed.");
+            } catch (Exception e) {
+                errorLogger.log(Level.SEVERE,
+                        "Error during refresh: " + e.getMessage(), e);
+            }
+        });
+    }
+
+    /**
+     * Clears all selected tags from the filter and resets the ListView to display all notes.
+     * Displays an alert if no tags are present to clear.
+     */
+    @FXML
+    private void clearTags() {
+        // Check if there are any tags in the filter box
+        boolean hasTags = selectedTagsContainer.getChildren().stream()
+                .anyMatch(node -> node instanceof ChoiceBox);
+
+        if (!hasTags) {
+            // Show alert if no tags are present
+            showAlert("No Tags to Clear",
+                    "There are no tags in the filter box to clear.");
+            return;
+        }
+
+        Platform.runLater(() -> {
+            selectedTagsContainer.getChildren().clear(); // Clear selected tags
+            togglePlaceholderText(); // Show placeholder text
+            notesListView.setItems(FXCollections.observableArrayList(notes));
+            System.out.println("All tags cleared and notes list reset.");
+        });
+    }
+
+
     /**
      * Find the referenced note and open it
+     *
      * @param title - the title of the referenced note
      */
     @FXML
     public void openNoteByTitle(String title) {
         // Find the target note by its title
-        Note targetNote = notes.stream()
+        Note targetNote = notesListView.getItems().stream()
                 .filter(note -> note.getTitle().equals(title))
                 .findFirst()
                 .orElse(null);
@@ -1270,7 +1604,12 @@ public class HomeScreenCtrl {
 
             System.out.println("Switched to note: " + targetNote.getTitle());
         } else {
-            System.err.println("Note with title '" + title + "' not found.");
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Referenced Note Not Found");
+            alert.setHeaderText("Cannot Open Referenced Note");
+            alert.setContentText("The referenced note \""
+                    + title + "\" is not in the current filtered list.");
+            alert.showAndWait();
         }
     }
 
@@ -1278,6 +1617,7 @@ public class HomeScreenCtrl {
     /**
      * Update all the references from notes when the title of the referenced
      * note was changed
+     *
      * @param oldTitle - the original title
      * @param newTitle - the new title
      */
@@ -1295,70 +1635,6 @@ public class HomeScreenCtrl {
                 }
             }
         }
-    }
-
-    /**
-     * Filter all the notes, making only those with the tag visible
-     * @param tag - the tag to be filtered by
-     */
-    @FXML
-    public void filterByTag(String tag) {
-        Platform.runLater(() -> {
-            // Check if the tag is already in the container
-            boolean tagExists = selectedTagsContainer.getChildren().stream()
-                    .anyMatch(node -> node instanceof Button && ((Button) node).getText().equals("#" + tag));
-
-            if (!tagExists) {
-                // Add the tag to the selected tags container
-                Button tagButton = new Button("#" + tag);
-                tagButton.setStyle("-fx-background-color: #e43e38; -fx-text-fill: white; -fx-background-radius: 5;");
-                tagButton.setOnAction(event -> {
-                    selectedTagsContainer.getChildren().remove(tagButton);
-                    refresh(); // Reset filtering
-                });
-                selectedTagsContainer.getChildren().add(tagButton);
-            }
-
-            // Filter notes containing the selected tag
-            ObservableList<Note> filteredNotes = notes.filtered(note ->
-                    note.getTags().stream().anyMatch(t -> t.getName().equals("#" + tag))
-            );
-            notesListView.setItems(filteredNotes);
-
-            System.out.println("Filtered notes by tag: #" + tag);
-        });
-    }
-
-
-    /**
-     * clear all the tags selected for filtering
-     */
-    @FXML
-    public void clearTags() {
-        selectedTagsContainer.getChildren().clear();
-        notesListView.setItems(notes); // Reset to the full notes list
-        System.out.println("All tags cleared. Displaying all notes.");
-    }
-
-    public void addTag(String tagName) {
-        Platform.runLater(() -> {
-            // Create a new Button for the tag
-            Button tagButton = new Button("#" + tagName);
-            tagButton.setStyle("-fx-background-color: #e43e38; -fx-text-fill: white; -fx-background-radius: 5;");
-
-            // Allow removing the tag when clicked
-            tagButton.setOnAction(event -> selectedTagsContainer.getChildren().remove(tagButton));
-
-            // Add the tag to the container
-            selectedTagsContainer.getChildren().add(tagButton);
-
-            // Ensure the ScrollPane scrolls to the bottom
-            tagsScrollPane.layout(); // Trigger layout update
-            tagsScrollPane.setHvalue(1.0); // Scroll to the far right (if horizontal scrolling is needed)
-            tagsScrollPane.setVvalue(1.0); // Scroll to the bottom (if vertical scrolling is needed)
-
-            System.out.println("Tag added: #" + tagName);
-        });
     }
 
     /**
@@ -1388,6 +1664,8 @@ public class HomeScreenCtrl {
             counter++;
         }
 
+        showAddInfo("New note has been successfully added!");
+
         // Create the new note
         Note newNote = new Note(newTitle, "", currentCollection);
         // Create command for adding new note
@@ -1397,6 +1675,54 @@ public class HomeScreenCtrl {
     }
 
     /**
+     * This method shows the 'toast' pop up when a note is added
+     *
+     * @param message - the message to be displayed
+     */
+    private void showAddInfo(String message) {
+        // Get the root node of the scene
+        Pane root = (Pane) addB.getScene().getRoot();
+        // Create a label for the toast message
+        Label toastLabel = new Label(message);
+        toastLabel.setStyle("-fx-background-color:  #1E1E1E; " +
+                "-fx-text-fill: white; -fx-padding: 10px;" +
+                " -fx-border-radius: 5; -fx-background-radius: 5;");
+
+        // Wrap the toast in a temporary StackPane
+        StackPane toastContainer = new StackPane(toastLabel);
+        toastContainer.setStyle("-fx-alignment: center; " +
+                "-fx-background-color: transparent;");
+        toastContainer.setMouseTransparent(true);
+
+        // Add the StackPane to the root node
+        root.getChildren().add(toastContainer);
+
+        // This centers the label
+        if (root instanceof Pane pane) {
+            toastContainer.layoutXProperty()
+                    .bind(pane.widthProperty()
+                            .subtract(toastContainer.widthProperty()).divide(2));
+            toastContainer.layoutYProperty()
+                    .bind(pane.heightProperty()
+                            .subtract(toastContainer.heightProperty()).divide(2));
+        }
+        // Fade-in animation
+        FadeTransition fadeIn = new FadeTransition(Duration.millis(500), toastContainer);
+        fadeIn.setFromValue(0);
+        fadeIn.setToValue(1);
+        // Pause before fade-out
+        PauseTransition pause = new PauseTransition(Duration.millis(1500));
+        // Fade-out animation
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(500), toastContainer);
+        fadeOut.setFromValue(1);
+        fadeOut.setToValue(0);
+        fadeOut.setOnFinished(event -> root.getChildren().remove(toastContainer));
+        // Play animations sequentially
+        new SequentialTransition(fadeIn, pause, fadeOut).play();
+    }
+
+
+    /**
      * Method to add a new note.
      *
      * @param newNote - note to be added
@@ -1404,7 +1730,6 @@ public class HomeScreenCtrl {
      */
     public void addCommand(final Note newNote) throws IOException {
         Note savedNote = saveNoteToServer(newNote);
-
         currentCollection.addNote(savedNote);  // Add to the collection
         notes.add(savedNote);                   // Add to the ObservableList
         notesListView.getSelectionModel().select(savedNote);
@@ -1412,6 +1737,8 @@ public class HomeScreenCtrl {
         currentNote = savedNote;
         noteTitleF.setText(savedNote.getTitle());
         noteBodyF.setText(savedNote.getBody());
+
+        updateUIAfterChange();
     }
 
     /**
@@ -1426,22 +1753,12 @@ public class HomeScreenCtrl {
      * @return a Note that was saved with a unique id
      */
     public Note saveNoteToServer(final Note note) throws IOException {
-        var json = new ObjectMapper().writeValueAsString(note);
-        var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
-        // Connect to the create endpoint, where add requests are processed
-        try (var response = ClientBuilder.newClient()
-                .target("http://localhost:8080/api/notes/create")
-                .request(MediaType.APPLICATION_JSON)
-                .post(requestBody)) {
-
-            if (response.getStatus() == creationSuccessfulCode) {
-                Note addedNote = response.readEntity(Note.class);
-                note.setNoteId(addedNote.getNoteId());
-                return addedNote;
-            } else {
-                throw new IOException(
-                        "Server returned status: " + response.getStatus());
-            }
+        try {
+            Note savedNote = serverUtils.saveNoteToServer(note);
+            note.setNoteId(savedNote.getNoteId());
+            return savedNote;
+        } catch (IOException e) {
+            return null;
         }
     }
 
@@ -1452,24 +1769,12 @@ public class HomeScreenCtrl {
      * @param note - Note
      */
     public void addRequest(final Note note) {
-        try {
-            var json = new ObjectMapper().writeValueAsString(note);
-            var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
-            try (var response = ClientBuilder.newClient()
-                    // Update with the correct endpoint for adding a note
-                    .target("http://localhost:8080/api/notes/create")
-                    .request(MediaType.APPLICATION_JSON)
-                    .post(requestBody)) {
-                System.out.println(
-                        "Server addition request sent. Response is "
-                                + response.toString());
-            }
-        } catch (Exception e) {
-            errorLogger.log(
-                    Level.INFO,
-                    "Error requesting addition of note: " + e.getMessage());
+        boolean success = serverUtils.addNoteToServer(note);
 
-
+        if (success) {
+            System.out.println("Note added successfully to the server.");
+        } else {
+            System.err.println("Failed to add note to the server.");
         }
     }
 
@@ -1490,14 +1795,7 @@ public class HomeScreenCtrl {
                 // Create a delete command and execute it
                 Command deleteCommand = new DeleteNoteCommand(
                         this, selectedNote);
-                lastDeletedNote = selectedNote;
                 invoker.executeCommand(deleteCommand);
-                // For testing purposes
-                System.out.println(
-                        "Note deleted: " + lastDeletedNote.getTitle());
-                System.out.println(
-                        "Note deleted: " + lastDeletedNote.getNoteId());
-
                 //Confirmation alert that note was deleted
                 alert.setTitle("Note Deleted");
                 alert.setHeaderText(null);
@@ -1548,23 +1846,15 @@ public class HomeScreenCtrl {
      *
      * @param noteId - ID of the note to be deleted
      */
-    public static void deleteRequest(final long noteId) {
-        Response response = ClientBuilder.newClient()
-                // Endpoint for deletion
-                .target("http://localhost:8080/api/notes/delete/" + noteId)
-                .request()
-                .delete();
-        if (response.getStatus() == Response.Status.NO_CONTENT
-                .getStatusCode()) {
-            System.out.println("Note successfully deleted.");
-        } else if (response.getStatus() == Response.Status.NOT_FOUND
-                .getStatusCode()) {
-            System.out.println("Note not found.");
+    public void deleteRequest(final long noteId) {
+        boolean success = serverUtils.deleteRequest(noteId);
+
+        if (success) {
+            updateUIAfterChange();
+            System.out.println("Note with ID " + noteId + " deleted successfully.");
         } else {
-            System.out.println("Failed to delete note. Status: " + response
-                    .getStatus());
+            System.err.println("Failed to delete note with ID " + noteId + ".");
         }
-        response.close();
     }
 
     /**
@@ -1583,6 +1873,38 @@ public class HomeScreenCtrl {
             String title = "<h1>" + renderer.render(parser.parse(currentNote.getTitle())) + "</h1>";
             String titleAndContent = title + currentNote.getBody();
             markDownOutput.getEngine().loadContent(titleAndContent);
+        }
+        updateUIAfterChange();
+    }
+
+    /**
+     * Method that edits the body of the currently selected note
+     */
+    public void bodyEdit() {
+        if (!isBodyEditInProgress) { // Check if a body edit is in progress
+            return;
+        }
+
+        Note selectedNote = notesListView.getSelectionModel().getSelectedItem();
+        if (selectedNote != null) {
+            String newBody = noteBodyF.getText().trim();
+
+            if (!newBody.equals(originalBody)) {
+                try {
+                    // If different from original body, update body and sync with the server
+                    // (Invoke command for editing body)
+                    Command editBodyCommand = new EditBodyCommand(
+                            currentNote, originalBody, newBody, HomeScreenCtrl.this);
+                    commandQueue.offer(editBodyCommand);
+                    originalBody = newBody; // Update the original body to the new body
+                } catch (Exception e) {
+                    errorLogger.log(
+                            Level.INFO,
+                            "Error handling body edit: " + e.getMessage()
+                    );
+                }
+            }
+            isBodyEditInProgress = false;
         }
     }
 
@@ -1604,32 +1926,26 @@ public class HomeScreenCtrl {
                             currentCollection.getCollectionId(), newTitle);
                     // Show and alert if the title is duplicate
                     if (isDuplicate) {
-                        Alert alert = new Alert(Alert.AlertType.WARNING);
-                        alert.setTitle("Duplicate Title");
-                        alert.setHeaderText("Title Already Exists");
-                        alert.setContentText("The title \""
-                                + newTitle
-                                + "\" already exists in this collection. "
-                                + "Please choose a different one.");
-                        alert.showAndWait();
-
+                        showWarningAlert("Duplicate Title",
+                                "Title Already Exists",
+                                "The title \""
+                                        + newTitle
+                                        + "\" already exists in this collection. "
+                                        + "Please choose a different one.");
                         // Revert to the original title
                         Platform.runLater(() -> noteTitleF.setText(originalTitle));
-                    }
-                    else if (newTitle.isEmpty()) {
-                        Alert alert = new Alert(Alert.AlertType.WARNING);
-                        alert.setTitle("Empty Title");
-                        alert.setHeaderText("Title Cannot be Empty!");
-                        alert.setContentText("Please enter a valid title!");
-                        alert.showAndWait();
-
+                    } else if (newTitle.isEmpty()) {
+                        showWarningAlert("Empty Title",
+                                "Title Cannot be Empty!",
+                                "Please enter a valid title!");
                         // Revert to the original title
                         Platform.runLater(() -> noteTitleF.setText(originalTitle));
-                    }
-                    else {
-                        // If not duplicate, update title and sync with the server (Invoke command for editing title)
-                        Command editTitleCommand = new EditTitleCommand( currentNote,originalTitle, newTitle,HomeScreenCtrl.this);
-                        invoker.executeCommand(editTitleCommand);
+                        updateUIAfterChange();
+                    } else {
+                        // If not duplicate, update title and sync with the server
+                        Command editTitleCommand = new EditTitleCommand(currentNote,
+                                originalTitle, newTitle, HomeScreenCtrl.this);
+                        commandQueue.offer(editTitleCommand);
                         originalTitle = newTitle;
                     }
                 } catch (Exception e) {
@@ -1639,7 +1955,19 @@ public class HomeScreenCtrl {
                                     + e.getMessage());
                 }
             }
+            isTitleEditInProgress = false;
         }
+    }
+
+    /**
+     * This method shows the alert represented as WARNING
+     */
+    private void showWarningAlert(String title, String headerText, String contentText) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle(title);
+        alert.setHeaderText(headerText);
+        alert.setContentText(contentText);
+        alert.showAndWait();
     }
 
     /**
@@ -1657,27 +1985,6 @@ public class HomeScreenCtrl {
         return serverUtils.validateTitleWithServer(collectionId, newTitle);
     }
 
-
-    /**
-     * Refreshes the notes list by re-fetching the notes from the server.
-     */
-    public void refresh() {
-        Platform.runLater(() -> {
-            System.out.println("Refreshing all notes...");
-            try {
-                // Re-fetches all notes from the server
-                // and updates the ObservableList
-                loadNotesFromServer();
-                loadCollectionsFromServer(); //Re-fetches all collections from the server
-                System.out.println("All notes refreshed successfully!");
-            } catch (Exception e) {
-                errorLogger.log(
-                        Level.FINE,
-                        "Error refreshing notes: " + e.getMessage());
-            }
-        });
-    }
-
     /**
      * Fetches a specific note from the server by its ID.
      *
@@ -1686,37 +1993,16 @@ public class HomeScreenCtrl {
      * or there was an error
      */
     private Note fetchNoteById(final long noteId) {
-        try {
-            var response = ClientBuilder.newClient()
-                    // Replace with actual API endpoint for fetching a single
-                    // note
-                    .target("http://localhost:8080/api/notes/" + noteId)
-                    .request(MediaType.APPLICATION_JSON)
-                    .get();
+        Note note = serverUtils.fetchNoteById(noteId);
 
-            if (response.getStatus() == requestSuccessfulCode) {
-                String json = response.readEntity(String.class);
-                ObjectMapper mapper = new ObjectMapper();
-                return mapper.readValue(json, Note.class);
-            } else {
-                System.err.println(
-                        "Failed to fetch note with ID "
-                                + noteId
-                                + ". Status code: "
-                                + response.getStatus()
-                );
-                return null;
-            }
-        } catch (Exception e) {
-            System.err.println(
-                    "Error fetching note with ID "
-                            + noteId
-                            + ": "
-                            + e.getMessage()
-            );
+        if (note != null) {
+            return note;
+        } else {
+            System.err.println("Failed to fetch note with ID: " + noteId);
             return null;
         }
     }
+
 
     /**
      * Searches for a note based on text field input.
@@ -1737,103 +2023,190 @@ public class HomeScreenCtrl {
             } else {
                 //parse in special way such that the found results are
                 // highlighted
-                for (int i = noteMatchIndices.size() - 1; i >= 0; i--) {
-                    //iterating from the back to not have to consider changes in
-                    // index due to additions
-                    if (noteMatchIndices.get(i) < titleHighlighted.length()) {
-                        if (i == currentSearchIndex) {
-                            titleHighlighted = titleHighlighted.substring(
-                                    0, Math.toIntExact(noteMatchIndices.get(i)))
-                                    + "<mark style=\"background: #E1C16E\">"
-                                    + searchText
-                                    + "</mark>"
-                                    + titleHighlighted
-                                    .substring(Math.toIntExact(noteMatchIndices
-                                            .get(i)) + searchText.length()
-                                    );
+                titleHighlighted = highlightMatchesInTitle(titleHighlighted, searchText);
+                bodyHighlighted
+                        = highlightMatchesInBody(bodyHighlighted, searchText, titleHighlighted);
 
-                        } else {
-                            titleHighlighted = titleHighlighted.substring(
-                                    0, Math.toIntExact(noteMatchIndices.get(i)))
-                                    + "<mark>"
-                                    + searchText
-                                    + "</mark>"
-                                    + titleHighlighted
-                                    .substring(Math.toIntExact(noteMatchIndices
-                                            .get(i)) + searchText.length()
-                                    );
-                        }
-                    } else {
-                        if (i == currentSearchIndex) {
-                            bodyHighlighted = bodyHighlighted
-                                    .substring(0, Math.toIntExact(
-                                            noteMatchIndices.get(i))
-                                            - titleHighlighted.length())
-                                    + "<mark style=\"background: #E1C16E\">"
-                                    + searchText
-                                    + "</mark>"
-                                    + bodyHighlighted.substring(
-                                    (Math.toIntExact(noteMatchIndices
-                                            .get(i))
-                                            - titleHighlighted
-                                            .length())
-                                            + searchText.length());
-                        } else {
-                            bodyHighlighted = bodyHighlighted
-                                    .substring(
-                                            0, Math.toIntExact(noteMatchIndices
-                                                    .get(i))
-                                                    - titleHighlighted.length())
-                                    + "<mark>"
-                                    + searchText
-                                    + "</mark>"
-                                    + bodyHighlighted.substring(
-                                    Math.toIntExact(noteMatchIndices
-                                            .get(i))
-                                            - titleHighlighted.length()
-                                            + searchText.length());
-                        }
-                    }
-                }
             }
         }
+        // Process #tags and [[notes]] after highlighting
+        String processedBody = processTagsAndReferences(bodyHighlighted);
+
         titleHighlighted = "<h1>"
                 + renderer.render(parser.parse(titleHighlighted))
                 + "</h1>";
         bodyHighlighted = renderer.render(parser.parse(bodyHighlighted));
         String totalContent = titleHighlighted + bodyHighlighted;
         markDownOutput.getEngine().loadContent(totalContent);
-
-
     }
 
     /**
-     * Searches through collection and displays notes that match search.
+     * This method highlights the matches in the title
+     *
+     * @param titleHighlighted - the title highlighted
+     * @param searchText       - the search text
+     * @return a String representing the highlighted title part
+     */
+    private String highlightMatchesInTitle(String titleHighlighted, String searchText) {
+        String highlightedTitle = titleHighlighted;
+        for (int i = noteMatchIndices.size() - 1; i >= 0; i--) {
+            if (noteMatchIndices.get(i) < highlightedTitle.length()) {
+                highlightedTitle = highlightMatch(
+                        highlightedTitle,
+                        searchText,
+                        Math.toIntExact(noteMatchIndices.get(i)),
+                        i == currentSearchIndex
+                );
+            }
+        }
+        return highlightedTitle;
+    }
+
+    /**
+     * This method highlights the matches in the body of the note
+     *
+     * @param body       - the body of the note
+     * @param searchText - the search text
+     * @param title      - the title provided
+     * @return a String representing the highlighted part
+     */
+    private String highlightMatchesInBody(String body, String searchText, String title) {
+        String highlightedBody = body;
+        int titleLength = title.length();
+        for (int i = noteMatchIndices.size() - 1; i >= 0; i--) {
+            if (noteMatchIndices.get(i) >= titleLength) {
+                int bodyIndex = Math.toIntExact(noteMatchIndices.get(i)) - titleLength;
+                highlightedBody = highlightMatch(
+                        highlightedBody,
+                        searchText,
+                        bodyIndex,
+                        i == currentSearchIndex
+                );
+            }
+        }
+        return highlightedBody;
+    }
+
+    /**
+     * This method highlights the match
+     *
+     * @param content    - the content
+     * @param searchText - the search text
+     * @param index      - the index of the current match
+     * @param isCurrent  - is it current?
+     * @return a String representing the highlighted part
+     */
+    private String highlightMatch(String content, String searchText, int index, boolean isCurrent) {
+        String highlightStyle = isCurrent ? " style=\"background: #E1C16E\"" : "";
+        return content.substring(0, index)
+                + "<mark" + highlightStyle + ">"
+                + searchText
+                + "</mark>"
+                + content.substring(index + searchText.length());
+    }
+
+    /**
+     * Processes text to identify and format `#tags` and `[[note]]` references
+     * into clickable elements. Tags are converted to buttons, and note references
+     * are converted to links or placeholders.
+     *
+     * @param text - the text containing tags and note references
+     * @return the processed text with formatted tags and references
+     */
+    private String processTagsAndReferences(String text) {
+        // Process #tags
+        String processedContent = text.replaceAll("#(\\w+)",
+                "<button style=\"background-color: #e43e38; color: " +
+                        "white; border: none; padding: 2px 6px; border-radius:" +
+                        " 4px; cursor: pointer;\" " +
+                        "onclick=\"javaApp.filterByTag('#$1')\">#$1</button>");
+
+        // Process [[note]] references
+        Matcher matcher = Pattern.compile("\\[\\[(.*?)\\]\\]").matcher(processedContent);
+        StringBuffer result = new StringBuffer();
+
+        while (matcher.find()) {
+            String title = matcher.group(1);
+            boolean noteExists = notes.stream().anyMatch(note -> note.getTitle().equals(title));
+            String replacement;
+
+            if (noteExists) {
+                replacement = "<a href=\"#\" style=\"color: blue; " +
+                        "text-decoration: underline;\" onclick=\"javaApp" +
+                        ".openNoteByTitle('" + title.replace("'", "\\'")
+                        + "')\">" + title + "</a>";
+            } else {
+                replacement = "<span style=\"color: red; font-style: italic;\">"
+                        + title + "</span>";
+            }
+
+            matcher.appendReplacement(result, replacement);
+        }
+        matcher.appendTail(result);
+
+        return result.toString();
+    }
+
+    /**
+     * Refreshes the ListView to display the latest state of the notes list.
+     */
+    public void updateUIAfterChange() {
+        Platform.runLater(() -> {
+            notesListView.refresh(); // Refresh the ListView
+            notesListView.setItems(FXCollections.observableArrayList(notes));
+        });
+    }
+
+    /**
+     * Searches through the notes and respects the current filters, including tags.
      */
     public void searchCollection() {
-        String searchText = searchCollectionF.textProperty().getValue();
-        ArrayList<ArrayList<Long>> collectionMatchIndices = currentCollection
-                .getSearch(searchText);
+        // Normalize search text
+        String searchText = searchCollectionF.getText().trim().toLowerCase();
 
-        ObservableList<Note> displayNotes = FXCollections.observableArrayList();
-        if (!collectionMatchIndices.isEmpty()) {
-            if (collectionMatchIndices.getFirst().getFirst() == -1) {
-                System.out.println("There are no matches for " + searchText);
-                displayNotes.clear(); //gives an empty display
-            } else {
+        // Determine the base list to filter (current filtered notes or all notes)
+        // Start with the currently displayed notes
+        ObservableList<Note> baseList = notesListView.getItems();
 
-                for (ArrayList<Long> collectionMatchIndex
-                        : collectionMatchIndices) {
-                    displayNotes.add(currentCollection
-                            .getNoteByID(Math
-                                    .toIntExact(collectionMatchIndex
-                                            .getFirst())));
-                }
-            }
-        } else {
-            displayNotes = notes;
+        if (searchText.isEmpty()) {
+            // If the search is cleared, reapply the tag filtering
+            filterNotesByTags(); // Reapply tag filtering to refresh the view
+            return;
         }
-        notesListView.setItems(displayNotes);
+
+        // Filter the base list of notes based on the search text
+        ObservableList<Note> filteredNotes = FXCollections.observableArrayList(
+                baseList.stream()
+                        .filter(note -> note.getTitle().toLowerCase().contains(searchText) ||
+                                note.getBody().toLowerCase().contains(searchText))
+                        .toList()
+        );
+
+        // Update the ListView with the filtered notes
+        notesListView.setItems(filteredNotes);
+
+        // Handle no matches
+        if (filteredNotes.isEmpty()) {
+            System.out.println("No matches found for: " + searchText);
+        } else {
+            // Optionally, select the first match
+            notesListView.getSelectionModel().selectFirst();
+        }
+    }
+
+
+
+    /**
+     * This method renders the highlighted content in the markdown
+     *
+     * @param title - the title of the note
+     * @param body  - the body of the note
+     */
+    private void renderHighlightedContent(String title, String body) {
+        String renderedTitle = "<h1>" + renderer.render(parser.parse(title)) + "</h1>";
+        String renderedBody = renderer.render(parser.parse(body));
+        String totalContent = renderedTitle + renderedBody;
+        markDownOutput.getEngine().loadContent(totalContent);
     }
 
     /**
@@ -1844,11 +2217,31 @@ public class HomeScreenCtrl {
     public void setUpLanguages() {
         final double height = 15;
         final double width = 30;
+
+        initializeLanguageOptions();
+        configureLanguageComboBox(height, width);
+        configureLanguageConverter();
+        configureLanguageSelectionListener(height, width);
+    }
+
+    /**
+     * This method initializes the language options
+     */
+    private void initializeLanguageOptions() {
         selectLangBox.getItems().forEach(lang -> System.out.println(
                 "Language: " + lang.getAbbr()));
         selectLangBox.getItems()
                 .setAll(LanguageOptions.getInstance().getLanguages());
         selectLangBox.setValue(selectLangBox.getItems().getFirst());
+    }
+
+    /**
+     * This method configures the combo box with languages
+     *
+     * @param height - the height of the combo box
+     * @param width  - the width of the combo box
+     */
+    private void configureLanguageComboBox(double height, double width) {
         /* How to do this gotten from stack overflow
         (https://stackoverflow.com/questions/32334
         137/javafx-choicebox-with-image-and-text)
@@ -1867,19 +2260,9 @@ public class HomeScreenCtrl {
                                     setText(null);
                                     setGraphic(null);
                                 } else {
-                                    String iconPath = item.getImg_path();
-                                    Image icon = new Image(Objects
-                                            .requireNonNull(getClass()
-                                                    .getClassLoader()
-                                                    .getResourceAsStream(
-                                                            iconPath)));
-                                    ImageView iconImageView = new ImageView(
-                                            icon);
-                                    iconImageView.setFitHeight(height);
-                                    iconImageView.setFitWidth(width);
-                                    iconImageView.setPreserveRatio(false);
-                                    setGraphic(iconImageView);
-
+                                    setGraphic(createLanguageIcon(item.getImgPath(),
+                                            height,
+                                            width));
                                 }
                             }
                         };
@@ -1895,21 +2278,30 @@ public class HomeScreenCtrl {
                     setText(null);
                     setGraphic(null);
                 } else {
-                    //path described from client location
-                    String iconPath = item.getImg_path();
-                    Image icon = new Image(Objects.requireNonNull(
-                            getClass()
-                                    .getClassLoader()
-                                    .getResourceAsStream(iconPath)));
-                    ImageView iconImageView = new ImageView(icon);
-                    iconImageView.setFitHeight(height);
-                    iconImageView.setFitWidth(width);
-                    iconImageView.setPreserveRatio(false);
-                    setGraphic(iconImageView); // only shows the flag
+                    setGraphic(createLanguageIcon(item.getImgPath(), height, width));
                 }
             }
         });
+    }
 
+    private ImageView createLanguageIcon(String iconPath, double height, double width) {
+        Image icon = new Image(Objects
+                .requireNonNull(getClass()
+                        .getClassLoader()
+                        .getResourceAsStream(
+                                iconPath)));
+        ImageView iconImageView = new ImageView(
+                icon);
+        iconImageView.setFitHeight(height);
+        iconImageView.setFitWidth(width);
+        iconImageView.setPreserveRatio(false);
+        return iconImageView;
+    }
+
+    /**
+     * This method configures the language converter
+     */
+    private void configureLanguageConverter() {
         selectLangBox.setConverter(new StringConverter<>() {
             @Override
             public String toString(final Language language) {
@@ -1928,7 +2320,9 @@ public class HomeScreenCtrl {
                 return selectLangBox.getItems().getFirst();
             }
         });
+    }
 
+    private void configureLanguageSelectionListener(double height, double width) {
         selectLangBox.getSelectionModel()
                 .selectedItemProperty()
                 .addListener((obs, oldLang, newLang) -> {
@@ -1956,37 +2350,37 @@ public class HomeScreenCtrl {
                         languageText.setText(bundle.getString("Language"));
                         noteTitleF.setPromptText(bundle.getString("Untitled"));
                         noteBodyF.setPromptText(bundle.getString("Text_Area"));
-
                     }
                 });
-
     }
 
     /**
      * This method saves the selected language to a config file
+     *
      * @param languageToSave - language to be saved
      */
     private void saveLanguageChoice(Language languageToSave) throws IOException {
         File languageFile = new File("language-choice.txt");
-        if(!languageFile.exists()) {
+        if (!languageFile.exists()) {
             languageFile.createNewFile();
         }
-        try(FileWriter fw = new FileWriter(languageFile)) {
+        try (FileWriter fw = new FileWriter(languageFile)) {
             fw.write(languageToSave.getAbbr());
         }
     }
 
     /**
      * This method loads the language that is stored in the file
+     *
      * @throws IOException - when something messes up
      */
     private void loadSavedLanguageChoice() throws IOException {
         File languageFile = new File("language-choice.txt");
-        if(languageFile.exists()) {
-            try(BufferedReader br = new BufferedReader(new FileReader(languageFile))) {
+        if (languageFile.exists()) {
+            try (BufferedReader br = new BufferedReader(new FileReader(languageFile))) {
                 String savedLanguageAbbr = br.readLine();
-                for(Language language : selectLangBox.getItems()) {
-                    if(language.getAbbr().equals(savedLanguageAbbr)) {
+                for (Language language : selectLangBox.getItems()) {
+                    if (language.getAbbr().equals(savedLanguageAbbr)) {
                         selectLangBox.setValue(language);
                         locale = switch (language.getAbbr()) {
                             case "ES" -> Locale.of("es", "ES");
@@ -2050,6 +2444,20 @@ public class HomeScreenCtrl {
         File file = fileChooser.showOpenDialog(uploadImageB.getScene().getWindow());
 
         if (file != null) {
+            String fileName = file.getName();
+
+            // Check for duplicate names
+            List<String> existingNames = fetchImagesForNote().stream()
+                    .map(Images::getName)
+                    .collect(Collectors.toList());
+            if (existingNames.contains(fileName)) {
+                showErrorDialog("Duplicate Image Name",
+                        "An image with the name \"" + fileName +
+                                "\" already exists in this note. " +
+                                "Please rename the file and try again.");
+                return;
+            }
+
             try {
                 byte[] imageData = Files.readAllBytes(file.toPath());
 
@@ -2072,6 +2480,7 @@ public class HomeScreenCtrl {
 
     /**
      * Saves images to the server
+     *
      * @param image
      * @return Images object
      * @throws IOException
@@ -2081,62 +2490,26 @@ public class HomeScreenCtrl {
             throw new IllegalStateException("Current note or note ID is not set");
         }
 
-        // Convert the image object to JSON
-        var json = new ObjectMapper().writeValueAsString(image);
-        var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
-
-        // Construct the URL with the noteId
-        String url = "http://localhost:8080/api/images/" + currentNote.getNoteId() + "/addImage";
-
-        // Send a POST request to the server
-        try (var response = ClientBuilder.newClient()
-                .target(url)
-                .request(MediaType.APPLICATION_JSON)
-                .post(requestBody)) {
-
-            if (response.getStatus() == Response.Status.CREATED.getStatusCode()) {
-                System.out.println("Image saved successfully");
-                return response.readEntity(Images.class);
-            } else if (response.getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
-                throw new IOException("Server returned 404: Note not found");
-            } else {
-                throw new IOException("Server returned status: " + response.getStatus());
-            }
+        try {
+            return serverUtils.saveImageToServer(image, currentNote.getNoteId());
+        } catch (IOException e) {
+            System.err.println("Error saving image to server: " + e.getMessage());
+            e.printStackTrace();
+            return null;
         }
     }
 
     /**
      * Fetches the notes images from the server
+     *
      * @return List of image names
      */
     public List<Images> fetchImagesForNote() {
-        if (currentNote == null) {
+        if (currentNote == null || currentNote.getNoteId() <= 0) {
             throw new IllegalStateException("Current note or note ID is not set");
         }
 
-        String url = "http://localhost:8080/api/images/" + currentNote.getNoteId() + "/allImages";
-
-        try (var response = ClientBuilder.newClient()
-                .target(url)
-                .request(MediaType.APPLICATION_JSON)
-                .get()) {
-
-            if (response.getStatus() == Response.Status.OK.getStatusCode()) {
-                // Parse the JSON response
-                String json = response.readEntity(String.class);
-                ObjectMapper mapper = new ObjectMapper();
-                return mapper.readValue(json,
-                        mapper.getTypeFactory().constructCollectionType(List.class, Images.class));
-            } else if (response.getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
-                System.err.println("No images found for note: " + currentNote.getNoteId());
-                return List.of(); // Return empty list
-            } else {
-                throw new IOException("Failed to fetch images. Server returned status: " + response.getStatus());
-            }
-        } catch (Exception e) {
-            System.err.println("Error fetching images: " + e.getMessage());
-            return List.of(); // Return empty list in case of failure
-        }
+        return serverUtils.fetchImagesForNote(currentNote.getNoteId());
     }
 
     /**
@@ -2155,9 +2528,279 @@ public class HomeScreenCtrl {
             for (Images image : images) {
                 imageListView.getItems().add(image.getName());
             }
-            System.out.println("Loaded " + images.size() + " images for note: " + currentNote.getTitle());
+            System.out.println("Loaded " + images.size()
+                    + " images for note: " + currentNote.getTitle());
         });
     }
+
+    /**
+     * Allows for the editing of image names on double click
+     */
+    private void setupImageListView() {
+        imageListView.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                String selectedImageName = imageListView.getSelectionModel().getSelectedItem();
+                if (selectedImageName != null) {
+                    renameImage(selectedImageName);
+                }
+            }
+        });
+    }
+
+    /**
+     * Changes the name of an image and ensures the name
+     * cannot be empty/file extension cant be changed
+     * @param currentName
+     */
+    private void renameImage(String currentName) {
+        TextInputDialog dialog = new TextInputDialog(currentName);
+        dialog.setTitle("Rename Image");
+        dialog.setHeaderText("Rename Image");
+        dialog.setContentText("New name:");
+
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(newName -> {
+            if(!isValidNameChange(currentName, newName)) {
+                showErrorDialog("Invalid Name",
+                        "The name must not be empty and must retain the same file extension");
+                return;
+            }
+
+            // Check for duplicate names
+            List<String> existingNames = fetchImagesForNote().stream()
+                    .map(Images::getName)
+                    .collect(Collectors.toList());
+            if (existingNames.contains(newName)) {
+                showErrorDialog("Duplicate Name",
+                        "An image with the name \"" + newName +
+                                "\" already exists. Please choose a different name.");
+                return;
+            }
+
+            Images imageToRename = fetchImageByName(currentName);
+            if(imageToRename != null) {
+                imageToRename.setName(newName);
+
+                try {
+                    Images updatedImage = serverUtils.updateImageOnServer(imageToRename);
+                    if (updatedImage != null) {
+                        imageListView.getItems().set(
+                                imageListView.getItems().indexOf(currentName), newName);
+                    } else {
+                        showErrorDialog("Update Failed",
+                                "Failed to update the image name on the server.");
+                    }
+                } catch (IOException e) {
+                    showErrorDialog("Server Error",
+                            "An error occurred while updating the image name: " + e.getMessage());
+                }
+            }
+        });
+    }
+
+    /**
+     * Checks for the validity of the changed image name
+     * @param oldName
+     * @param newName
+     * @return boolean value for validity
+     */
+    private boolean isValidNameChange(String oldName, String newName) {
+        if (newName == null || newName.trim().isEmpty()) return false;
+
+        String oldExtension = oldName.substring(oldName.lastIndexOf('.') + 1);
+        String newExtension = newName.substring(newName.lastIndexOf('.') + 1);
+
+        return oldExtension.equalsIgnoreCase(newExtension);
+    }
+
+    /**
+     * Retrieves the image based on its name
+     * @param name
+     * @return
+     */
+    private Images fetchImageByName(String name) {
+        List<Images> images = fetchImagesForNote();
+        return images.stream()
+                .filter(img -> img.getName().equals(name))
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * Method is called when clicking the delete button,
+     * deletes a selected image from note
+     */
+    @FXML
+    public void deleteImage() {
+        String selectedImageName = imageListView.getSelectionModel().getSelectedItem();
+
+        if (selectedImageName == null) {
+            showErrorDialog("No Image Selected", "Please select an image to delete.");
+            return;
+        }
+
+        // Confirm deletion
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Delete Image");
+        alert.setHeaderText("Are you sure you want to delete this image?");
+        alert.setContentText("Image: \"" + selectedImageName + "\"");
+        Optional<ButtonType> result = alert.showAndWait();
+
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            Images imageToDelete = fetchImageByName(selectedImageName);
+
+            if (imageToDelete == null) {
+                showErrorDialog("Image Not Found", "The selected image could not be found.");
+                return;
+            }
+
+            try {
+                boolean success = serverUtils.deleteImageFromServer(imageToDelete);
+
+                if (success) {
+                    Platform.runLater(() -> imageListView.getItems().remove(selectedImageName));
+                    System.out.println("Image deleted: " + selectedImageName);
+                } else {
+                    showErrorDialog("Server Error", "Failed to delete the image from the server.");
+                }
+            } catch (Exception e) {
+                showErrorDialog("Error",
+                        "An error occurred while deleting the image: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Shows an image download screen
+     */
+    @FXML
+    public void showDownloadImageScreen() {
+        Stage downloadStage = new Stage();
+        downloadStage.setTitle("Download Image");
+
+        // Layout
+        VBox layout = new VBox(10);
+        layout.setPadding(new Insets(20));
+        layout.setAlignment(Pos.CENTER);
+
+        // Input field for the image name
+        TextField imageNameField = new TextField();
+        imageNameField.setPromptText("Enter image name");
+
+        // Download button
+        Button downloadButton = new Button("Download");
+        downloadButton.setOnAction(event -> {
+            String imageName = imageNameField.getText().trim();
+            if (!imageName.isEmpty()) {
+                downloadImage(imageName);
+            } else {
+                showErrorDialog("Invalid Input", "Please enter a valid image name.");
+            }
+        });
+
+        layout.getChildren().addAll(new Label("Download an Image"), imageNameField, downloadButton);
+
+        // Scene setup
+        Scene downloadScene = new Scene(layout, 300, 150);
+        downloadStage.setScene(downloadScene);
+        downloadStage.show();
+    }
+
+    /**
+     * Downloads an image to the device
+     * @param imageName
+     */
+    private void downloadImage(String imageName) {
+        if (currentNote == null || currentNote.getNoteId() <= 0) {
+            showErrorDialog("No Note Selected",
+                    "Please select a note to download images from.");
+            return;
+        }
+
+        try {
+            // Construct the image URL
+            String encodedNoteTitle = URLEncoder.encode(currentNote.getTitle(),
+                    StandardCharsets.UTF_8);
+            String encodedImageName = URLEncoder.encode(imageName, StandardCharsets.UTF_8);
+            String imageUrl = String.format("http://localhost:8080/api/images/files/notes/%s/%s",
+                    encodedNoteTitle, encodedImageName);
+
+            // Fetch the image data from the server
+            HttpResponse<byte[]> response = HttpClient.newHttpClient()
+                    .send(HttpRequest.newBuilder()
+                            .uri(URI.create(imageUrl))
+                            .GET()
+                            .build(), HttpResponse.BodyHandlers.ofByteArray());
+
+            if (response.statusCode() == 200) {
+                byte[] imageData = response.body();
+
+                // Save the image locally
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.setInitialFileName(imageName);
+                fileChooser.getExtensionFilters().add(
+                        new FileChooser.ExtensionFilter("All Files", "*.*"));
+
+                File saveFile = fileChooser.showSaveDialog(null);
+                if (saveFile != null) {
+                    Files.write(saveFile.toPath(), imageData);
+                    showInfoDialog("Download Successful",
+                            "Image downloaded successfully to: " + saveFile.getAbsolutePath());
+                }
+            } else {
+                showErrorDialog("Download Failed",
+                        "Image not found or server error occurred.");
+            }
+        } catch (Exception e) {
+            showErrorDialog("Error",
+                    "An error occurred while downloading the image: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Information dialog
+     * @param title
+     * @param message
+     */
+    private void showInfoDialog(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private void showErrorDialog(
+            final String currentTitle, final String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(currentTitle);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+    /**
+     * Starts a separate thread to process commands from the queue.
+     */
+    private void startCommandProcessor() {
+        Thread commandProcessorThread = new Thread(() -> {
+            try {
+                while (true) {
+                    // Take the next command from the queue and execute it
+                    Command command = commandQueue.take();
+                    invoker.executeCommand(command);
+                    System.out.println("COMMAND EXECUTED: " + command.toString());
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt(); // Restore interrupted status
+                System.err.println("Command processor interrupted: " + e.getMessage());
+            }
+        });
+
+        commandProcessorThread.setDaemon(true); // Ensure the thread exits with the application
+        commandProcessorThread.start();
+    }
+
+
 }
 
 

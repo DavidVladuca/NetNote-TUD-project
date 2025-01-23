@@ -1,10 +1,13 @@
 package commons;
 
-import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -19,8 +22,12 @@ public class Note {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long noteId; //todo - this does not work well all notes have id 0
 
+    @OneToMany(mappedBy = "note", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Images> images = new ArrayList<>();
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "collection_id", nullable = false) // Ensure that the title is mandatory in the database
+    // Ensure that the title is mandatory in the database
+    @JoinColumn(name = "collection_id", nullable = false)
     @JsonBackReference
     private Collection collection;
 
@@ -38,13 +45,17 @@ public class Note {
     )
     private Set<Tag> tags = new HashSet<>();
 
-    // Protected no-arg constructor for JPA and object mappers
-    public Note() {}
+    /**
+     * Protected no-arg constructor for JPA and object mappers
+     */
+    public Note() {
+    }
 
     /**
      * Constructor for the Note class.
-     * @param title - Title of the note.
-     * @param body - Content/body of the note.
+     *
+     * @param title      - Title of the note.
+     * @param body       - Content/body of the note.
      * @param collection - The collection the note is part of.
      */
     public Note(String title, String body, Collection collection) {
@@ -56,6 +67,7 @@ public class Note {
 
     /**
      * Getter for the noteId
+     *
      * @return integer value of the noteId
      */
     public long getNoteId() {
@@ -64,6 +76,7 @@ public class Note {
 
     /**
      * Setter for the noteId
+     *
      * @param noteId - the value of the ID that we want to set
      */
     public void setNoteId(long noteId) {
@@ -72,6 +85,7 @@ public class Note {
 
     /**
      * Getter for the title
+     *
      * @return String value of the title
      */
     public String getTitle() {
@@ -80,6 +94,7 @@ public class Note {
 
     /**
      * Setter for the title
+     *
      * @param title - the value of the title that we want to set
      */
     public void setTitle(String title) {
@@ -88,6 +103,7 @@ public class Note {
 
     /**
      * Getter for the body
+     *
      * @return String value of the body
      */
     public String getBody() {
@@ -96,6 +112,7 @@ public class Note {
 
     /**
      * Setter for the body
+     *
      * @param body - the value of the body that we want to set
      */
     public void setBody(String body) {
@@ -104,6 +121,7 @@ public class Note {
 
     /**
      * Getter for the collection
+     *
      * @return - Collection
      */
     public Collection getCollection() {
@@ -112,6 +130,7 @@ public class Note {
 
     /**
      * Setter for the collection
+     *
      * @param collection
      */
     public void setCollection(Collection collection) {
@@ -120,6 +139,7 @@ public class Note {
 
     /**
      * Getter for the Tags
+     *
      * @return - the list of Tags representing the tags
      */
     public Set<Tag> getTags() {
@@ -128,6 +148,7 @@ public class Note {
 
     /**
      * Setter for the tags
+     *
      * @param tags - list of Tags representing the tags
      */
     public void setTags(Set<Tag> tags) {
@@ -135,17 +156,34 @@ public class Note {
     }
 
     /**
+     * Retrieves list of images associated with the note
+     * @return List of images objects
+     */
+    public List<Images> getImages() {
+        return images;
+    }
+
+    /**
+     * Sets the list of images associated with the note
+     * @param images
+     */
+    public void setImages(List<Images> images) {
+        this.images = images;
+    }
+
+    /**
      * Equals method for the Note class.
      * Returns true if obj is also a Note and has the same ID.
      * Else returns false
+     *
      * @param obj - Object we compare with
      * @return boolean whether they are equal or not based on the ID
      */
     @Override
     public boolean equals(Object obj) {
-        if(this == obj)
+        if (this == obj)
             return true;
-        if(obj == null || getClass() != obj.getClass())
+        if (obj == null || getClass() != obj.getClass())
             return false;
         Note note = (Note) obj;
         return noteId == note.noteId;
@@ -153,6 +191,7 @@ public class Note {
 
     /**
      * hashCode method for the Note Class
+     *
      * @return a hash code representation of the Note Object
      */
     @Override
@@ -162,6 +201,7 @@ public class Note {
 
     /**
      * toString method for the Note Class
+     *
      * @return a human friendly representation of the Note Object
      */
     @Override
@@ -177,7 +217,8 @@ public class Note {
         }
         return "Note:\n" +
                 "Note ID: " + noteId + "\n" +
-                "Collection ID: " + (collection != null ? collection.getCollectionId() : "No Collection") + "\n" +
+                "Collection ID: " + (collection != null ?
+                collection.getCollectionId() : "No Collection") + "\n" +
                 "Title: " + title + "\n" +
                 "Body:\n" + body + "\n" +
                 "Tags: " + tagsString + "\n";
@@ -185,16 +226,21 @@ public class Note {
 
     /**
      * gets indices for all matches for a particular search text
-     * @param search_text - inputted text by user
-     * @return - returns ArrayList of the starting index of all matches in the order in which they appear in the text; -1 if there are no matches, and empty array if no text has been introduced
+     *
+     * @param searchText - inputted text by user
+     * @return - returns ArrayList of the starting index
+     * of all matches in the order in which they appear in the text;
+     * -1 if there are no matches, and empty array if no text has been introduced
      */
-    public ArrayList<Long> getMatchIndices(String search_text) {
-        String total_content = title+body;
+    public ArrayList<Long> getMatchIndices(String searchText) {
+        String totalContent = title + body;
         ArrayList<Long> matches = new ArrayList<Long>();
-        if (search_text.isEmpty()) //before the user starts to write, the method will (likely) still be called todo - check if it is
+        //before the user starts to write, the method will (likely) still be called
+        if (searchText.isEmpty())
+            // todo - check if it is
             return matches;
-        for (int i = 0; i < total_content.length() - search_text.length()+1; i++) {
-            if (total_content.startsWith(search_text, i))
+        for (int i = 0; i < totalContent.length() - searchText.length() + 1; i++) {
+            if (totalContent.startsWith(searchText, i))
                 matches.add((long) i);
         }
         if (matches.isEmpty())

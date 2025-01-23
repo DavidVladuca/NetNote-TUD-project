@@ -11,6 +11,13 @@ public class EditTitleCommand implements Command {
     private final String newTitle;
     private final HomeScreenCtrl controller;
 
+    /**
+     * This is a constructor for EditTitleCommand class
+     * @param note - note provided
+     * @param oldTitle - the old title that was before execution
+     * @param newTitle - the new title after execution
+     * @param controller - the HomeScreenController
+     */
     public EditTitleCommand(Note note,String oldTitle, String newTitle, HomeScreenCtrl controller) {
         this.note = note;
         this.oldTitles.push(oldTitle);
@@ -24,7 +31,6 @@ public class EditTitleCommand implements Command {
     @Override
     public void execute() {
         note.setTitle(newTitle);
-        controller.syncNoteWithServer(note);
     }
 
     /**

@@ -22,7 +22,8 @@ public class CollectionController {
      * @param collectionRepository - CollectionRepository
      * @param serverRepository - ServerRepository
      */
-    public CollectionController(CollectionRepository collectionRepository, ServerRepository serverRepository) {
+    public CollectionController(CollectionRepository collectionRepository,
+                                ServerRepository serverRepository) {
         this.collectionRepository = collectionRepository;
         this.serverRepository = serverRepository;
     }
@@ -58,18 +59,21 @@ public class CollectionController {
      * @return - ResponseEntity with the updated collection
      */
     @PutMapping("/update/{id}")
-    public ResponseEntity<Collection> updateCollection(@PathVariable Long id, @RequestBody Collection collection) {
+    public ResponseEntity<Collection> updateCollection(@PathVariable Long id,
+                                                       @RequestBody Collection collection) {
         if (id <= 0) {
             return ResponseEntity.badRequest().build();
         }
 
         // Find the existing collection
         Collection existingCollection = collectionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Collection not found for ID: " + id));
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Collection not found for ID: " + id));
 
         // Update the collection details
         existingCollection.setCollectionTitle(collection.getCollectionTitle());
-        existingCollection.setServer(collection.getServer() != null ? collection.getServer() : existingCollection.getServer());
+        existingCollection.setServer(collection.getServer() != null ?
+                collection.getServer() : existingCollection.getServer());
 
         // Save the updated collection
         Collection updatedCollection = collectionRepository.save(existingCollection);
@@ -85,4 +89,24 @@ public class CollectionController {
         return collectionRepository.findAll();
     }
 
+    /**
+     * Endpoint for deleting a collection by ID
+     * @param id - ID of the collection to delete
+     * @return - ResponseEntity indicating success or failure
+     */
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<Void> deleteCollection(@PathVariable Long id) {
+        if (id <= 0) {
+            return ResponseEntity.badRequest().build(); // Invalid ID
+        }
+
+        // Check if the collection exists
+        if (!collectionRepository.existsById(id)) {
+            return ResponseEntity.notFound().build(); // Collection not found
+        }
+
+        // Delete the collection
+        collectionRepository.deleteById(id);
+        return ResponseEntity.noContent().build(); // Return 204 No Content on successful deletion
+    }
 }

@@ -9,6 +9,12 @@ public class AddNoteCommand implements Command {
     private boolean executedSuccessfully = false;
 
 
+    /**
+     * Constructor for the AddNoteCommand class
+     *
+     * @param controller - the HomeScreenController
+     * @param note       - Note to be added/undone
+     */
     public AddNoteCommand(HomeScreenCtrl controller, Note note) {
         this.controller = controller;
         this.note = note;
@@ -31,18 +37,18 @@ public class AddNoteCommand implements Command {
     /**
      * Deletes the added note - Undoes operation
      */
-        @Override
+    @Override
     public void undo() {
-            if (executedSuccessfully) {
-                try {
-                    // Delete the added note
-                    controller.deleteCommand(note.getNoteId());
-                    System.out.println(note.getNoteId()+"________");
-                } catch (Exception e) {
-                    System.err.println("Error during undo: " + e.getMessage());
-                }
-            } else {
-                System.err.println("Undo was not successful");
+        if (executedSuccessfully) {
+            try {
+                // Delete the added note
+                controller.deleteCommand(note.getNoteId());
+                System.out.println(note.getNoteId() + "________");
+            } catch (Exception e) {
+                System.err.println("Error during undo: " + e.getMessage());
             }
+        } else {
+            System.err.println("Undo was not successful");
+        }
     }
 }

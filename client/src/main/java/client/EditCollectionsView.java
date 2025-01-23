@@ -10,9 +10,16 @@ public class EditCollectionsView extends Application {
     private static final Injector INJECTOR = Guice.createInjector(new MyModule());
     private static final MyFXML FXML = new MyFXML(INJECTOR);
 
+    /**
+     * This method starts the edit collections view scene
+     * @param primaryStage - the primary stage
+     */
     @Override
     public void start(Stage primaryStage) {
-        var editCollectionsView = FXML.load(EditCollectionsView.class, "client", "editCollectionsScreen.fxml");
+        var editCollectionsView =
+                FXML.load(EditCollectionsView.class,
+                        "client",
+                        "editCollectionsScreen.fxml");
         var scene = new Scene(editCollectionsView.getValue());
         primaryStage.setScene(scene);
         primaryStage.show();

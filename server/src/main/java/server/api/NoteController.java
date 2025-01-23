@@ -3,6 +3,7 @@ import commons.Collection;
 import commons.Note;
 import commons.Server;
 import commons.Tag;
+import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @RestController
@@ -64,9 +66,6 @@ public class NoteController {
         // Set the existing collection in the note (ensure relationship consistency)
         note.setCollection(collection);
 
-        // Handle tags
-        handleTags(note);
-
         // Save the note
         Note savedNote = noteRepository.save(note);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedNote);
@@ -77,45 +76,54 @@ public class NoteController {
      * @param note - note that was provided with json
      * @return a response entity with the status of the execution
      */
+    @Transactional
     @PutMapping("/update")
     public ResponseEntity<Note> updateNote(@RequestBody Note note) {
         if (note.getNoteId() <= 0) {
-            System.err.println("Invalid note ID: " + note.getNoteId());
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(null);
         }
 
-        // Check if the note exists in the database
         Note existingNote = noteRepository.findById(note.getNoteId())
-                .orElseThrow(() -> new IllegalArgumentException("Note not found for ID: " + note.getNoteId()));
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Note not found for ID: " + note.getNoteId()));
 
-        // Use the existing collection if not provided in the request
-        if (note.getCollection() == null) {
-            note.setCollection(existingNote.getCollection());
+        // Update properties
+        existingNote.setTitle(note.getTitle());
+        existingNote.setBody(note.getBody());
+
+        // Extract tags from the body
+        Matcher tagMatcher = Pattern.compile("#(\\w+)").matcher(note.getBody());
+        Set<Tag> updatedTags = new HashSet<>();
+
+        //System.out.println("Note : " + note.getNoteId());
+        while (tagMatcher.find()) {
+            String tagName = tagMatcher.group(1);
+
+            // Check if the tag exists, or create it
+            Tag tag = tagRepository.findByName(tagName)
+                    .orElseGet(() -> {
+                        Tag newTag = new Tag(tagName);
+                        return tagRepository.save(newTag);
+                    });
+            //System.out.println(tag.toString());
+            updatedTags.add(tag);
         }
 
-        // Check for title change
-        String oldTitle = existingNote.getTitle();
-        String newTitle = note.getTitle();
-
-        // Handle tags
-        handleTags(note);
+        // Update the note's tags
+        existingNote.setTags(updatedTags);
+        System.out.println("\nNote : "+ note.getNoteId());
+        System.out.println("tags : " + existingNote.getTags() + "\n");
 
         try {
-            // Save the updated note with new tags
-            Note updatedNote = noteRepository.save(note);
-
-            // If the title has changed, update references in other notes
-            if (!oldTitle.equals(newTitle)) {
-                updateReferences(oldTitle, newTitle);
-            }
-
-            return ResponseEntity.ok(updatedNote);
+            // Save the updated note and return it
+            Note savedNote = noteRepository.save(existingNote);
+            return ResponseEntity.ok(savedNote); // Return the updated note
         } catch (Exception e) {
-            System.err.println("Error updating note: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
 
     /**
      * Update all the references from notes when the title of the referenced
@@ -136,7 +144,8 @@ public class NoteController {
             System.out.println("Original body: " + body);
 
             // Update references
-            String updatedBody = body.replaceAll("\\[\\[" + Pattern.quote(oldTitle) + "\\]\\]", "[[" + newTitle + "]]");
+            String updatedBody = body.replaceAll("\\[\\[" + Pattern.quote(oldTitle) + "\\]\\]",
+                    "[[" + newTitle + "]]");
 
             if (!updatedBody.equals(body)) {
                 System.out.println("Updated body for note: " + note.getTitle());
@@ -160,12 +169,18 @@ public class NoteController {
         Set<Tag> managedTags = new HashSet<>();
         for (Tag tag : note.getTags()) {
             // Find existing tags or create new ones
-            Tag existingTag = tagRepository.findByName(tag.getName());
-            managedTags.add(Objects.requireNonNullElseGet(existingTag, () -> tagRepository.save(new Tag(tag.getName()))));
+            Tag existingTag = tagRepository.findByName(tag.getName()).get();
+            managedTags.add(Objects.requireNonNullElseGet(existingTag, ()
+                    -> tagRepository.save(new Tag(tag.getName()))));
         }
         note.setTags(managedTags);
     }
 
+    /**
+     * getter for the tags within a note.
+     * @param id - id of the note id
+     * @return tags for that particular note
+     */
     @GetMapping("/{id}/tagsGetter")
     public ResponseEntity<Set<Tag>> getTagsForNote(@PathVariable Long id) {
         return noteRepository.findById(id)
@@ -173,22 +188,27 @@ public class NoteController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    /**
+     * updates tags for a particular note.
+     * @param id - ID of the note to update
+     * @param tagNames - set of new tags
+     * @return status code of operation.
+     */
     @PutMapping("/{id}/tagsUpdate")
-    public ResponseEntity<Note> updateTagsForNote(@PathVariable Long id, @RequestBody Set<String> tagNames) {
+    public ResponseEntity<Note> updateTagsForNote(
+            @PathVariable Long id, @RequestBody Set<String> tagNames) {
         Note note = noteRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Note not found for ID: " + id));
 
         Set<Tag> managedTags = new HashSet<>();
         for (String tagName : tagNames) {
-            Tag existingTag = tagRepository.findByName(tagName);
+            Tag existingTag = tagRepository.findByName(tagName).orElse(null);
             if (existingTag == null) {
-                // Create and save the new tag if it doesn't exist
                 existingTag = tagRepository.save(new Tag(tagName));
             }
             managedTags.add(existingTag);
         }
 
-        // Update the note's tags
         note.setTags(managedTags);
 
         try {
@@ -209,10 +229,21 @@ public class NoteController {
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteNote(@PathVariable Long id) {
         if (!noteRepository.existsById(id)) {
-            return ResponseEntity.notFound().build(); // Return Not Found if the note does not exist
+            return ResponseEntity.notFound().build();
         }
-        noteRepository.deleteById(id); // Delete the note from the database
-        return ResponseEntity.noContent().build(); // Return no content
+        try {
+            Note note = noteRepository.findById(id).orElse(null);
+            if (note != null) {
+                System.out.println("Deleting note and associated images for Note ID: " + id);
+            }
+
+            noteRepository.deleteById(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            System.err.println("Error while deleting note: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     /**
@@ -223,7 +254,6 @@ public class NoteController {
     public List<Note> getAllNotes() {
         return noteRepository.findAll();
     }
-
 
 
     /**
@@ -240,13 +270,17 @@ public class NoteController {
 
     /**
      * Validates if a title already exists within the given collection.
+     * @param collectionId - the ID of the collection
      * @param title - Title to check for duplicates
      * @return - HTTP 409 Conflict if duplicate, 200 OK otherwise
      */
     @GetMapping("/validate-title")
-    public ResponseEntity<Void> validateTitle(@RequestParam String title) {
-        // Checks if there is the same title - even when there is a space at the end, that is ensured by trim()
-        boolean isDuplicate = noteRepository.existsByCollectionCollectionIdAndTitle(0L, title.trim());
+    public ResponseEntity<Void> validateTitle(@RequestParam Long collectionId,
+                                              @RequestParam String title) {
+        // Checks if there is the same title
+        // - even when there is a space at the end, that is ensured by trim()
+        boolean isDuplicate
+                = noteRepository.existsByCollectionCollectionIdAndTitle(collectionId, title.trim());
         if (isDuplicate) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build(); // returns 409 Conflict Code
         }

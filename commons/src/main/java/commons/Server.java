@@ -11,11 +11,16 @@ public class Server {
     //@GeneratedValue(strategy = GenerationType.AUTO)
     private long serverId;
 
-    @OneToMany(mappedBy = "server", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(mappedBy = "server", cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY, orphanRemoval = true)
     @JsonManagedReference
     private List<Collection> collections;
 
-    // Default constructor for JPA
+    private String URL = "localhost:8080";
+
+    /**
+     * The default constructor for JPA
+     */
     public Server() {
         this.collections = new ArrayList<>();
     }
@@ -29,6 +34,22 @@ public class Server {
     }
 
     /**
+     * The getter for the URL
+     * @return the URL of the server
+     */
+    public String getURL() {
+        return URL;
+    }
+
+    /**
+     * The setter for the URL
+     * @param url - the url to be replaced
+     */
+    public void setURL(String url) {
+        this.URL = url;
+    }
+
+    /**
      * Setter for the serverId
      * @param serverId - the value of the ID that we want to set
      */
@@ -36,10 +57,18 @@ public class Server {
         this.serverId = serverId;
     }
 
+    /**
+     * The getter for the collections of the server
+     * @return the list of collections associated with the server
+     */
     public List<Collection> getCollections() {
         return collections;
     }
 
+    /**
+     * The setter for the collections
+     * @param collections - the collections to be set
+     */
     public void setCollections(List<Collection> collections) {
         this.collections = collections;
     }
@@ -93,6 +122,7 @@ public class Server {
         }
         return "Server:\n" +
                 "Server ID: " + serverId + "\n" +
-                "Collections:\n\n" + (!collectionsString.isEmpty() ? collectionsString : "No Collections");
+                "Collections:\n\n" + (!collectionsString.isEmpty() ?
+                collectionsString : "No Collections");
     }
 }

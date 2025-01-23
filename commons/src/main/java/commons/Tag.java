@@ -25,6 +25,9 @@ public class Tag {
     @ManyToMany(mappedBy = "tags", fetch = FetchType.LAZY)
     private Set<Note> notes = new HashSet<>();
 
+    /**
+     * The default constructor for the tag entity
+     */
     public Tag() {}
 
     /**

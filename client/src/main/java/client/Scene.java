@@ -24,6 +24,11 @@ public class Scene extends Application {
 
     public static void main(String[] args) { launch(args); }
 
+    /**
+     * This method starts the Scene
+     * @param primaryStage - the primary stage
+     * @throws Exception - checked exception when something messes up
+     */
     @Override
     public void start(Stage primaryStage) throws Exception {
         primaryStage.getIcons().add(new Image("/icons/icon.png"));
@@ -32,20 +37,25 @@ public class Scene extends Application {
         ResourceBundle bundle = ResourceBundle.getBundle("MyBundle", locale);
 
         // Load the home screen FXML
-        FXMLLoader homeLoader = new FXMLLoader(HomeScreenCtrl.class.getResource("/client/homeScreen.fxml"), bundle);
+        FXMLLoader homeLoader
+                = new FXMLLoader(HomeScreenCtrl.class
+                .getResource("/client/homeScreen.fxml"), bundle);
         HomeScreenCtrl homeCtrl = INJECTOR.getInstance(HomeScreenCtrl.class);
         homeLoader.setController(homeCtrl);
         Parent home = homeLoader.load();
 
         // Load the edit collections screen FXML
-        FXMLLoader editCollectionsLoader = new FXMLLoader(EditCollectionsViewCtrl.class.getResource("/client/editCollectionsScreen.fxml"), bundle);
+        FXMLLoader editCollectionsLoader
+                = new FXMLLoader(EditCollectionsViewCtrl.class
+                .getResource("/client/editCollectionsScreen.fxml"), bundle);
         EditCollectionsViewCtrl editCtrl = INJECTOR.getInstance(EditCollectionsViewCtrl.class);
         editCollectionsLoader.setController(editCtrl);
         Parent editCollections = editCollectionsLoader.load();
 
         // Initialize ScreenCtrl and set up scenes
         ScreenCtrl screenCtrl = INJECTOR.getInstance(ScreenCtrl.class);
-        screenCtrl.init(primaryStage, new Pair<>(homeCtrl, home), new Pair<>(editCtrl, editCollections));
+        screenCtrl.init(primaryStage,
+                new Pair<>(homeCtrl, home), new Pair<>(editCtrl, editCollections));
 
         // Pass ScreenCtrl to controllers for navigation
         homeCtrl.setScreenCtrl(screenCtrl);
@@ -59,5 +69,7 @@ public class Scene extends Application {
 
 
 
-    private static URL getLocation(String path) {return Scene.class.getClassLoader().getResource(path);}
+    private static URL getLocation(String path) {
+        return Scene.class.getClassLoader().getResource(path);
+    }
 }
