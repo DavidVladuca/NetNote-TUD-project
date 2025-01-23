@@ -115,6 +115,7 @@ public class NoteControllerTest {
 
         //Perform the request and verify the response
         mockMvc.perform(MockMvcRequestBuilders.post("/api/notes/create")
+                        .param("collectionId", "0")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(MockMvcResultMatchers.status().isCreated())

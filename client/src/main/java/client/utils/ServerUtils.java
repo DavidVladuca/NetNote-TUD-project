@@ -341,10 +341,12 @@ public class ServerUtils {
     /**
      * This method saves the note to server
      * @param note - the note to be saved
+     * @param collectionId - ID of the collection that needs to save the note
      * @return a Note
      * @throws IOException - Exception
      */
-    public Note saveNoteToServer(final Note note) throws IOException {
+    public Note saveNoteToServer(final Note note, Long collectionId) throws IOException {
+        System.out.println(note.toString() + " " + collectionId); //testing
         String endpoint = "api/notes/create";
         String json = new ObjectMapper().writeValueAsString(note);
         var requestBody = Entity.entity(json, MediaType.APPLICATION_JSON);
@@ -352,13 +354,24 @@ public class ServerUtils {
         try (var response = ClientBuilder.newClient()
                 .target(SERVER)
                 .path(endpoint)
+                .queryParam("collectionId", collectionId) // Properly add query parameter
                 .request(MediaType.APPLICATION_JSON)
                 .post(requestBody)) {
 
+            System.out.println("Response status: " + response.getStatus());//testing
+            String responseBody = response.readEntity(String.class); //testing
+            System.out.println("Response body: " + responseBody); //testing
+
             if (response.getStatus() == Response.Status.CREATED.getStatusCode()) {
-                Note addedNote = response.readEntity(Note.class);
-                System.out.println("Note saved successfully. ID: " + addedNote.getNoteId());
-                return addedNote;
+                try {
+                    Note addedNote = new ObjectMapper().readValue(responseBody, Note.class);
+                    System.out.println("Note saved successfully. ID: " + addedNote.getNoteId());
+                    return addedNote;
+                } catch (IOException e) {
+                    System.err.println("Error deserializing response: " + e.getMessage());
+                    e.printStackTrace();
+                    return null;
+                }
             } else {
                 throw new IOException("Failed to save note. Server returned status: "
                         + response.getStatus());
