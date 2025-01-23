@@ -184,9 +184,9 @@ public class HomeScreenCtrl {
      */
     private Button undoB;
     /**
-     * TBH IDK - todo.
+     * searched through note.
      */
-    private Button dropDownSearchNoteB;
+    private Button searchNoteB;
     /**
      * Go to previous search match in a note.
      */
@@ -225,11 +225,11 @@ public class HomeScreenCtrl {
     /**
      * Bundle containing all languages.
      */
-    private ResourceBundle bundle;
+    private static ResourceBundle bundle;
     /**
      * current locale.
      */
-    private Locale locale;
+    private static Locale locale;
     /**
      * Language selection box in JavaFX.
      */
@@ -262,10 +262,6 @@ public class HomeScreenCtrl {
     private ArrayList<Long> noteMatchIndices;
 
     /**
-     * IDK TBH - todo.
-     */
-    private Button searchMore;
-    /**
      * Output showing actual note.
      */
     public WebView markDownOutput;
@@ -281,7 +277,7 @@ public class HomeScreenCtrl {
     /**
      * Button to show tags scene.
      */
-    private Button tagsButton;
+    public Button clearTagsB;
 
     /**
      * List of filtered tags
@@ -424,7 +420,10 @@ public class HomeScreenCtrl {
      */
     private void configureTextFiltering() {
         // Placeholder Text for "Filter by tag..."
-        Text placeholderText = new Text("Filter by tag...");
+        bundle = ResourceBundle.getBundle("MyBundle", locale);
+        String placeholderValue = bundle.getString("Filter_by_tag");
+
+        Text placeholderText = new Text(placeholderValue);
         placeholderText.setStyle("-fx-fill: lightgray; -fx-font-size: 12; -fx-font-style: italic;");
 
         // Add the placeholder text to the container by default
@@ -972,31 +971,29 @@ public class HomeScreenCtrl {
      */
     public void showShortcuts() {
         Alert shortcuts = new Alert(Alert.AlertType.INFORMATION);
-        shortcuts.setTitle("Keyboard Shortcuts");
-        shortcuts.setHeaderText("Available Keyboard Shortcuts");
-        shortcuts.setContentText(
-                """
-                        Shift + A: Add a new note
-                        Delete: Delete the selected note
-                        Page Up/Down: Navigate between note title and content
-                        Shift + S: Show shortcuts pop-up
-                        Shift + L: Show available languages
-                        Shift + C: Show available collections
-                        Shift + E: Edit collections
-                        Shift + T: Edit Tags
-                        Shift + U: Upload a file
-                        Control + C: Clear Tags
-                        F5: \t\tRefresh
-                        Ctrl + F: Search within a note
-                        ESC: Set/reset focus to the collection search
-                        
-                        COLLECTION VIEW:
-                        Control + A: Add a collection
-                        Control + Delete: Delete a collection
-                        Control + D: Make collection default
-                        Control + S: Save a collection
-                        """
-        );
+        shortcuts.setTitle(bundle.getString("Keyboard_Shortcuts"));
+        shortcuts.setHeaderText(bundle.getString("Keyboard_Shortcuts_h"));
+        shortcuts.setContentText(bundle.getString("Keyboard_Shortcuts_b"));
+        //Shortcuts text jic something goes wrong in bundle:
+//            Shift + A: Add a new note
+//            Delete: Delete the selected note
+//            Page Up/Down: Navigate between note title and content
+//            Shift + S: Show shortcuts pop-up
+//            Shift + L: Show available languages
+//            Shift + C: Show available collections
+//            Shift + E: Edit collections
+//            Shift + T: Edit Tags
+//            Shift + U: Upload a file
+//            Control + C: Clear Tags
+//            F5: \t\tRefresh
+//            Ctrl + F: Search within a note
+//            ESC: Set/reset focus to the collection search
+//
+//            COLLECTION VIEW:
+//            Control + A: Add a collection
+//            Control + Delete: Delete a collection
+//            Control + D: Make collection default
+//            Control + S: Save a collection
         shortcuts.showAndWait();
     }
 
@@ -1313,16 +1310,14 @@ public class HomeScreenCtrl {
      */
     @FXML
     public void filterByTag(String tag) {
-        Platform.runLater(() -> {
-            // Clean the tag (remove # if present)
+        Platform.runLater(() -> { // Clean the tag (remove # if present)
             String cleanTag = tag.startsWith("#") ? tag.substring(1) : tag;
             // Check if the tag already exists in the filtering box
             boolean tagExists = selectedTagsContainer.getChildren().stream()
                     .filter(node -> node instanceof ChoiceBox)
                     .map(node -> ((ChoiceBox<String>) node).getValue())
                     .anyMatch(existingTag -> existingTag.equals(cleanTag));
-            if (!tagExists) {
-                // Create the ChoiceBox for the new tag
+            if (!tagExists) { // Create the ChoiceBox for the new tag
                 ChoiceBox<String> tagChoiceBox = new ChoiceBox<>();
                 tagChoiceBox.setValue(cleanTag);
                 // Store the original value to revert if the selection is canceled
@@ -1332,11 +1327,9 @@ public class HomeScreenCtrl {
                 // Revert to the original value if the dropdown is closed without selecting anything
                 tagChoiceBox.setOnHiding(event -> {
                     if (tagChoiceBox.getValue() == null) {
-                        Platform.runLater(()
-                                -> tagChoiceBox.setValue(originalValue[0]));
+                        Platform.runLater(() -> tagChoiceBox.setValue(originalValue[0]));
                     }
-                });
-                // Validate the new tag combination when a tag is selected
+                }); // Validate the new tag combination when a tag is selected
                 tagChoiceBox.getSelectionModel()
                         .selectedItemProperty()
                         .addListener((obs, oldTag, newTag) -> {
@@ -1346,12 +1339,15 @@ public class HomeScreenCtrl {
                                     adjustChoiceBoxWidth(tagChoiceBox, newTag);
                                     filterNotesByTags();
                                     originalValue[0] = newTag; // Update the original value
-                                } else {
-                                    showAlert("Invalid Tag Combination",
-                                            "No notes match the selected tag " +
-                                                    "combination. Please try again.");
-                                    Platform.runLater(() -> tagChoiceBox
-                                            .setValue(originalValue[0])); // Revert selection
+                                } else {// Revert selection
+                                    bundle = ResourceBundle.getBundle("MyBundle", locale);
+                                    String invalidMsgTitle = bundle
+                                            .getString("InvTagComb_t");
+                                    String invalidMsg1 = bundle.getString("InvTagComb_m1");
+                                    String invalidMsg2 = bundle.getString("InvTagComb_m2");
+                                    showAlert(invalidMsgTitle, invalidMsg1 + invalidMsg2);
+                                    Platform.runLater(()
+                                            -> tagChoiceBox.setValue(originalValue[0]));
                                 }
                             }
                         });
@@ -1422,7 +1418,9 @@ public class HomeScreenCtrl {
                 // Show placeholder text if no tags are present
                 if (selectedTagsContainer.getChildren().stream()
                         .noneMatch(node -> node instanceof Text)) {
-                    Text placeholderText = new Text("Filter by tag...");
+                    bundle = ResourceBundle.getBundle("MyBundle", locale);
+                    String placeholderValue = bundle.getString("Filter_by_tag");
+                    Text placeholderText = new Text(placeholderValue);
                     placeholderText.setStyle("-fx-fill: lightgray; " +
                             "-fx-font-size: 12; -fx-font-style: italic;");
                     selectedTagsContainer.getChildren().add(placeholderText);
@@ -1614,8 +1612,11 @@ public class HomeScreenCtrl {
 
         if (!hasTags) {
             // Show alert if no tags are present
-            showAlert("No Tags to Clear",
-                    "There are no tags in the filter box to clear.");
+            bundle = ResourceBundle.getBundle("MyBundle", locale);
+            String titleAlert = bundle.getString("No_tags_to_clear_t");
+            String messageAlert = bundle.getString("No_tags_to_clear_m");
+            showAlert(titleAlert,
+                    messageAlert);
             return;
         }
 
@@ -1623,6 +1624,7 @@ public class HomeScreenCtrl {
             selectedTagsContainer.getChildren().clear(); // Clear selected tags
             togglePlaceholderText(); // Show placeholder text
             notesListView.setItems(FXCollections.observableArrayList(notes));
+
             System.out.println("All tags cleared and notes list reset.");
         });
     }
@@ -1655,10 +1657,19 @@ public class HomeScreenCtrl {
             System.out.println("Switched to note: " + targetNote.getTitle());
         } else {
             Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Referenced Note Not Found");
-            alert.setHeaderText("Cannot Open Referenced Note");
-            alert.setContentText("The referenced note \""
-                    + title + "\" is not in the current filtered list.");
+            bundle = ResourceBundle.getBundle("MyBundle", locale);
+            String refNoteNotFoundT = bundle
+                    .getString("Ref_note_not_found_t");
+            String refNoteNotFoundH = bundle
+                    .getString("Ref_note_not_found_h"); //header
+            String refNoteNotFoundM1 = bundle
+                    .getString("Ref_note_not_found_m1");
+            String refNoteNotFoundM2 = bundle
+                    .getString("Ref_note_not_found_m2");
+            alert.setTitle(refNoteNotFoundT);
+            alert.setHeaderText(refNoteNotFoundH);
+            alert.setContentText(refNoteNotFoundM1
+                    + title + refNoteNotFoundM2);
             alert.showAndWait();
         }
     }
@@ -1714,14 +1725,16 @@ public class HomeScreenCtrl {
             counter++;
         }
 
-        showAddInfo("New note has been successfully added!");
-
         // Create the new note
         Note newNote = new Note(newTitle, "", currentCollection);
         // Create command for adding new note
         Command addNoteCommand = new AddNoteCommand(this, newNote);
         // Use the invoker to execute the command
         invoker.executeCommand(addNoteCommand);
+        //success msg needs to be invoked AFTER ensuring it is correct
+        bundle = ResourceBundle.getBundle("MyBundle", locale);
+        showAddInfo(bundle.getString("NoteSuccessfulAdded"));
+
     }
 
     /**
@@ -1836,28 +1849,40 @@ public class HomeScreenCtrl {
         if (selectedNote != null) {
             // Create a confirmation alert
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Delete Note");
-            alert.setHeaderText("Are you sure you want to delete this note?");
-            alert.setContentText("Note: \"" + selectedNote.getTitle() + "\"");
-            var result = alert.showAndWait(); // Waiting for user response
+            bundle = ResourceBundle.getBundle("MyBundle", locale);
+            String deleteNoteT = bundle.getString("Delete_note_t");
+            String deleteNoteH = bundle.getString("Delete_note_h");
+            String deleteNoteM = bundle.getString("Delete_note_m");
 
+            alert.setTitle(deleteNoteT);
+            alert.setHeaderText(deleteNoteH);
+            alert.setContentText(deleteNoteM + selectedNote.getTitle() + "\"");
+            var result = alert.showAndWait(); // Waiting for user response
             if (result.isPresent() && result.get() == ButtonType.OK) {
                 // Create a delete command and execute it
                 Command deleteCommand = new DeleteNoteCommand(
                         this, selectedNote);
                 invoker.executeCommand(deleteCommand);
                 //Confirmation alert that note was deleted
-                alert.setTitle("Note Deleted");
+                bundle = ResourceBundle.getBundle("MyBundle", locale);
+                String alertTitle = bundle.getString("Note_deleted");
+                String alertBody = bundle.getString("Delete_successful");
+                alert.setTitle(alertTitle);
                 alert.setHeaderText(null);
-                alert.setContentText("The note has been successfully deleted!");
+                alert.setContentText(alertBody);
                 alert.showAndWait();
             }
         } else {
+            bundle = ResourceBundle.getBundle("MyBundle", locale);
+            String alertTitle = bundle.getString("No_note_selected_t");
+            String alertHeader = bundle.getString("No_note_selected_h");
+            String alertContent = bundle.getString("No_note_selected_m");
+
             Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("No Note Selected!");
-            alert.setHeaderText("No note selected to delete.");
-            alert.setContentText(
-                    "Please select a note from the list to delete.");
+
+            alert.setTitle(alertTitle);
+            alert.setHeaderText(alertHeader);
+            alert.setContentText(alertContent);
             alert.showAndWait();
         }
         System.out.println("Delete");  //Temporary for testing
@@ -1962,37 +1987,38 @@ public class HomeScreenCtrl {
      * Edits the title of the currently selected note.
      */
     public void titleEdit() {
+        bundle = ResourceBundle.getBundle("MyBundle", locale);
         if (!isTitleEditInProgress) {
             return;
         }
-
         Note selectedNote = notesListView.getSelectionModel().getSelectedItem();
         if (selectedNote != null) {
             String newTitle = noteTitleF.getText().trim();
-
             if (!newTitle.equals(originalTitle)) {
                 try {
                     boolean isDuplicate = validateTitleWithServer(
                             currentCollection.getCollectionId(), newTitle);
                     // Show and alert if the title is duplicate
                     if (isDuplicate) {
-                        showWarningAlert("Duplicate Title",
-                                "Title Already Exists",
-                                "The title \""
-                                        + newTitle
-                                        + "\" already exists in this collection. "
-                                        + "Please choose a different one.");
+                        String alertTitle = bundle.getString("Title_dup_t");
+                        String alertHeader = bundle.getString("Title_dup_h");
+                        String alertContent1 = bundle.getString("Title_dup_m1");
+                        String alertContent2 = bundle.getString("Title_dup_m2");
+                        String alertContent3 = bundle.getString("Title_dup_m3");
+                        showWarningAlert(alertTitle,
+                                alertHeader, alertContent1 + newTitle
+                                        + alertContent2 + alertContent3);
                         // Revert to the original title
                         Platform.runLater(() -> noteTitleF.setText(originalTitle));
                     } else if (newTitle.isEmpty()) {
-                        showWarningAlert("Empty Title",
-                                "Title Cannot be Empty!",
-                                "Please enter a valid title!");
+                        String alertTitle = bundle.getString("Empty_title_t");
+                        String alertHeader = bundle.getString("Empty_title_h");
+                        String alertBod = bundle.getString("Empty_title_m");
+                        showWarningAlert(alertTitle, alertHeader, alertBod);
                         // Revert to the original title
                         Platform.runLater(() -> noteTitleF.setText(originalTitle));
                         updateUIAfterChange();
-                    } else {
-                        // If not duplicate, update title and sync with the server
+                    } else { // If not duplicate, update title and sync with server
                         Command editTitleCommand = new EditTitleCommand(currentNote,
                                 originalTitle, newTitle, HomeScreenCtrl.this);
                         commandQueue.offer(editTitleCommand);
@@ -2000,9 +2026,8 @@ public class HomeScreenCtrl {
                     }
                 } catch (Exception e) {
                     errorLogger.log(
-                            Level.INFO,
-                            "Error validating title with server: "
-                                    + e.getMessage());
+                            Level.INFO, bundle.getString("ErrValidation")
+                            + e.getMessage());
                 }
             }
             isTitleEditInProgress = false;
@@ -2400,6 +2425,14 @@ public class HomeScreenCtrl {
                         languageText.setText(bundle.getString("Language"));
                         noteTitleF.setPromptText(bundle.getString("Untitled"));
                         noteBodyF.setPromptText(bundle.getString("Text_Area"));
+                        uploadImageB.setText(bundle.getString("Upload"));
+                        clearTagsB.setText(bundle.getString("ClearTags"));
+                        String placeholderValue = bundle.getString("Filter_by_tag");
+                        Text placeholderText = new Text(placeholderValue);
+                        placeholderText.setStyle("-fx-fill: lightgray; "
+                                + "-fx-font-size: 12; -fx-font-style: italic;");
+                        // Add the placeholder text to the container by default
+                        selectedTagsContainer.getChildren().set(0, placeholderText);
                     }
                 });
     }
@@ -2438,6 +2471,7 @@ public class HomeScreenCtrl {
                             case "ZZ" -> Locale.of("zz", "ZZ");
                             default -> Locale.of("en", "US");
                         };
+                        System.out.println(locale.toString());
                         break;
                     }
                 }
@@ -2463,6 +2497,15 @@ public class HomeScreenCtrl {
     }
 
     /**
+     * Bundle getter.
+     * @return bundle for the current (updated) language.
+     */
+    public static ResourceBundle getBundle() {
+        bundle = ResourceBundle.getBundle("MyBundle", locale);
+        return bundle;
+    }
+
+    /**
      * Highlights the next match of the note search.
      */
     public void nextMatch() {
@@ -2485,7 +2528,9 @@ public class HomeScreenCtrl {
     @FXML
     public void uploadImage() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Select file");
+        bundle = ResourceBundle.getBundle("MyBundle", locale);
+
+        fileChooser.setTitle(bundle.getString("Select_File"));
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("All Files", "*.*"),
                 new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
@@ -2501,10 +2546,14 @@ public class HomeScreenCtrl {
                     .map(Images::getName)
                     .collect(Collectors.toList());
             if (existingNames.contains(fileName)) {
-                showErrorDialog("Duplicate Image Name",
-                        "An image with the name \"" + fileName +
-                                "\" already exists in this note. " +
-                                "Please rename the file and try again.");
+                bundle = ResourceBundle.getBundle("MyBundle", locale);
+                String alertTitle = bundle.getString("Duplicate_img_t");
+                String alertBod1 = bundle.getString("Duplicate_img_m1");
+                String alertBod2 = bundle.getString("Duplicate_img_m2");
+                String alertBod3 = bundle.getString("Duplicate_img_m3");
+
+                showErrorDialog(alertTitle,
+                        alertBod1 + fileName + alertBod2 + alertBod3);
                 return;
             }
 
@@ -2529,7 +2578,7 @@ public class HomeScreenCtrl {
     }
 
     /**
-     * Saves images to the server
+     * Saves images to the server.
      *
      * @param image
      * @return Images object
@@ -2607,42 +2656,45 @@ public class HomeScreenCtrl {
         dialog.setTitle("Rename Image");
         dialog.setHeaderText("Rename Image");
         dialog.setContentText("New name:");
-
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(newName -> {
-            if(!isValidNameChange(currentName, newName)) {
-                showErrorDialog("Invalid Name",
-                        "The name must not be empty and must retain the same file extension");
+            if (!isValidNameChange(currentName, newName)) {
+                bundle = ResourceBundle.getBundle("MyBundle", locale);
+                showErrorDialog(bundle.getString("InvalidNameT"),
+                        bundle.getString("InvalidNameM"));
                 return;
-            }
-
-            // Check for duplicate names
+            } // Check for duplicate names
             List<String> existingNames = fetchImagesForNote().stream()
-                    .map(Images::getName)
-                    .collect(Collectors.toList());
+                    .map(Images::getName).collect(Collectors.toList());
             if (existingNames.contains(newName)) {
-                showErrorDialog("Duplicate Name",
-                        "An image with the name \"" + newName +
-                                "\" already exists. Please choose a different name.");
+                bundle = ResourceBundle.getBundle("MyBundle", locale);
+                String eTitle = bundle.getString("Duplicate_img_t");
+                String eM1 =  bundle.getString("Duplicate_img_m1");
+                String eM2 =  bundle.getString("Duplicate_img_m2");
+                String eM3 =  bundle.getString("Duplicate_img_m3");
+                showErrorDialog(eTitle,eM1 + newName + eM2 + eM3);
                 return;
             }
-
             Images imageToRename = fetchImageByName(currentName);
-            if(imageToRename != null) {
+            if (imageToRename != null) {
                 imageToRename.setName(newName);
-
                 try {
                     Images updatedImage = serverUtils.updateImageOnServer(imageToRename);
                     if (updatedImage != null) {
                         imageListView.getItems().set(
                                 imageListView.getItems().indexOf(currentName), newName);
                     } else {
-                        showErrorDialog("Update Failed",
-                                "Failed to update the image name on the server.");
+                        bundle = ResourceBundle.getBundle("MyBundle", locale);
+                        String updateFailedT = bundle.getString("updateFailedT");
+                        String updateFailedM = bundle.getString("updateFailedM");
+                        showErrorDialog(updateFailedT,
+                                updateFailedM);
                     }
                 } catch (IOException e) {
-                    showErrorDialog("Server Error",
-                            "An error occurred while updating the image name: " + e.getMessage());
+                    bundle = ResourceBundle.getBundle("MyBundle", locale);
+                    String serverT = bundle.getString("ServerErrorT");
+                    String serverM = bundle.getString("ServerErrorM");
+                    showErrorDialog(serverT, serverM + e.getMessage());
                 }
             }
         });
@@ -2683,24 +2735,31 @@ public class HomeScreenCtrl {
     @FXML
     public void deleteImage() {
         String selectedImageName = imageListView.getSelectionModel().getSelectedItem();
-
+        bundle = ResourceBundle.getBundle("MyBundle", locale);
         if (selectedImageName == null) {
-            showErrorDialog("No Image Selected", "Please select an image to delete.");
+            String noImgSelectT = bundle.getString("NoImgSelectT");
+            String noImgSelectM = bundle.getString("NoImgSelectM");
+            showErrorDialog(noImgSelectT, noImgSelectM);
             return;
         }
 
         // Confirm deletion
+        String deleteImgT = bundle.getString("deleteImgT");
+        String deleteImgH = bundle.getString("deleteImgH");
+        String deleteImgM = bundle.getString("deleteImgM");
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Delete Image");
-        alert.setHeaderText("Are you sure you want to delete this image?");
-        alert.setContentText("Image: \"" + selectedImageName + "\"");
+        alert.setTitle(deleteImgT);
+        alert.setHeaderText(deleteImgH);
+        alert.setContentText(deleteImgM + selectedImageName + "\"");
         Optional<ButtonType> result = alert.showAndWait();
 
         if (result.isPresent() && result.get() == ButtonType.OK) {
             Images imageToDelete = fetchImageByName(selectedImageName);
 
             if (imageToDelete == null) {
-                showErrorDialog("Image Not Found", "The selected image could not be found.");
+                String alertT= bundle.getString("ImgNotFoundT");
+                String alertM =  bundle.getString("ImgNotFoundM");
+                showErrorDialog(alertT, alertM);
                 return;
             }
 
@@ -2711,11 +2770,16 @@ public class HomeScreenCtrl {
                     Platform.runLater(() -> imageListView.getItems().remove(selectedImageName));
                     System.out.println("Image deleted: " + selectedImageName);
                 } else {
-                    showErrorDialog("Server Error", "Failed to delete the image from the server.");
+                    bundle = ResourceBundle.getBundle("MyBundle", locale);
+                    String delImgErrT = bundle.getString("delImgErrT");
+                    String delImgErrM = bundle.getString("delImgErrM");
+                    showErrorDialog(delImgErrT, delImgErrM);
                 }
             } catch (Exception e) {
-                showErrorDialog("Error",
-                        "An error occurred while deleting the image: " + e.getMessage());
+                bundle = ResourceBundle.getBundle("MyBundle", locale);
+                String imgDelErrorT = bundle.getString("ImgDelErrorT");
+                String imgDelErrorM = bundle.getString("ImgDelErrorM");
+                showErrorDialog(imgDelErrorT, imgDelErrorM + e.getMessage());
             }
         }
     }
@@ -2726,7 +2790,8 @@ public class HomeScreenCtrl {
     @FXML
     public void showDownloadImageScreen() {
         Stage downloadStage = new Stage();
-        downloadStage.setTitle("Download Image");
+        bundle = ResourceBundle.getBundle("MyBundle", locale);
+        downloadStage.setTitle(bundle.getString("DownloadImg"));
 
         // Layout
         VBox layout = new VBox(10);
@@ -2735,20 +2800,24 @@ public class HomeScreenCtrl {
 
         // Input field for the image name
         TextField imageNameField = new TextField();
-        imageNameField.setPromptText("Enter image name");
+        imageNameField.setPromptText(bundle.getString("Enter_image_name"));
 
         // Download button
-        Button downloadButton = new Button("Download");
+        Button downloadButton = new Button(bundle.getString("Download"));
         downloadButton.setOnAction(event -> {
             String imageName = imageNameField.getText().trim();
             if (!imageName.isEmpty()) {
                 downloadImage(imageName);
             } else {
-                showErrorDialog("Invalid Input", "Please enter a valid image name.");
+                String invalidInput = bundle.getString("InvalidInput");
+                String invalidInputM = bundle.getString("InvalidInputM");
+                showErrorDialog(invalidInput, invalidInputM);
             }
         });
 
-        layout.getChildren().addAll(new Label("Download an Image"), imageNameField, downloadButton);
+
+        layout.getChildren().addAll(new Label(bundle.getString("Download_an_Image")),
+                imageNameField, downloadButton);
 
         // Scene setup
         Scene downloadScene = new Scene(layout, 300, 150);
@@ -2762,11 +2831,13 @@ public class HomeScreenCtrl {
      */
     private void downloadImage(String imageName) {
         if (currentNote == null || currentNote.getNoteId() <= 0) {
-            showErrorDialog("No Note Selected",
-                    "Please select a note to download images from.");
+            bundle=ResourceBundle.getBundle("MyBundle", locale);
+            String noNoteSelectT=bundle.getString("noNoteSelectT");
+            String noNoteSelectM=bundle.getString("noNoteSelectM");
+            showErrorDialog(noNoteSelectT,
+                    noNoteSelectM);
             return;
         }
-
         try {
             // Construct the image URL
             String encodedNoteTitle = URLEncoder.encode(currentNote.getTitle(),
@@ -2774,17 +2845,14 @@ public class HomeScreenCtrl {
             String encodedImageName = URLEncoder.encode(imageName, StandardCharsets.UTF_8);
             String imageUrl = String.format("http://localhost:8080/api/images/files/notes/%s/%s",
                     encodedNoteTitle, encodedImageName);
-
             // Fetch the image data from the server
             HttpResponse<byte[]> response = HttpClient.newHttpClient()
                     .send(HttpRequest.newBuilder()
                             .uri(URI.create(imageUrl))
                             .GET()
                             .build(), HttpResponse.BodyHandlers.ofByteArray());
-
             if (response.statusCode() == 200) {
                 byte[] imageData = response.body();
-
                 // Save the image locally
                 FileChooser fileChooser = new FileChooser();
                 fileChooser.setInitialFileName(imageName);
@@ -2794,16 +2862,20 @@ public class HomeScreenCtrl {
                 File saveFile = fileChooser.showSaveDialog(null);
                 if (saveFile != null) {
                     Files.write(saveFile.toPath(), imageData);
-                    showInfoDialog("Download Successful",
-                            "Image downloaded successfully to: " + saveFile.getAbsolutePath());
+                    bundle = ResourceBundle.getBundle("MyBundle", locale);
+                    showInfoDialog(bundle.getString("Download_Successful"),
+                            bundle.getString("Image_downloaded_successfully_to")
+                                    + saveFile.getAbsolutePath());
                 }
             } else {
-                showErrorDialog("Download Failed",
-                        "Image not found or server error occurred.");
+                bundle = ResourceBundle.getBundle("MyBundle", locale);
+                showErrorDialog(bundle.getString("Download_Failed"),
+                        "Download_Failed_m");
             }
         } catch (Exception e) {
-            showErrorDialog("Error",
-                    "An error occurred while downloading the image: " + e.getMessage());
+            bundle = ResourceBundle.getBundle("MyBundle", locale);
+            showErrorDialog(bundle.getString("Error"),
+                    bundle.getString("ErrorM")  + e.getMessage());
         }
     }
 

@@ -17,9 +17,10 @@ import javafx.scene.control.Alert.AlertType;
 
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-
+import javafx.scene.text.Text;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.ResourceBundle;
 
 public class EditCollectionsViewCtrl {
     /**
@@ -35,19 +36,32 @@ public class EditCollectionsViewCtrl {
      * Button to add a collection.
      */
     @FXML
-    private Button addB;
+    public Button addB;
     /**
      * Button to delete a collection.
      */
-    private Button deleteB;
+    public Button deleteB;
     /**
      * Button to make a collection the default.
      */
-    private Button makeDefaultB;
+    public Button makeDefaultB;
     /**
      * Button to save the collections.
      */
-    private Button saveB;
+
+    public Text titleT;
+
+    public Text serverT;
+
+    public Text collectionT;
+
+    public Text statusT;
+
+    public Text statusTextTBI;
+
+    public Text editCollectionsT;
+
+    public Button saveB;
     /**
      * Text field to name a collection.
      */
@@ -94,7 +108,7 @@ public class EditCollectionsViewCtrl {
         collections.setAll(homeScreenCtrl.currentServer.getCollections());
         setupCollectionsListView();
         collectionKeyboardShortcuts();
-
+        setUpLanguages();
         Platform.runLater(() -> {
             clearFields();
             if (serverTextF != null && (serverTextF.getText() == null ||
@@ -140,6 +154,21 @@ public class EditCollectionsViewCtrl {
                         Platform.runLater(() -> collectionsListView.getSelectionModel());
                     }
                 });
+    }
+
+    /**
+     * sets up the buttons languages properly.
+     */
+    private void setUpLanguages() {
+        ResourceBundle bundle = HomeScreenCtrl.getBundle();
+        editCollectionsT.setText(bundle.getString("Edit_Collections"));
+        saveB.setText(bundle.getString("Save"));
+        statusTextTBI.setText(bundle.getString("Status_Text_TBI")); //todo - this is wrong
+        makeDefaultB.setText(bundle.getString("Make_Default"));
+        statusT.setText(bundle.getString("Status"));
+        titleT.setText(bundle.getString("Title"));
+        serverT.setText(bundle.getString("Server"));
+        collectionT.setText(bundle.getString("Collection"));
     }
 
     /**
@@ -324,13 +353,13 @@ public class EditCollectionsViewCtrl {
      */
     public void deleteCollection() {
         Collection selectedCollection = collectionsListView.getSelectionModel().getSelectedItem();
-
+        ResourceBundle bundle = HomeScreenCtrl.getBundle();
         if (selectedCollection == null) {
-            showAlert(AlertType.WARNING, "No Selection", "Please select a collection to delete.");
+            showAlert(AlertType.WARNING, bundle.getString("NoSelection"),
+                    bundle.getString("NoSelectionB"));
             System.err.println("No collection selected to delete."); //testing
             return;
         }
-
         if(selectedCollection.equals(homeScreenCtrl.default_collection)){
             showAlert(AlertType.ERROR, "Deleting the default collection", "The default collection "+
                     "can't be deleted, please select a different collection!");
@@ -339,9 +368,9 @@ public class EditCollectionsViewCtrl {
 
         // Pop-up for the confirmation of deletion
         Alert confirmationAlert = new Alert(AlertType.CONFIRMATION);
-        confirmationAlert.setTitle("Delete Confirmation");
-        confirmationAlert.setHeaderText("Are you sure?");
-        confirmationAlert.setContentText("Are you sure you want to delete the collection: "
+        confirmationAlert.setTitle(bundle.getString("Delete_Confirmation"));
+        confirmationAlert.setHeaderText(bundle.getString("Delete_Confirmation_h"));
+        confirmationAlert.setContentText(bundle.getString("Delete_Confirmation_m")
                 + selectedCollection.getCollectionTitle() + "?");
 
         // Wait for the user's response
@@ -351,7 +380,6 @@ public class EditCollectionsViewCtrl {
         if (result.isPresent() && result.get() == ButtonType.OK) {
             try {
                 HomeScreenCtrl.deleteCollectionFromServer(selectedCollection.getCollectionId());
-
                 Platform.runLater(() -> {
                     collections.remove(selectedCollection);
                     collectionsListView.getSelectionModel().clearSelection();
@@ -361,10 +389,11 @@ public class EditCollectionsViewCtrl {
                 });
 
                 showAlert(AlertType.INFORMATION,
-                        "Delete Successful",
-                        "Collection deleted successfully.");
+                        bundle.getString("DeleteSuccessful"),
+                        bundle.getString("DeleteSuccessful_b"));
             } catch (Exception e) {
-                System.err.println("Error while deleting collection: " + e.getMessage());
+                System.err.println(bundle.getString("DelCollectionErr")
+                        + e.getMessage());
                 e.printStackTrace();
             }
         } else {
