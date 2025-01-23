@@ -59,7 +59,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class HomeScreenCtrl {
     /**
@@ -412,6 +411,7 @@ public class HomeScreenCtrl {
         configureScrollPane();
         configureTextFiltering();
         Platform.runLater(this::refresh); // Ensure tags and notes sync correctly
+        Platform.runLater(this::updateUIAfterChange);
     }
 
     /**
@@ -639,11 +639,8 @@ public class HomeScreenCtrl {
         selectCollectionBox.setItems(collectionOptions);
 
         if(ok==1) { // check if it's the first run in the session
-            //auto-set to the Default collection
-            int defaultIndex = IntStream.range(0, collectionOptions.size())
-                    .filter(i -> collectionOptions.get(i).getCollectionTitle().equals("Default"))
-                    .findFirst().orElse(0);
-            selectCollectionBox.setValue(collectionOptions.get(defaultIndex));
+            //auto-set to show All notes
+            selectCollectionBox.setValue(collectionOptions.get(0));
             ok=0;
             // Show a pop-up informing the user about the default collection
             PauseTransition delay = new PauseTransition(Duration.seconds(2.5));
@@ -667,6 +664,7 @@ public class HomeScreenCtrl {
         selectCollectionBox.getSelectionModel()
                 .selectedItemProperty().addListener((obs, oldCollection, newCollection) -> {
                     if (!newCollection.equals(oldCollection)) {
+                        loadCollectionsFromServer();
                         updateNotesList(newCollection);
 
                         // Update current collection based on selection
@@ -688,6 +686,7 @@ public class HomeScreenCtrl {
         for (int i = 0; i < currentServer.getCollections().size(); i++) {
             if (currentServer.getCollections().get(i).getCollectionTitle().equals("Default")) {
                 default_collection = currentServer.getCollections().get(i);
+                currentCollection = default_collection;
                 break;
             }
         }
@@ -737,11 +736,15 @@ public class HomeScreenCtrl {
      */
     private void updateNotesList(Collection selectedCollection) {
         if (selectedCollection.getCollectionTitle().equals("All")) {
+            loadCollectionsFromServer();
             notes.setAll(currentServer.getCollections().stream()
                     .flatMap(collection -> collection.getNotes().stream())
                     .toList());
+            updateUIAfterChange();
         } else {
+            loadCollectionsFromServer();
             notes.setAll(selectedCollection.getNotes());
+            updateUIAfterChange();
         }
     }
 
@@ -1793,14 +1796,15 @@ public class HomeScreenCtrl {
      */
     public void addCommand(final Note newNote) throws IOException {
         Note savedNote = saveNoteToServer(newNote);
-        currentCollection.addNote(savedNote);  // Add to the collection
-        notes.add(savedNote);                   // Add to the ObservableList
-        notesListView.getSelectionModel().select(savedNote);
-        // Update UI fields
-        currentNote = savedNote;
-        noteTitleF.setText(savedNote.getTitle());
-        noteBodyF.setText(savedNote.getBody());
-
+        if(savedNote!=null){
+            currentCollection.addNote(savedNote);  // Add to the collection
+            notes.add(savedNote);                   // Add to the ObservableList
+            notesListView.getSelectionModel().select(savedNote);
+            // Update UI fields
+            currentNote = savedNote;
+            noteTitleF.setText(savedNote.getTitle());
+            noteBodyF.setText(savedNote.getBody());
+        }
         updateUIAfterChange();
     }
 
@@ -1816,8 +1820,11 @@ public class HomeScreenCtrl {
      * @return a Note that was saved with a unique id
      */
     public Note saveNoteToServer(final Note note) throws IOException {
+        System.out.println(currentCollection.getCollectionId() + " " +
+                currentCollection.getCollectionId()); // testing
         try {
-            Note savedNote = serverUtils.saveNoteToServer(note);
+            Note savedNote = serverUtils.saveNoteToServer(note,
+                    currentCollection.getCollectionId());
             note.setNoteId(savedNote.getNoteId());
             return savedNote;
         } catch (IOException e) {
@@ -1907,7 +1914,13 @@ public class HomeScreenCtrl {
             // Remove the note from the ObservableList (UI)
             notes.remove(noteToDelete);
             // Remove the note from the current collection
-            currentCollection.getNotes().remove(noteToDelete);
+            if(currentCollection.getNotes().contains(noteToDelete)) {
+                currentCollection.getNotes().remove(noteToDelete);
+                notes.remove(noteToDelete);
+            } else {
+                noteToDelete.getCollection().getNotes().remove(noteToDelete);
+                notes.remove(noteToDelete);
+            }
             // Send a delete request to the server
             deleteRequest(noteId);
         } else {

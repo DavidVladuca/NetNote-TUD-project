@@ -42,11 +42,12 @@ public class NoteController {
     /**
      * Endpoint for creating notes - still working with only 1 Default Collection
      * @param note - Note object
+     * @param collectionId - ID of the collection that needs to save the note
      * @return - Response, indicating note was created
      */
     @PostMapping("/create")
-    public ResponseEntity<Note> createNote(@RequestBody Note note) {
-        // 0 is the default collection in the database
+    public ResponseEntity<Note> createNote(@RequestBody Note note,
+                                           @RequestParam Long collectionId) {
         // Ensure default Server exists - if not, create it
         Server server = serverRepository.findById(0L)
                 .orElseGet(() -> {
@@ -55,8 +56,8 @@ public class NoteController {
                     return serverRepository.save(newServer);
                 });
 
-        // Ensure default Collection exists - if not, again, create it
-        Collection collection = collectionRepository.findById(0L).orElseGet(() -> {
+        // Ensure current Collection exists - if not, again, create it
+        Collection collection = collectionRepository.findById(collectionId).orElseGet(() -> {
             Collection defaultCollection = new Collection();
             defaultCollection.setCollectionId(0);
             defaultCollection.setCollectionTitle("Default Collection");
