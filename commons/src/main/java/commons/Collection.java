@@ -25,6 +25,9 @@ public class Collection {
     @Column(name = "collection_path", nullable = false)
     private String collectionPath = "-";
 
+    @Column(name = "default_collection", nullable = false)
+    private boolean defaultCollection = false;
+
     @OneToMany(mappedBy = "collection", cascade = CascadeType.ALL,
             fetch = FetchType.LAZY, orphanRemoval = true)
     @JsonManagedReference
@@ -45,12 +48,15 @@ public class Collection {
      * @param server          - The server associated with the collection.
      * @param collectionTitle - The title of the collection.
      * @param collectionPath  - The path in the URL for the collection
+     * @param isDefaultCollection - The type of collection
      */
-    public Collection(Server server, String collectionTitle, String collectionPath) {
+    public Collection(Server server, String collectionTitle,
+                      String collectionPath, boolean isDefaultCollection) {
         this.server = server;
         this.collectionTitle = collectionTitle;
         this.collectionPath = collectionPath;
         this.notes = new ArrayList<>();
+        this.defaultCollection = isDefaultCollection;
     }
 
     /**
@@ -189,6 +195,8 @@ public class Collection {
                 "Collection ID: " + collectionId + "\n" +
                 "Server ID: " + server.getServerId() + "\n" +
                 "Collection Title: " + collectionTitle + "\n" +
+                "Collection Path: " + collectionPath + "\n" +
+                "Default Collection: " + defaultCollection + "\n" +
                 "Notes:\n\n" + (!notesString.isEmpty() ? notesString : "No Notes");
     }
 
@@ -261,10 +269,25 @@ public class Collection {
 
     /**
      * getter for latest note id
-     *
      * @return returns note id of the previous note
      */
     public long getLatestNoteId() {
         return latestNoteId;
+    }
+
+    /**
+     * getter for isDefaultCollection
+     * @return value of isDefaultCollection
+     */
+    public boolean isDefaultCollection() {
+        return defaultCollection;
+    }
+
+    /**
+     * setter for isDefaultCollection
+     * @param defaultCollection - new value of isDefaultCollection
+     */
+    public void setDefaultCollection(boolean defaultCollection) {
+        this.defaultCollection = defaultCollection;
     }
 }

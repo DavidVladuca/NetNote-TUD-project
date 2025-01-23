@@ -20,10 +20,14 @@ public class CollectionTest {
     public void setUp() {
         server1 = new Server();
         Server server2 = new Server();
-        collection1 = new Collection(server1, "Test Collection 1", "collection-1");
-        collection2 = new Collection(server1, "Test Collection 1","collection-1");
-        differentCollection = new Collection(server2, "Test Collection 2", "collection-2");
-        emptyCollection = new Collection(server1, "Empty Collection", "empty-collection");
+        collection1 = new Collection(server1, "Test Collection 1",
+                "collection-1", false);
+        collection2 = new Collection(server1, "Test Collection 1",
+                "collection-1", false);
+        differentCollection = new Collection(server2, "Test Collection 2",
+                "collection-2", false);
+        emptyCollection = new Collection(server1, "Empty Collection",
+                "empty-collection", false);
 
     }
 
@@ -93,10 +97,12 @@ public class CollectionTest {
                 Collection ID: %d
                 Server ID: %d
                 Collection Title: Empty Collection
+                Collection Path: empty-collection
+                Default Collection: %b
                 Notes:
 
                 No Notes
-                """.formatted(emptyCollection.getCollectionId(), server1.getServerId());
+                """.formatted(emptyCollection.getCollectionId(), server1.getServerId(), emptyCollection.isDefaultCollection());
 
         assertEquals(expectedOutput.trim(), emptyCollection.toString().trim(), "toString should match the expected format for an empty collection");
     }
