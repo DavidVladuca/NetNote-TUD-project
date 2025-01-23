@@ -53,9 +53,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -274,11 +272,7 @@ public class HomeScreenCtrl {
      * Invoker for keeping history of commands and executing them.
      */
     private final CommandInvoker invoker = new CommandInvoker();
-    /**
-     * Keeps track of last note deleted.
-     * It is useful for the undo button.
-     */
-    private Note lastDeletedNote = null;
+
     /**
      * Button to show tags scene.
      */
@@ -356,7 +350,14 @@ public class HomeScreenCtrl {
      * Boolean that determines whether title is in progress or not.
      */
     private boolean isTitleEditInProgress = false;
-
+    /**
+     * The original body, prior to the change.
+     */
+    private String originalBody;
+    /**
+     * Boolean that determines whether body is in progress or not.
+     */
+    private boolean isBodyEditInProgress = false;
     /**
      * Title of note in last sync to server.
      */
@@ -365,6 +366,13 @@ public class HomeScreenCtrl {
      * Body of note in last sync to server.
      */
     private String lastSyncedBody = "";
+
+    /**
+     * A queue that holds commands to be processed one at a time in a separate thread.
+     * * This ensures commands are executed in the order they are added to the queue.
+     */
+    private final BlockingQueue<Command> commandQueue = new LinkedBlockingQueue<>();
+
 
     /**
      * This method initializes the controller
@@ -388,6 +396,9 @@ public class HomeScreenCtrl {
         setupNotesListView();
         setupImageListView();
         handleTitleEdits();
+        handleBodyEdits();
+        handleNoteChanges();
+        startCommandProcessor();
         prevMatch();
         nextMatch();
         enableJavaScript();
@@ -519,36 +530,91 @@ public class HomeScreenCtrl {
     }
 
     /**
-     * Method to handle title edits.
+     * Method which handles upcoming edits in the title
      */
     private void handleTitleEdits() {
-        notesListView.getSelectionModel()
-                .selectedItemProperty()
-                .addListener((observable, oldValue, newValue) -> {
-                    if (newValue != null) {
-                        originalTitle = newValue.getTitle();
+        // Listener for focus changes on the title field
+        noteTitleF.focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue) { // Gaining focus
+                currentEditState = EditState.TITLE;// Set active edit state
+                System.out.println("NOW EDITING TITLE"); // For testing purposes
+            } else { // Losing focus
+                // Finalize title edits if they are in progress
+                if (isTitleEditInProgress) {
+                    System.out.println("FINALIZING TITLE EDITS"); // For testing purposes
+                    titleEdit(); // Save title changes
+                    isTitleEditInProgress = false; // Reset the edit flag
+                }
+                currentEditState = EditState.NONE; // Reset state
+            }
+        });
+        // Listener for text changes in the title field
+        noteTitleF.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null || newValue.equals(originalTitle)) {
+                isTitleEditInProgress = false;
+            } else {
+                isTitleEditInProgress = true;
+            }
+        });
+    }
+
+    /**
+     * Method which handles upcoming edits in the body
+     */
+    private void handleBodyEdits() {
+        // Listener for focus changes on the body field
+        noteBodyF.focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue) { // Gaining focus
+                currentEditState = EditState.BODY;// Set active edit state
+                System.out.println("NOW EDITING BODY"); // For testing purposes
+            } else { // Losing focus
+                // Finalize body edits if they are in progress
+                if (isBodyEditInProgress) {
+                    System.out.println("FINALIZING BODY EDITS"); // For testing purposes
+                    bodyEdit(); // Save body changes
+                    isBodyEditInProgress = false; // Reset the edit flag
+                }
+                currentEditState = EditState.NONE; // Reset state
+            }
+        });
+
+        // Listener for text changes in the body field
+        noteBodyF.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null || newValue.equals(originalBody)) {
+                isBodyEditInProgress = false;
+            } else {
+                isBodyEditInProgress = true;
+            }
+        });
+    }
+
+    /**
+     * Handles changing the currently selected note (Important for finalizing editing operations)
+     */
+    private void handleNoteChanges() {
+        // Listener for note selection changes in the ListView
+        notesListView.
+                getSelectionModel().
+                selectedItemProperty().addListener((observable, oldNote, newNote) -> {
+                    // Finalizes edits for the previously selected note
+                    if (currentEditState == EditState.TITLE && isTitleEditInProgress) {
+                        titleEdit(); // Save title changes
+                        isTitleEditInProgress = false; // Reset the edit flag
+                    } else if (currentEditState == EditState.BODY && isBodyEditInProgress) {
+                        bodyEdit(); // Save body changes
+                        isBodyEditInProgress = false; // Reset the edit flag
+                    }
+                    // Loads the new note's data
+                    if (newNote != null) {
+                        originalTitle = newNote.getTitle();
+                        originalBody = newNote.getBody();
                         noteTitleF.setText(originalTitle);
-                        // Reset the flag when use selects a note
+                        noteBodyF.setText(originalBody);
+
+                        // Reset edit flags and state
                         isTitleEditInProgress = false;
-                    }
-                });
-
-        noteTitleF.focusedProperty()
-                .addListener((observable, oldValue, newValue) -> {
-                    // Only call if title was edited
-                    if (!newValue && isTitleEditInProgress) {
-                        titleEdit();
-                        syncNoteWithServer(currentNote);
-                        //updateMarkdownView();
-                    }
-                });
-
-        noteTitleF
-                .textProperty()
-                .addListener((observable, oldValue, newValue) -> {
-                    if (!newValue.equals(originalTitle)) {
-                        isTitleEditInProgress = true; // Title is being edited
-                        currentNote.setTitle(newValue.trim());
+                        isBodyEditInProgress = false;
+                        currentEditState = EditState.NONE;
                     }
                 });
     }
@@ -635,6 +701,10 @@ public class HomeScreenCtrl {
         }
     }
 
+    /**
+     * EditState enum for keeping track of the editing of the fields
+     */
+    private EditState currentEditState = EditState.NONE;
 
     /**
      * Fetches collections from the server and stores them locally
@@ -1619,6 +1689,7 @@ public class HomeScreenCtrl {
 
     /**
      * This method shows the 'toast' pop up when a note is added
+     *
      * @param message - the message to be displayed
      */
     private void showAddInfo(String message) {
@@ -1741,13 +1812,7 @@ public class HomeScreenCtrl {
                 // Create a delete command and execute it
                 Command deleteCommand = new DeleteNoteCommand(
                         this, selectedNote);
-                lastDeletedNote = selectedNote;
                 invoker.executeCommand(deleteCommand);
-                // For testing purposes
-                System.out.println(
-                        "Note deleted: " + lastDeletedNote.getTitle());
-                System.out.println(
-                        "Note deleted: " + lastDeletedNote.getNoteId());
                 //Confirmation alert that note was deleted
                 bundle = ResourceBundle.getBundle("MyBundle", locale);
                 String alertTitle = bundle.getString("Note_deleted");
@@ -1838,6 +1903,37 @@ public class HomeScreenCtrl {
     }
 
     /**
+     * Method that edits the body of the currently selected note
+     */
+    public void bodyEdit() {
+        if (!isBodyEditInProgress) { // Check if a body edit is in progress
+            return;
+        }
+
+        Note selectedNote = notesListView.getSelectionModel().getSelectedItem();
+        if (selectedNote != null) {
+            String newBody = noteBodyF.getText().trim();
+
+            if (!newBody.equals(originalBody)) {
+                try {
+                    // If different from original body, update body and sync with the server
+                    // (Invoke command for editing body)
+                    Command editBodyCommand = new EditBodyCommand(
+                            currentNote, originalBody, newBody, HomeScreenCtrl.this);
+                    commandQueue.offer(editBodyCommand);
+                    originalBody = newBody; // Update the original body to the new body
+                } catch (Exception e) {
+                    errorLogger.log(
+                            Level.INFO,
+                            "Error handling body edit: " + e.getMessage()
+                    );
+                }
+            }
+            isBodyEditInProgress = false;
+        }
+    }
+
+    /**
      * Edits the title of the currently selected note.
      */
     public void titleEdit() {
@@ -1875,9 +1971,7 @@ public class HomeScreenCtrl {
                     } else { // If not duplicate, update title and sync with server
                         Command editTitleCommand = new EditTitleCommand(currentNote,
                                 originalTitle, newTitle, HomeScreenCtrl.this);
-                        invoker.executeCommand(editTitleCommand);
-                        // Notify the backend to update references
-                        updateReferencesInNotes(originalTitle, newTitle);
+                        commandQueue.offer(editTitleCommand);
                         originalTitle = newTitle;
                     }
                 } catch (Exception e) {
@@ -1886,6 +1980,7 @@ public class HomeScreenCtrl {
                             + e.getMessage());
                 }
             }
+            isTitleEditInProgress = false;
         }
     }
 
@@ -2492,7 +2587,7 @@ public class HomeScreenCtrl {
      */
     private void setupImageListView() {
         imageListView.setOnMouseClicked(event -> {
-            if(event.getClickCount() == 2) {
+            if (event.getClickCount() == 2) {
                 String selectedImageName = imageListView.getSelectionModel().getSelectedItem();
                 if (selectedImageName != null) {
                     renameImage(selectedImageName);
@@ -2755,6 +2850,29 @@ public class HomeScreenCtrl {
         alert.setContentText(message);
         alert.showAndWait();
     }
+    /**
+     * Starts a separate thread to process commands from the queue.
+     */
+    private void startCommandProcessor() {
+        Thread commandProcessorThread = new Thread(() -> {
+            try {
+                while (true) {
+                    // Take the next command from the queue and execute it
+                    Command command = commandQueue.take();
+                    invoker.executeCommand(command);
+                    System.out.println("COMMAND EXECUTED: " + command.toString());
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt(); // Restore interrupted status
+                System.err.println("Command processor interrupted: " + e.getMessage());
+            }
+        });
+
+        commandProcessorThread.setDaemon(true); // Ensure the thread exits with the application
+        commandProcessorThread.start();
+    }
+
+
 }
 
 
