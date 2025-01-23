@@ -163,7 +163,7 @@ public class EditCollectionsViewCtrl {
         ResourceBundle bundle = HomeScreenCtrl.getBundle();
         editCollectionsT.setText(bundle.getString("Edit_Collections"));
         saveB.setText(bundle.getString("Save"));
-        statusTextTBI.setText(bundle.getString("Status_Text_TBI"));
+        statusTextTBI.setText(bundle.getString("Status_Text_TBI")); //todo - this is wrong
         makeDefaultB.setText(bundle.getString("Make_Default"));
         statusT.setText(bundle.getString("Status"));
         titleT.setText(bundle.getString("Title"));

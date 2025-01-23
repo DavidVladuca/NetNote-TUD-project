@@ -69,9 +69,9 @@
                         <Font size="14.0" />
                      </font>
                   </Button>
-                  <TextField fx:id="titleTextF" layoutX="233.0" layoutY="71.0" onAction="#titleEntry" styleClass="collection-field" stylesheets="@../css/style.css" />
-                  <TextField fx:id="serverTextF" layoutX="233.0" layoutY="114.0" onAction="#serverEntry" styleClass="collection-field" stylesheets="@../css/style.css" />
-                  <TextField fx:id="collectionTextF" layoutX="232.0" layoutY="156.0" onAction="#collectionEntry" styleClass="collection-field" stylesheets="@../css/style.css" />
+                  <TextField fx:id="titleTextF" layoutX="233.0" layoutY="71.0" styleClass="collection-field" stylesheets="@../css/style.css" />
+                  <TextField fx:id="serverTextF" layoutX="233.0" layoutY="114.0" styleClass="collection-field" stylesheets="@../css/style.css" />
+                  <TextField fx:id="collectionTextF" layoutX="232.0" layoutY="156.0" styleClass="collection-field" stylesheets="@../css/style.css" />
                   <Text fx:id="statusTextTBI" layoutX="232.0" layoutY="216.0" strokeType="OUTSIDE" strokeWidth="0.0" text="%Status_Text_TBI" textAlignment="CENTER" wrappingWidth="148.5078125" />
                   <Text fx:id="editCollectionsT" fill="#e43e38" layoutX="117.0" layoutY="43.0" strokeType="OUTSIDE" strokeWidth="0.0" text="%Edit_Collections">
                      <font>
