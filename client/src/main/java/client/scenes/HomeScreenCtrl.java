@@ -2114,15 +2114,15 @@ public class HomeScreenCtrl {
         String bodyHighlighted = currentNote.getBody();
         if (!noteMatchIndices.isEmpty()) {
             if (noteMatchIndices.getFirst() == -1L
-                    && noteMatchIndices.size() == 1L) {
+                    && noteMatchIndices.size() == 1) {
                 System.out.println(
                         "Not found in \"" + currentNote.getTitle() + "\"");
             } else {
                 //parse in special way such that the found results are
                 // highlighted
-                titleHighlighted = highlightMatchesInTitle(titleHighlighted, searchText);
                 bodyHighlighted
                         = highlightMatchesInBody(bodyHighlighted, searchText, titleHighlighted);
+                titleHighlighted = highlightMatchesInTitle(titleHighlighted, searchText);
 
             }
         }
@@ -2131,14 +2131,14 @@ public class HomeScreenCtrl {
 
         titleHighlighted = "<h1>"
                 + renderer.render(parser.parse(titleHighlighted))
-                + "</h1>";
+                + "</h1>";//todo - add bar
         bodyHighlighted = renderer.render(parser.parse(bodyHighlighted));
         String totalContent = titleHighlighted + bodyHighlighted;
         markDownOutput.getEngine().loadContent(totalContent);
     }
 
     /**
-     * This method highlights the matches in the title
+     * This method highlights the matches in the title.
      *
      * @param titleHighlighted - the title highlighted
      * @param searchText       - the search text
