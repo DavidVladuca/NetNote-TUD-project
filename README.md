@@ -45,7 +45,7 @@ PLEASE NOTE - shortcuts are not available if you are focused in a text field, yo
 
 •  **To manually refresh my client view, so I see new information on the server.** - you can refresh with the F5 shortcut, or with the refresh button in the bottom left corner of the application
 
-•  **To search for keywords, so I can find notes with matching titles or content** - We implemented two types of searching - search within a collection and a search within a note. Let's start with the main - **search within the collection**. When you search something, you have to press enter for the results to show up. This also holds for deleting the text from the search bar. For the **note search** you just type letters and it will automatically highlight matches, you can move between the matches with the arrows, next to the search bar
+•  **To search for keywords, so I can find notes with matching titles or content** - We implemented two types of searching - search within a collection and a search within a note. Let's start with the main - **search within the collection**. When you search something, the results automatically show up. For the **note search** you just type letters and it will automatically highlight matches, you can move between the matches with the arrows, next to the search bar
 
 •  **To be able to use Markdown formatting in my notes, so I can write structured notes.** - The markdown is automatically shown when editing the title/content of the note. Implemented with the commonmark library.
 
