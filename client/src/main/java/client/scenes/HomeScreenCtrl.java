@@ -606,13 +606,13 @@ public class HomeScreenCtrl {
                 getSelectionModel().
                 selectedItemProperty().addListener((observable, oldNote, newNote) -> {
                     // Finalizes edits for the previously selected note
-                    if (currentEditState == EditState.TITLE && isTitleEditInProgress) {
-                        titleEdit(); // Save title changes
-                        isTitleEditInProgress = false; // Reset the edit flag
-                    } else if (currentEditState == EditState.BODY && isBodyEditInProgress) {
-                        bodyEdit(); // Save body changes
-                        isBodyEditInProgress = false; // Reset the edit flag
-                    }
+//                    if (currentEditState == EditState.TITLE && isTitleEditInProgress) {
+//                        titleEdit(); // Save title changes
+//                        isTitleEditInProgress = false; // Reset the edit flag
+//                    } else if (currentEditState == EditState.BODY && isBodyEditInProgress) {
+//                        bodyEdit(); // Save body changes
+//                        isBodyEditInProgress = false; // Reset the edit flag
+//                    }
                     // Loads the new note's data
                     if (newNote != null) {
                         originalTitle = newNote.getTitle();
@@ -1016,6 +1016,7 @@ public class HomeScreenCtrl {
                     (!currentNote.getBody().equals(lastSyncedBody) ||
                             !currentNote.getTitle().equals(lastSyncedTitle))) {
 
+                bodyEdit(); //Save body edits automatically
                 // Sync with the server if there is a change in title or body
                 syncNoteWithServer(currentNote);
 
@@ -1159,8 +1160,6 @@ public class HomeScreenCtrl {
      */
     public void markDownTitle() {
         noteTitleF.textProperty().addListener((observable, oldValue, newValue) -> {
-            currentNote.setTitle(newValue);
-
             // Process #tags and [[notes]] in the body
             String processedContent = processTagsAndReferences(noteBodyF.getText());
 
@@ -1190,15 +1189,6 @@ public class HomeScreenCtrl {
             if (currentNote == null || currentNote.getNoteId() <= 0) {
                 System.err.println("No note selected or note ID is invalid");
                 return;
-            }
-            currentNote.setBody(newValue);
-
-            // Send the updated note to the server
-            try {
-                syncNoteWithServer(currentNote);
-            } catch (Exception e) {
-                e.printStackTrace();
-
             }
             System.out.println("Note (MD): " + currentNote.getNoteId()
                     + currentNote.getTags().toString());
