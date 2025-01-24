@@ -26,12 +26,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.text.Text;
-import javafx.scene.layout.Region;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -583,7 +579,8 @@ public class HomeScreenCtrl {
         noteTitleF.textProperty().addListener((observable, oldValue, newValue) -> {
             // Only track changes if not programmatically triggered
             if (!isProgrammaticChange) {
-                if (!newValue.equals(notesListView.getSelectionModel().getSelectedItem().getTitle())) {
+                if (!newValue.equals
+                        (notesListView.getSelectionModel().getSelectedItem().getTitle())) {
                     titleBuffer = newValue;
                 }
                 if (newValue == null || newValue.equals(originalTitle)) {
@@ -625,10 +622,11 @@ public class HomeScreenCtrl {
 
     /**
      * Updates the fields to the newly selected note
+     *
      * @param newNote - Note currently selected
      */
-  public void setNewNoteFields(Note newNote){
-        if(newNote!=null){
+    public void setNewNoteFields(Note newNote) {
+        if (newNote != null) {
             {
                 // Update the fields with the new note's data
                 originalTitle = newNote.getTitle();
@@ -642,59 +640,60 @@ public class HomeScreenCtrl {
                 currentEditState = EditState.NONE;
             }
         }
-  }
+    }
 
     /**
      * Handles changing the currently selected note (Important for finalizing editing operations)
      */
     private void handleNoteChanges() {
-
         // Listener for note selection changes in the ListView
-        notesListView.getSelectionModel().selectedItemProperty().addListener((observable, oldNote, newNote) -> {
-            if (shouldTitleBuffer) {
-                shouldTitleBuffer = false;
-                try {
-                    boolean isDuplicate = validateTitleWithServer(
-                            currentCollection.getCollectionId(), titleBuffer);
-
-                    if (isDuplicate) isDuplicateAlert(titleBuffer); // Display alert for duplicate title
-                    if (titleBuffer.isEmpty()) isEmptyAlert(); // Display alert for empty title
-
-                        // Else Revert the title
-                    else {
-                        notesListView.getSelectionModel().getSelectedItem().setTitle(titleBuffer);
+        notesListView.getSelectionModel().selectedItemProperty()
+                .addListener((observable, oldNote, newNote) -> {
+                    if (shouldTitleBuffer) {
+                        shouldTitleBuffer = false;
+                        try {
+                            boolean isDuplicate = validateTitleWithServer(
+                                    currentCollection.getCollectionId(), titleBuffer);
+                            // Display alert for duplicate title
+                            if (isDuplicate) isDuplicateAlert(titleBuffer);
+                            // Display alert for empty title
+                            if (titleBuffer.isEmpty()) isEmptyAlert();
+                                // Else Revert the title
+                            else {
+                                notesListView.getSelectionModel().
+                                        getSelectedItem().setTitle(titleBuffer);
+                            }
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
+                    isProgrammaticChange = true; // Indicate it is not user edit
 
-            isProgrammaticChange = true; // Indicate it is not user edit
-
-            if (isTitleEditInProgress) {
-                isTitleEditInProgress = false;
-                // Show a confirmation alert if edits are in progress
-                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                alert.setTitle("Unsaved Changes");
-                alert.setHeaderText("You have unsaved changes.");
-                alert.setContentText("If you continue, all changes will be discarded. Do you want to proceed?");
-
-                ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-                ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
-
-                alert.getButtonTypes().setAll(cancelButton, okButton);
-
-                // Show the alert and wait for the user's response
-                Optional<ButtonType> result = alert.showAndWait();
-
-                if (!result.isPresent() || result.get() == cancelButton) {
-                    shouldTitleBuffer = true; // Indicate that the title buffered should be restored
-                    notesListView.getSelectionModel().select(oldNote); // Restore the old title
-                }
-                return;
-            }
-            setNewNoteFields(newNote);
-        });
+                    if (isTitleEditInProgress) {
+                        isTitleEditInProgress = false;
+                        // Show a confirmation alert if edits are in progress
+                        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                        alert.setTitle("Do you want to proceed?");
+                        alert.setHeaderText("You have unsaved changes.");
+                        alert.
+                                setContentText("If you continue, all changes will be discarded.");
+                        ButtonType cancelButton =
+                                new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+                        ButtonType okButton =
+                                new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+                        alert.getButtonTypes().setAll(cancelButton, okButton);
+                        // Show the alert and wait for the user's response
+                        Optional<ButtonType> result = alert.showAndWait();
+                        if (!result.isPresent() || result.get() == cancelButton) {
+                            // Indicate that the title buffered should be restored
+                            shouldTitleBuffer = true;
+                            // Restore the old title
+                            notesListView.getSelectionModel().select(oldNote);
+                        }
+                        return;
+                    }
+                    setNewNoteFields(newNote);
+                });
     }
 
 
@@ -2016,7 +2015,8 @@ public class HomeScreenCtrl {
      * Undoes the last action.
      */
     public void undo() {
-        isProgrammaticChange = true; // Indicate that the undo change restores the title and body, and it is not user edit
+        // Indicate that the undo change restores the title and body, and it is not user edit
+        isProgrammaticChange = true;
         invoker.undoLastCommand(); // Undo the last command with invoker
 
         // Refresh UI fields to reflect the reverted state of the note
@@ -2989,7 +2989,8 @@ public class HomeScreenCtrl {
                     // Take the next command from the queue and execute it
                     Command command = commandQueue.take();
                     Platform.runLater(() -> {
-                        invoker.executeCommand(command); // Invoke the command on JavaFX thread for no errors
+                        // Invoke the command on JavaFX thread for no errors
+                        invoker.executeCommand(command);
                     });
                     System.out.println("COMMAND EXECUTED: " + command.toString());
                 }
