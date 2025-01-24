@@ -3,6 +3,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ScrollBar?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
@@ -15,7 +16,6 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.web.WebView?>
 
-<?import javafx.scene.control.ScrollBar?>
 <Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="607.0" prefWidth="1000.0" style="-fx-background-color: #1E1E1E;" styleClass="background" stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <HBox layoutY="62.0" prefHeight="546.0" prefWidth="1000.0" style="-fx-background-color: #1E1E1E;" styleClass="bordered" stylesheets="@../css/style.css">
@@ -42,10 +42,10 @@
 
                   <HBox alignment="CENTER_LEFT" spacing="10.0" style="-fx-padding: 5; -fx-background-color: white; -fx-background-radius: 5;">
                      <!-- Scrollable Tag Box -->
-                     <VBox spacing="0" style="-fx-background-color: transparent;" prefWidth="400.0">
-                        <ScrollPane fx:id="tagsScrollPane" hbarPolicy="NEVER" vbarPolicy="NEVER" fitToHeight="false" fitToWidth="true" prefHeight="50.0" prefWidth="400.0" style="-fx-background: white; -fx-border-color: transparent;">
+                     <VBox prefWidth="400.0" spacing="0" style="-fx-background-color: transparent;">
+                        <ScrollPane fx:id="tagsScrollPane" fitToHeight="false" fitToWidth="true" hbarPolicy="NEVER" prefHeight="50.0" prefWidth="400.0" style="-fx-background: white; -fx-border-color: transparent;" vbarPolicy="NEVER">
                            <content>
-                              <HBox fx:id="selectedTagsContainer" spacing="5.0" alignment="CENTER" style="-fx-padding: 5; -fx-background-color: white;" prefHeight="50.0">
+                              <HBox fx:id="selectedTagsContainer" alignment="CENTER" prefHeight="50.0" spacing="5.0" style="-fx-padding: 5; -fx-background-color: white;">
                                  <!-- Dynamic ChoiceBox elements and placeholder text will be added here -->
                               </HBox>
                            </content>
@@ -92,7 +92,7 @@
             <Font name="Plus Jakarta Sans Bold" size="18.0" />
          </font>
       </Text>
-      <TextField fx:id="searchCollectionF" layoutX="226.0" layoutY="16.0" onAction="#searchCollection" prefHeight="30.0" prefWidth="343.0" promptText="%Search" style="-fx-background-color: #262626;" styleClass="searchField" stylesheets="@../css/style.css" />
+      <TextField fx:id="searchCollectionF" layoutX="226.0" layoutY="16.0" onKeyReleased="#searchCollection" prefHeight="30.0" prefWidth="343.0" promptText="%Search" style="-fx-background-color: #262626;" styleClass="searchField" stylesheets="@../css/style.css" />
       <ComboBox fx:id="selectCollectionBox" layoutX="761.0" layoutY="27.0" prefWidth="150.0" style="-fx-background-color: #262626;" styleClass="selection" stylesheets="@../css/style.css" />
       <Text fx:id="languageText" fill="#e43e38" layoutX="922.0" layoutY="18.0" strokeType="OUTSIDE" strokeWidth="0.0" text="%Language" />
       <Button fx:id="editCollectionsB" layoutX="584.0" layoutY="15.0" mnemonicParsing="false" onAction="#editCollections" prefHeight="32.0" prefWidth="157.0" style="-fx-background-color: #e43e38; -fx-background-radius: 10;" stylesheets="@../css/style.css" text="%edit_collection" textFill="WHITE" />

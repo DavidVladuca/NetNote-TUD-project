@@ -2258,6 +2258,7 @@ public class HomeScreenCtrl {
      * Searches through the notes and respects the current filters, including tags.
      */
     public void searchCollection() {
+        filterNotesByTags();
         // Normalize search text
         String searchText = searchCollectionF.getText().trim().toLowerCase();
 
