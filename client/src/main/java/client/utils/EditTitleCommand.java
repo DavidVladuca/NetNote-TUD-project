@@ -13,10 +13,10 @@ public class EditTitleCommand implements Command {
 
     /**
      * This is a constructor for EditTitleCommand class
-     * @param note - note provided
-     * @param oldTitle - the old title that was before execution
+     * @param note - (Note) note provided
+     * @param oldTitle - (Stack<String>) the old titles that were before execution
      * @param newTitle - the new title after execution
-     * @param controller - the HomeScreenController
+     * @param controller - (HomeScreenCtrl) the HomeScreenController
      */
     public EditTitleCommand(Note note,String oldTitle, String newTitle, HomeScreenCtrl controller) {
         this.note = note;
@@ -31,6 +31,7 @@ public class EditTitleCommand implements Command {
     @Override
     public void execute() {
         note.setTitle(newTitle);
+        controller.syncNoteWithServer(note);
     }
 
     /**
@@ -40,6 +41,5 @@ public class EditTitleCommand implements Command {
     public void undo() {
         note.setTitle(oldTitles.pop());
         controller.syncNoteWithServer(note);
-
     }
 }

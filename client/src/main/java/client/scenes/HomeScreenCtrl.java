@@ -236,6 +236,14 @@ public class HomeScreenCtrl {
      * Language selection box in JavaFX.
      */
     public ComboBox<Language> selectLangBox = new ComboBox<>();
+
+    /**
+     * Boolean variable that keeps track whether the edits of the title and body are due to program or user change
+     * Default is true, as the first selected note sets the text fields programmatically
+     */
+    boolean isProgrammaticChange = true;
+
+
     /**
      * Title text field in the scene.
      */
@@ -280,6 +288,7 @@ public class HomeScreenCtrl {
      * Button to show tags scene.
      */
     public Button clearTagsB;
+
 
     /**
      * List of filtered tags
@@ -369,6 +378,16 @@ public class HomeScreenCtrl {
      * Body of note in last sync to server.
      */
     private String lastSyncedBody = "";
+
+    /**
+     * String buffer for the title edit that has not been saved properly
+     */
+    String titleBuffer="";
+
+    /**
+     * Boolean that indicated whether the buffered title shoud be restored
+     */
+    boolean shouldTitleBuffer=false;
 
     /**
      * Value that asserts if it's the first run in the session
@@ -544,26 +563,36 @@ public class HomeScreenCtrl {
     private void handleTitleEdits() {
         // Listener for focus changes on the title field
         noteTitleF.focusedProperty().addListener((observable, oldValue, newValue) -> {
+
             if (newValue) { // Gaining focus
+                isProgrammaticChange=false; // Indicate it is not user edit
                 currentEditState = EditState.TITLE;// Set active edit state
-                System.out.println("NOW EDITING TITLE"); // For testing purposes
+                // For testing purposes
             } else { // Losing focus
                 // Finalize title edits if they are in progress
-                if (isTitleEditInProgress) {
-                    System.out.println("FINALIZING TITLE EDITS"); // For testing purposes
-                    titleEdit(); // Save title changes
-                    isTitleEditInProgress = false; // Reset the edit flag
+                if (!isProgrammaticChange) { // Only finalize edits if this is a user-initiated focus loss
+                    if (isTitleEditInProgress) {
+                        titleEdit();// Save title changes
+                        isTitleEditInProgress = false; // Reset the edit flag
+                    }
                 }
                 currentEditState = EditState.NONE; // Reset state
             }
         });
+
         // Listener for text changes in the title field
         noteTitleF.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue == null || newValue.equals(originalTitle)) {
-                isTitleEditInProgress = false;
-            } else {
-                isTitleEditInProgress = true;
-            }
+
+                    if (!isProgrammaticChange) { // Only track changes if not programmatically triggered
+                        if(!newValue.equals(notesListView.getSelectionModel().getSelectedItem().getTitle())){
+                            titleBuffer=newValue;
+                        }
+                        if (newValue == null || newValue.equals(originalTitle)) {
+                            isTitleEditInProgress = false;
+                        } else {
+                            isTitleEditInProgress = true;
+                        }
+                    }
         });
     }
 
@@ -575,11 +604,9 @@ public class HomeScreenCtrl {
         noteBodyF.focusedProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue) { // Gaining focus
                 currentEditState = EditState.BODY;// Set active edit state
-                System.out.println("NOW EDITING BODY"); // For testing purposes
             } else { // Losing focus
                 // Finalize body edits if they are in progress
                 if (isBodyEditInProgress) {
-                    System.out.println("FINALIZING BODY EDITS"); // For testing purposes
                     bodyEdit(); // Save body changes
                     isBodyEditInProgress = false; // Reset the edit flag
                 }
@@ -597,36 +624,72 @@ public class HomeScreenCtrl {
         });
     }
 
+
+
     /**
      * Handles changing the currently selected note (Important for finalizing editing operations)
      */
     private void handleNoteChanges() {
-        // Listener for note selection changes in the ListView
-        notesListView.
-                getSelectionModel().
-                selectedItemProperty().addListener((observable, oldNote, newNote) -> {
-                    // Finalizes edits for the previously selected note
-//                    if (currentEditState == EditState.TITLE && isTitleEditInProgress) {
-//                        titleEdit(); // Save title changes
-//                        isTitleEditInProgress = false; // Reset the edit flag
-//                    } else if (currentEditState == EditState.BODY && isBodyEditInProgress) {
-//                        bodyEdit(); // Save body changes
-//                        isBodyEditInProgress = false; // Reset the edit flag
-//                    }
-                    // Loads the new note's data
-                    if (newNote != null) {
-                        originalTitle = newNote.getTitle();
-                        originalBody = newNote.getBody();
-                        noteTitleF.setText(originalTitle);
-                        noteBodyF.setText(originalBody);
 
-                        // Reset edit flags and state
-                        isTitleEditInProgress = false;
-                        isBodyEditInProgress = false;
-                        currentEditState = EditState.NONE;
+        // Listener for note selection changes in the ListView
+        notesListView.getSelectionModel().selectedItemProperty().addListener((observable, oldNote, newNote) -> {
+            if(shouldTitleBuffer){
+                shouldTitleBuffer=false;
+                try {
+                    boolean isDuplicate = validateTitleWithServer(
+                            currentCollection.getCollectionId(), titleBuffer);
+
+                    if(isDuplicate) isDuplicateAlert(titleBuffer); // Display alert for duplicate title
+                    if(titleBuffer.isEmpty()) isEmptyAlert(); // Display alert for empty title
+
+                    // Else Revert the title
+                    else {
+                        notesListView.getSelectionModel().getSelectedItem().setTitle(titleBuffer);
                     }
-                });
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            isProgrammaticChange = true; // Indicate it is not user edit
+
+            if (isTitleEditInProgress) {
+                isTitleEditInProgress = false;
+                // Show a confirmation alert if edits are in progress
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                alert.setTitle("Unsaved Changes");
+                alert.setHeaderText("You have unsaved changes.");
+                alert.setContentText("If you continue, all changes will be discarded. Do you want to proceed?");
+
+                ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+                ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+
+                alert.getButtonTypes().setAll(cancelButton, okButton);
+
+                // Show the alert and wait for the user's response
+                Optional<ButtonType> result = alert.showAndWait();
+
+                if (!result.isPresent() || result.get() == cancelButton) {
+                    shouldTitleBuffer=true; // Indicate that the title buffered should be restored
+                    notesListView.getSelectionModel().select(oldNote); // Restore the old title
+                }
+                return;
+            }
+            if (newNote != null) {
+                // Update the fields with the new note's data
+                originalTitle = newNote.getTitle();
+                originalBody = newNote.getBody();
+                noteTitleF.setText(originalTitle);
+                noteBodyF.setText(originalBody);
+
+                // Reset edit flags and state
+                isTitleEditInProgress = false;
+                isBodyEditInProgress = false;
+                currentEditState = EditState.NONE;
+            }
+        });
     }
+
 
     /**
      * Obtains the current collection. In case there is none, it creates one.
@@ -1948,9 +2011,8 @@ public class HomeScreenCtrl {
      * Undoes the last action.
      */
     public void undo() {
-        //Temporary for testing
-        System.out.println("Undo");
-        invoker.undoLastCommand();
+        isProgrammaticChange=true; // Indicate that the undo change restores the title and body, and it is not user edit
+        invoker.undoLastCommand(); // Undo the last command with invoker
 
         // Refresh UI fields to reflect the reverted state of the note
         // Currently for testing
@@ -1962,6 +2024,7 @@ public class HomeScreenCtrl {
             markDownOutput.getEngine().loadContent(titleAndContent);
         }
         updateUIAfterChange();
+
     }
 
     /**
@@ -1992,6 +2055,7 @@ public class HomeScreenCtrl {
                 }
             }
             isBodyEditInProgress = false;
+            isProgrammaticChange=true;
         }
     }
 
@@ -2012,21 +2076,11 @@ public class HomeScreenCtrl {
                             currentCollection.getCollectionId(), newTitle);
                     // Show and alert if the title is duplicate
                     if (isDuplicate) {
-                        String alertTitle = bundle.getString("Title_dup_t");
-                        String alertHeader = bundle.getString("Title_dup_h");
-                        String alertContent1 = bundle.getString("Title_dup_m1");
-                        String alertContent2 = bundle.getString("Title_dup_m2");
-                        String alertContent3 = bundle.getString("Title_dup_m3");
-                        showWarningAlert(alertTitle,
-                                alertHeader, alertContent1 + newTitle
-                                        + alertContent2 + alertContent3);
+                       isDuplicateAlert(newTitle);
                         // Revert to the original title
                         Platform.runLater(() -> noteTitleF.setText(originalTitle));
                     } else if (newTitle.isEmpty()) {
-                        String alertTitle = bundle.getString("Empty_title_t");
-                        String alertHeader = bundle.getString("Empty_title_h");
-                        String alertBod = bundle.getString("Empty_title_m");
-                        showWarningAlert(alertTitle, alertHeader, alertBod);
+
                         // Revert to the original title
                         Platform.runLater(() -> noteTitleF.setText(originalTitle));
                         updateUIAfterChange();
@@ -2043,6 +2097,7 @@ public class HomeScreenCtrl {
                 }
             }
             isTitleEditInProgress = false;
+            isProgrammaticChange=true;
         }
     }
 
@@ -2914,6 +2969,7 @@ public class HomeScreenCtrl {
     }
     /**
      * Starts a separate thread to process commands from the queue.
+     * Optimizes command invoking performance
      */
     private void startCommandProcessor() {
         Thread commandProcessorThread = new Thread(() -> {
@@ -2921,7 +2977,9 @@ public class HomeScreenCtrl {
                 while (true) {
                     // Take the next command from the queue and execute it
                     Command command = commandQueue.take();
-                    invoker.executeCommand(command);
+                    Platform.runLater(() -> {
+                        invoker.executeCommand(command); // Invoke the command on JavaFX thread for no errors
+                    });
                     System.out.println("COMMAND EXECUTED: " + command.toString());
                 }
             } catch (InterruptedException e) {
@@ -2934,6 +2992,30 @@ public class HomeScreenCtrl {
         commandProcessorThread.start();
     }
 
+    /**
+     * Alert if title is empty
+     */
+    public void isEmptyAlert(){
+        String alertTitle = bundle.getString("Empty_title_t");
+        String alertHeader = bundle.getString("Empty_title_h");
+        String alertBod = bundle.getString("Empty_title_m");
+        showWarningAlert(alertTitle, alertHeader, alertBod);
+    }
+
+    /**
+     * Alert if title is duplica
+     * @param title - String title
+     */
+    public void isDuplicateAlert(String title){
+        String alertTitle = bundle.getString("Title_dup_t");
+        String alertHeader = bundle.getString("Title_dup_h");
+        String alertContent1 = bundle.getString("Title_dup_m1");
+        String alertContent2 = bundle.getString("Title_dup_m2");
+        String alertContent3 = bundle.getString("Title_dup_m3");
+        showWarningAlert(alertTitle,
+                alertHeader, alertContent1 + title
+                        + alertContent2 + alertContent3);
+    }
 
 }
 
