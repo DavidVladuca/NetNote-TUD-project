@@ -1967,8 +1967,20 @@ public class HomeScreenCtrl {
         if (currentNote != null) {
             noteTitleF.setText(currentNote.getTitle()); // Update title field
             noteBodyF.setText(currentNote.getBody());// Update body field
-            String title = "<h1>" + renderer.render(parser.parse(currentNote.getTitle())) + "</h1>";
-            String titleAndContent = title + currentNote.getBody();
+            String processedContent = currentNote.getBody().replaceAll("#(\\w+)",
+                    "<button style=\"background-color: #e43e38; color: white; " +
+                            "border: none; padding: 2px 6px; border-radius: 4px; cursor: "+
+                            "pointer;\" onclick=\"javaApp.filterByTag('#$1')\">#$1</button>");
+            StringBuffer processedReferences = processNoteReferences(processedContent);
+            String processedImages = processImageMarkdown(processedReferences.toString());
+            String showTitle = "<h1 class=\"title\">"
+                    + renderer.render(parser.parse(currentNote.getTitle()))
+                    + "</h1>";
+            String showContent = renderer.render(parser.parse(processedImages));
+
+            String titleAndContent = showTitle + "<hr>" + showContent;
+            titleAndContent = "<link rel='stylesheet' type='text/css' href='"
+                    + webviewCSSPath + "'>" + titleAndContent;
             markDownOutput.getEngine().loadContent(titleAndContent);
         }
         updateUIAfterChange();
@@ -2127,14 +2139,22 @@ public class HomeScreenCtrl {
             }
         }
         // Process #tags and [[notes]] after highlighting
-        String processedBody = processTagsAndReferences(bodyHighlighted);
-
-        titleHighlighted = "<h1>"
+        String processedContent = bodyHighlighted.replaceAll("#(\\w+)",
+                "<button style=\"background-color: #e43e38; color: white; " +
+                        "border: none; padding: 2px 6px; border-radius: " +
+                        "4px; cursor: pointer;\" " +
+                        "onclick=\"javaApp.filterByTag('#$1')\">#$1</button>");
+        StringBuffer processedReferences = processNoteReferences(processedContent);
+        String processedImages = processImageMarkdown(processedReferences.toString());
+        String showTitle = "<h1 class=\"title\">"
                 + renderer.render(parser.parse(titleHighlighted))
-                + "</h1>";//todo - add bar
-        bodyHighlighted = renderer.render(parser.parse(bodyHighlighted));
-        String totalContent = titleHighlighted + bodyHighlighted;
-        markDownOutput.getEngine().loadContent(totalContent);
+                + "</h1>";
+        String showContent = renderer.render(parser.parse(processedImages));
+
+        String titleAndContent = showTitle + "<hr>" + showContent;
+        titleAndContent = "<link rel='stylesheet' type='text/css' href='"
+                + webviewCSSPath + "'>" + titleAndContent;
+        markDownOutput.getEngine().loadContent(titleAndContent);
     }
 
     /**
@@ -2194,7 +2214,7 @@ public class HomeScreenCtrl {
      * @return a String representing the highlighted part
      */
     private String highlightMatch(String content, String searchText, int index, boolean isCurrent) {
-        String highlightStyle = isCurrent ? " style=\"background: #E1C16E\"" : "";
+        String highlightStyle = isCurrent ? " style=\"background: rgb(225,193,110)\"" : "";
         return content.substring(0, index)
                 + "<mark" + highlightStyle + ">"
                 + searchText
