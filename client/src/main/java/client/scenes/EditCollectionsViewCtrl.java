@@ -67,11 +67,11 @@ public class EditCollectionsViewCtrl {
      */
     public TextField titleTextF;
     /**
-     * Text field about server? todo.
+     * Text field for server to choose
      */
     public TextField serverTextF;
     /**
-     * Text field to write about collections? todo.
+     * Text field for collection description.
      */
     public TextField collectionTextF;
     /**

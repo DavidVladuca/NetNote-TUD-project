@@ -237,7 +237,6 @@ public class Note {
         ArrayList<Long> matches = new ArrayList<Long>();
         //before the user starts to write, the method will (likely) still be called
         if (searchText.isEmpty())
-            // todo - check if it is
             return matches;
         for (int i = 0; i < totalContent.length() - searchText.length() + 1; i++) {
             if (totalContent.startsWith(searchText, i))
