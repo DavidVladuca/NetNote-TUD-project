@@ -202,7 +202,7 @@ public class HomeScreenCtrl {
     /**
      * Downloads images
      */
-    private Button downloadImageB;
+    public Button downloadImageB;
 
     /**
      * Button for editing collections.
@@ -668,26 +668,26 @@ public class HomeScreenCtrl {
                         }
                     }
                     isProgrammaticChange = true; // Indicate it is not user edit
-
                     if (isTitleEditInProgress) {
                         isTitleEditInProgress = false;
                         // Show a confirmation alert if edits are in progress
                         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                        alert.setTitle("Do you want to proceed?");
-                        alert.setHeaderText("You have unsaved changes.");
+                        alert.setTitle(bundle.getString("Proceed"));
+                        alert.setHeaderText(bundle.getString("ProceedH"));
                         alert.
-                                setContentText("If you continue, all changes will be discarded.");
+                                setContentText(bundle.getString("ProceedM"));
                         ButtonType cancelButton =
-                                new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+                                new ButtonType(bundle.getString("Cancel"),
+                                        ButtonBar.ButtonData.CANCEL_CLOSE);
                         ButtonType okButton =
-                                new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+                                new ButtonType(bundle.getString("OK"),
+                                        ButtonBar.ButtonData.OK_DONE);
                         alert.getButtonTypes().setAll(cancelButton, okButton);
                         // Show the alert and wait for the user's response
                         Optional<ButtonType> result = alert.showAndWait();
                         if (!result.isPresent() || result.get() == cancelButton) {
                             // Indicate that the title buffered should be restored
-                            shouldTitleBuffer = true;
-                            // Restore the old title
+                            shouldTitleBuffer = true;// Restore the old title
                             notesListView.getSelectionModel().select(oldNote);
                         }
                         return;
@@ -779,10 +779,9 @@ public class HomeScreenCtrl {
 
     private void showDefaultCollectionPopup() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Default Collection Set");
+        alert.setTitle(bundle.getString("DefaultSet"));
         alert.setHeaderText(null);
-        alert.setContentText("The default collection is set to 'Default'. " +
-                "All the notes that will be created while in 'Default' will be saved there.");
+        alert.setContentText(bundle.getString("DefaultSetM") + "'Default'");
         alert.showAndWait();
     }
 
@@ -2518,13 +2517,15 @@ public class HomeScreenCtrl {
                         noteTitleF.setPromptText(bundle.getString("Untitled"));
                         noteBodyF.setPromptText(bundle.getString("Text_Area"));
                         uploadImageB.setText(bundle.getString("Upload"));
+                        downloadImageB.setText(bundle.getString("Download"));
                         clearTagsB.setText(bundle.getString("ClearTags"));
                         String placeholderValue = bundle.getString("Filter_by_tag");
                         Text placeholderText = new Text(placeholderValue);
                         placeholderText.setStyle("-fx-fill: lightgray; "
                                 + "-fx-font-size: 12; -fx-font-style: italic;");
                         // Add the placeholder text to the container by default
-                        selectedTagsContainer.getChildren().set(0, placeholderText);
+                        selectedTagsContainer.getChildren().clear();
+                        selectedTagsContainer.getChildren().add(placeholderText);
                     }
                 });
     }
@@ -2554,6 +2555,8 @@ public class HomeScreenCtrl {
         if (languageFile.exists()) {
             try (BufferedReader br = new BufferedReader(new FileReader(languageFile))) {
                 String savedLanguageAbbr = br.readLine();
+                if (!selectLangBox.getItems().isEmpty())
+                    initializeLanguageOptions();
                 for (Language language : selectLangBox.getItems()) {
                     if (language.getAbbr().equals(savedLanguageAbbr)) {
                         selectLangBox.setValue(language);
