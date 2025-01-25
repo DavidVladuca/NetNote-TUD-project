@@ -2939,8 +2939,9 @@ public class HomeScreenCtrl {
         try {
             // Construct the image URL
             String encodedNoteTitle = URLEncoder.encode(currentNote.getTitle(),
-                    StandardCharsets.UTF_8);
-            String encodedImageName = URLEncoder.encode(imageName, StandardCharsets.UTF_8);
+                    StandardCharsets.UTF_8).replace("+", "%20");
+            String encodedImageName = URLEncoder.encode(imageName, StandardCharsets.UTF_8)
+                    .replace("+", "%20");
             String imageUrl = String.format("http://localhost:8080/api/images/files/notes/%s/%s",
                     encodedNoteTitle, encodedImageName);
             // Fetch the image data from the server
