@@ -53,8 +53,10 @@ public class ImagesController {
         image.setMimeType(determineMimeType(image.getName())); // Set MIME type
         Images savedImage = imageRepository.save(image);
 
-        String encodedTitle = URLEncoder.encode(note.getTitle(), StandardCharsets.UTF_8);
-        String encodedName = URLEncoder.encode(savedImage.getName(), StandardCharsets.UTF_8);
+        String encodedTitle = URLEncoder.encode(note.getTitle(), StandardCharsets.UTF_8)
+                .replace("+", "%20");
+        String encodedName = URLEncoder.encode(savedImage.getName(), StandardCharsets.UTF_8)
+                .replace("+", "%20");
         String fileUrl = String.format("http://server/api/images/files/notes/%s/%s", encodedTitle, encodedName);
 
         Map<String, String> responseBody = new HashMap<>();

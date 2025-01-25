@@ -440,10 +440,16 @@ public class ServerUtils {
                 Map<String, String> responseBody = objectMapper
                         .readValue(rawResponse, new TypeReference<>() {});
                 String fileUrl = responseBody.get("fileUrl");
+
+                if(fileUrl != null) {
+                    fileUrl = fileUrl.replace("+", "%20");
+                }
+
                 image.setFileUrl(fileUrl);
             } catch (JsonParseException e) {
                 // Handle case where response is plain text (fallback)
-                image.setFileUrl(rawResponse.trim());
+                String normalizedResponse = rawResponse.trim().replace("+", "%20");
+                image.setFileUrl(normalizedResponse);
             }
 
             return image;
