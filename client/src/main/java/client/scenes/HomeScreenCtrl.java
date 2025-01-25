@@ -656,7 +656,9 @@ public class HomeScreenCtrl {
                             boolean isDuplicate = validateTitleWithServer(
                                     currentCollection.getCollectionId(), titleBuffer);
                             // Display alert for duplicate title
-                            if (isDuplicate) {isDuplicateAlert(titleBuffer); }
+                            if (isDuplicate) {
+                                isDuplicateAlert(titleBuffer);
+                            }
                             // Display alert for empty title
                             else if (titleBuffer.isEmpty()) isEmptyAlert();
                                 // Else Revert the title
@@ -665,12 +667,9 @@ public class HomeScreenCtrl {
                                         getSelectedItem().setTitle(titleBuffer);
                             }
                             titleBuffer = "";
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
+                        } catch (IOException e) {  throw new RuntimeException(e); }
                     }
                     isProgrammaticChange = true; // Indicate it is not user edit
-
                     if (isTitleEditInProgress && !titleBuffer.isEmpty()) {
                         isTitleEditInProgress = false;
                         // Show a confirmation alert if edits are in progress
@@ -1083,18 +1082,18 @@ public class HomeScreenCtrl {
      */
     private void syncIfChanged() {
 
-            if (currentNote != null &&
-                    !isTitleEditInProgress && // Prevent syncing if title is being edited
-                    (!noteBodyF.equals(lastSyncedBody))) {
+        if (currentNote != null &&
+                !isTitleEditInProgress && // Prevent syncing if title is being edited
+                (!noteBodyF.equals(lastSyncedBody))) {
 
-                //Save body edits automatically and syncs note with server
-                bodyEdit();
+            //Save body edits automatically and syncs note with server
+            bodyEdit();
 
-                lastSyncedTitle = currentNote.getTitle();
-                lastSyncedBody = currentNote.getBody();
+            lastSyncedTitle = currentNote.getTitle();
+            lastSyncedBody = currentNote.getBody();
 
-                System.out.println("Note synced with the server at: " + java.time.LocalTime.now());
-            }
+            System.out.println("Note synced with the server at: " + java.time.LocalTime.now());
+        }
 
     }
 
@@ -2025,7 +2024,7 @@ public class HomeScreenCtrl {
             noteBodyF.setText(currentNote.getBody());// Update body field
             String processedContent = currentNote.getBody().replaceAll("#(\\w+)",
                     "<button style=\"background-color: #e43e38; color: white; " +
-                            "border: none; padding: 2px 6px; border-radius: 4px; cursor: "+
+                            "border: none; padding: 2px 6px; border-radius: 4px; cursor: " +
                             "pointer;\" onclick=\"javaApp.filterByTag('#$1')\">#$1</button>");
             StringBuffer processedReferences = processNoteReferences(processedContent);
             String processedImages = processImageMarkdown(processedReferences.toString());
