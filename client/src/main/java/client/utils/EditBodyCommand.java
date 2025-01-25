@@ -2,7 +2,6 @@ package client.utils;
 
 import client.scenes.HomeScreenCtrl;
 import commons.Note;
-import javafx.application.Platform;
 
 import java.util.Stack;
 
