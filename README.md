@@ -53,12 +53,24 @@ PLEASE NOTE - shortcuts are not available if you are focused in a text field, yo
 
 •  **To see an automatic update of the rendered view, so I see my changes reflected in real time.** - Again, all described in the markdown part.
 
-•  T**o be prevented from using a duplicate note title, so note content is clear.**
+•  **To be prevented from using a duplicate note title, so note content is clear.**
 (Note titles should be unique per collection, like a filename has to be unique in a folder.) - When you edit a title, and this title already exists in a collection, you will receive a warning that this title already exists and the title is restored back to the previous one.
 
 ## Multi-collection
 
 ## Embedded files
+
+•	**To embed files into notes (e.g images), so I can add relevant media to my descriptions.** - Files can be uploaded to a note using the upload button on the bottom of the application. When a file is selected, it is displayed in the listview and uploaded to the server
+
+•	**To rename file names, so I can give them more descriptive names without re-upload.** - On double-click of files in the listview, they can be renamed. Duplicate/empty file names and altered file extensions are not accepted.
+
+•	**To delete files, so I can remove irrelevant information.** A file can be deleted by selecting a file on the listview and clicking the delete icon (minus symbol by listview)
+
+•	**To delete all embedded files when I delete notes, so the server does not accumulate irrelevant files.** When a note is deleted, files are deleted also, as reflected when accessing the database.
+
+•	**To refer to embedded images in my Markdown, so I can see images in my preview.** To display embedded images, the user must write ![alt text](filename.jpeg) as an example
+
+•	**To download files when I click on them, so I can use the files locally on my computer.** By clicking the download button and typing in the file name, the file is successfully downloaded.
 
 ## Interconnected content
 
