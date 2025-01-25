@@ -286,4 +286,63 @@ public class CollectionTest {
         collection1.setCollectionPath("collection-1-1");
         assertEquals(collection1.getCollectionPath(), "collection-1-1");
     }
+
+    @Test
+    public void testGetNoteById_Found() {
+        Note note1 = new Note();
+        note1.setNoteId(1);
+        collection1.addNote(note1);
+
+        assertEquals(note1, collection1.getNoteByID(1),
+                "getNoteByID should return the correct note when found");
+    }
+
+    @Test
+    public void testGetNoteById_NotFound() {
+        Note note1 = new Note();
+        note1.setNoteId(1);
+        collection1.addNote(note1);
+
+        assertNull(collection1.getNoteByID(2),
+                "getNoteByID should return null when the note ID is not found");
+    }
+
+    @Test
+    public void testIsDefaultCollection() {
+        assertFalse(collection1.isDefaultCollection(),
+                "isDefaultCollection should return false initially");
+
+        collection1.setDefaultCollection(true);
+        assertTrue(collection1.isDefaultCollection(),
+                "isDefaultCollection should return true after setting it to true");
+    }
+
+    @Test
+    public void testEquals_SameObject() {
+        assertEquals(collection1, collection1,
+                "A collection should be equal to itself");
+    }
+
+    @Test
+    public void testHashCodeDifferentObjects() {
+        collection1.setCollectionId(1);
+        differentCollection.setCollectionId(2);
+
+        assertNotEquals(collection1.hashCode(),
+                differentCollection.hashCode(),
+                "Collections with different IDs should have different hash codes");
+    }
+
+
+    @Test
+    public void testGetSearchEmptyString() {
+        Note note1 = new Note();
+        note1.setBody("Some body");
+        collection1.addNote(note1);
+
+        assertEquals(new ArrayList<>(),
+                collection1.getSearch(""),
+                "getSearch should return an empty list for an empty search string");
+    }
+
 }
