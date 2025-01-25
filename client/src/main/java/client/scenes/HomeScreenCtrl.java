@@ -598,7 +598,8 @@ public class HomeScreenCtrl {
     private void handleBodyEdits() {
         // Listener for focus changes on the body field
         noteBodyF.focusedProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue) { // Gaining focus
+            if (newValue) {
+                isProgrammaticChange = false;// Gaining focus
                 currentEditState = EditState.BODY;// Set active edit state
             } else { // Losing focus
                 // Finalize body edits if they are in progress
@@ -655,21 +656,22 @@ public class HomeScreenCtrl {
                             boolean isDuplicate = validateTitleWithServer(
                                     currentCollection.getCollectionId(), titleBuffer);
                             // Display alert for duplicate title
-                            if (isDuplicate) isDuplicateAlert(titleBuffer);
+                            if (isDuplicate) {isDuplicateAlert(titleBuffer); }
                             // Display alert for empty title
-                            if (titleBuffer.isEmpty()) isEmptyAlert();
+                            else if (titleBuffer.isEmpty()) isEmptyAlert();
                                 // Else Revert the title
                             else {
                                 notesListView.getSelectionModel().
                                         getSelectedItem().setTitle(titleBuffer);
                             }
+                            titleBuffer = "";
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
                     }
                     isProgrammaticChange = true; // Indicate it is not user edit
 
-                    if (isTitleEditInProgress) {
+                    if (isTitleEditInProgress && !titleBuffer.isEmpty()) {
                         isTitleEditInProgress = false;
                         // Show a confirmation alert if edits are in progress
                         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -1083,7 +1085,7 @@ public class HomeScreenCtrl {
 
             if (currentNote != null &&
                     !isTitleEditInProgress && // Prevent syncing if title is being edited
-                    (!currentNote.getBody().equals(lastSyncedBody))) {
+                    (!noteBodyF.equals(lastSyncedBody))) {
 
                 //Save body edits automatically and syncs note with server
                 bodyEdit();
@@ -2091,10 +2093,9 @@ public class HomeScreenCtrl {
                     // Show and alert if the title is duplicate
                     if (isDuplicate) {
                         isDuplicateAlert(newTitle);
-                        // Revert to the original title
                         Platform.runLater(() -> noteTitleF.setText(originalTitle));
+                        updateUIAfterChange();
                     } else if (newTitle.isEmpty()) {
-
                         // Revert to the original title
                         Platform.runLater(() -> noteTitleF.setText(originalTitle));
                         updateUIAfterChange();
@@ -3046,6 +3047,7 @@ public class HomeScreenCtrl {
         showWarningAlert(alertTitle,
                 alertHeader, alertContent1 + title
                         + alertContent2 + alertContent3);
+
     }
 
 }

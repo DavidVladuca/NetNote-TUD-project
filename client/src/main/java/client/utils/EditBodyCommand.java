@@ -33,8 +33,7 @@ public class EditBodyCommand implements Command {
     @Override
     public void execute() {
         note.setBody(newBody);
-
-        Platform.runLater(() -> {controller.syncNoteWithServer(note);});
+        controller.syncNoteWithServer(note);
     }
 
     /**
