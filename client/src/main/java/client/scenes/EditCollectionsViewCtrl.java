@@ -71,7 +71,7 @@ public class EditCollectionsViewCtrl {
      */
     public TextField serverTextF;
     /**
-     * Text field for collection description.
+     * Text field for collection path.
      */
     public TextField collectionTextF;
     /**
@@ -176,7 +176,7 @@ public class EditCollectionsViewCtrl {
      */
     public void save() {
         Collection selectedCollection = collectionsListView.getSelectionModel().getSelectedItem();
-
+        ResourceBundle bundle = HomeScreenCtrl.getBundle();
         if (selectedCollection != null) {
             String newTitle = titleTextF.getText().trim();
             String newPath = collectionTextF.getText().trim();
@@ -191,22 +191,23 @@ public class EditCollectionsViewCtrl {
                 changes = true;
             }
             if(!serverTextF.getText().trim().equals("http://localhost:8080")){
-                showAlert(AlertType.ERROR, "Server not found",
-                        "The server you selected can't be found," +
-                                " please choose the default sever");
+                showAlert(AlertType.ERROR, bundle.getString("Server_not_found"),
+                        bundle.getString("Server_not_found_m1") +
+                                bundle.getString("Server_not_found_m2"));
                 return;
             }
 
             if(changes == true) {
                 // Save the updated collection to the server
                 syncCollectionWithServer(selectedCollection);
-                showAlert(Alert.AlertType.INFORMATION, "Changes",
-                        "Changes to the Collection: " +
-                                selectedCollection.getCollectionTitle() + " have been saved.");
+                showAlert(Alert.AlertType.INFORMATION, bundle.getString("Changes"),
+                        bundle.getString("Changes_m1") +
+                                selectedCollection.getCollectionTitle()
+                                +bundle.getString("Changes_m2"));
             }
         } else {
-            showAlert(AlertType.INFORMATION, "Status",
-                    "No collection was selected for changes....Saving....");
+            showAlert(AlertType.INFORMATION, bundle.getString("Status"),
+                    bundle.getString("NoChangesM"));
         }
 
         System.out.println("Saving");
@@ -218,6 +219,7 @@ public class EditCollectionsViewCtrl {
      * @param collection - the collection that needs to be synced(updated) in the server
      */
     private void syncCollectionWithServer(Collection collection) {
+        ResourceBundle bundle = HomeScreenCtrl.getBundle();
         try {
             Collection updatedCollection = localServerUtils.syncCollectionWithServer(collection);
             if (updatedCollection != null) {
@@ -241,8 +243,8 @@ public class EditCollectionsViewCtrl {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            showAlert(Alert.AlertType.ERROR, "Error",
-                    "An error occurred while saving: " + e.getMessage());
+            showAlert(Alert.AlertType.ERROR, bundle.getString("Error"),
+                    bundle.getString("ErrorOccurred") + e.getMessage());
         }
     }
 
@@ -251,10 +253,10 @@ public class EditCollectionsViewCtrl {
      */
     public void makeDefault() {
         Collection selectedCollection = collectionsListView.getSelectionModel().getSelectedItem();
-
+        ResourceBundle bundle = HomeScreenCtrl.getBundle();
         if (selectedCollection == null) {
-            showAlert(Alert.AlertType.WARNING, "No collection selected",
-                    "Please select a collection to make default.");
+            showAlert(Alert.AlertType.WARNING, bundle.getString("NoCollectionSelected"),
+                    bundle.getString("NoCollectionSelectedM"));
             return;
         }
 
@@ -273,9 +275,8 @@ public class EditCollectionsViewCtrl {
             homeScreenCtrl.loadCollectionsFromServer();
             homeScreenCtrl.setUpCollections();
         });
-
-        showAlert(Alert.AlertType.INFORMATION, "Default Collection Set",
-                "The default collection has been set to: " +
+        showAlert(Alert.AlertType.INFORMATION, bundle.getString("DefaultSet"),
+                bundle.getString("DefaultSetM") +
                         selectedCollection.getCollectionTitle() + ".");
     }
 
@@ -284,23 +285,27 @@ public class EditCollectionsViewCtrl {
      */
     @FXML
     public void addCollection() {
+        ResourceBundle bundle = HomeScreenCtrl.getBundle();
         // Check if any of the fields are empty
         if (titleTextF.getText().trim().isEmpty()) {
-            showAlert(AlertType.WARNING, "Missing field",  "The Title is missing.");
+            showAlert(AlertType.WARNING, bundle.getString("MissingField"),
+                    bundle.getString("MissingTitle"));
             return;
         }
         if (serverTextF.getText().trim().isEmpty()) {
-            showAlert(AlertType.WARNING, "Missing Field", "The Server is missing.");
+            showAlert(AlertType.WARNING, bundle.getString("MissingField"),
+                    bundle.getString("MissingServer"));
             return;
         }
         if (collectionTextF.getText().trim().isEmpty()) {
-            showAlert(AlertType.WARNING, "Missing Field", "The Collection Path is missing.");
+            showAlert(AlertType.WARNING, bundle.getString("MissingField"),
+                    bundle.getString("MissingCollectPath"));
             return;
         }
         if (!serverTextF.getText().trim().equals("http://localhost:8080")) {
-            showAlert(AlertType.ERROR, "Server not found",
-                    "The server you selected can't be found," +
-                            " please choose the default sever");
+            showAlert(AlertType.ERROR, bundle.getString("Server_not_found"),
+                    bundle.getString("Server_not_found_m1") +
+                            bundle.getString("Server_not_found_m2"));
             return;
         }
 
@@ -323,6 +328,7 @@ public class EditCollectionsViewCtrl {
      * @param collection - the collection that needs to be saved
      */
     private void saveCollectiontoServer(Collection collection) {
+        ResourceBundle bundle = HomeScreenCtrl.getBundle();
         try {
             Collection savedCollection = localServerUtils.saveCollectionToServer(collection);
             if (savedCollection != null) {
@@ -332,7 +338,7 @@ public class EditCollectionsViewCtrl {
                 // Show an information pop-up
                 Platform.runLater(() -> {
                     showAlert(Alert.AlertType.INFORMATION,
-                            "Success", "Collection saved successfully.");
+                            bundle.getString("Success"), bundle.getString("CollSaved"));
                     collections.add(savedCollection);
                 });
 
@@ -361,8 +367,8 @@ public class EditCollectionsViewCtrl {
             return;
         }
         if(selectedCollection.equals(homeScreenCtrl.default_collection)){
-            showAlert(AlertType.ERROR, "Deleting the default collection", "The default collection "+
-                    "can't be deleted, please select a different collection!");
+            showAlert(AlertType.ERROR, bundle.getString("DelDefault"),
+                    bundle.getString("CantDeleteDefault"));
             return;
         }
 
@@ -387,7 +393,6 @@ public class EditCollectionsViewCtrl {
                     homeScreenCtrl.loadCollectionsFromServer();
                     homeScreenCtrl.setUpCollections();
                 });
-
                 showAlert(AlertType.INFORMATION,
                         bundle.getString("DeleteSuccessful"),
                         bundle.getString("DeleteSuccessful_b"));

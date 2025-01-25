@@ -1,7 +1,9 @@
 package client.utils;
 
+import client.scenes.HomeScreenCtrl;
 import javafx.scene.control.Alert;
 
+import java.util.ResourceBundle;
 import java.util.Stack;
 
 public class CommandInvoker {
@@ -39,19 +41,20 @@ public class CommandInvoker {
      * If it is the latter, undoes the last action
      */
     public void undoLastCommand() {
+        ResourceBundle bundle = HomeScreenCtrl.getBundle();
         if (!commandHistory.isEmpty()) {
             Command command = commandHistory.pop();
             command.undo();
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Undo Successful");
-            alert.setHeaderText("Last operation has been undone!");
+            alert.setTitle(bundle.getString("UndoSuccessful"));
+            alert.setHeaderText(bundle.getString("UndoSuccessfulM"));
             alert.setContentText(command.toString());
             alert.showAndWait();
         }else {
             Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Undo Unsuccessful");
-            alert.setHeaderText("No operation to be undone!");
-            alert.setContentText("Please try again!");
+            alert.setTitle(bundle.getString("UndoFail"));
+            alert.setHeaderText(bundle.getString("UndoFailH"));
+            alert.setContentText(bundle.getString("UndoFailM"));
             alert.showAndWait();
         }
     }
