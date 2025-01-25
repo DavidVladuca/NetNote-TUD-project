@@ -62,6 +62,20 @@ PLEASE NOTE - shortcuts are not available if you are focused in a text field, yo
 
 ## Interconnected content
 
+•	**To use tags in the form of "#foo" in my notes, so I can organize information and make it easier to find.** - By typing in the main text box using this format, the Markdown Display will process the text as a tag (providing a visual indicator) and assign it as a tag for the current note. The tag will also be added to the database. Deleting or editing a tag will also delete or update the tag in the database.
+
+•	**To use [[other note]] to refer to other notes in the same collection by title, so I can link related notes.** - By typing in the main text box using this format, the Markdown Display will process the text as a link to another note (providing a visual indicator). 
+
+•	**To see a visual difference in the preview if a referenced note does not exist, so I can spot typos.** - If the referenced note is not present in the current list of notes in the collection (filtered by tag or search function), the Markdown Display will visually highlight the issue, making it clear that the reference is invalid. 
+
+•	**To click on the link to another note, so it is easy to switch to the other note.** - If the link to the referenced note is valid, clicking on it will switch the current view to the referenced note.  
+
+•	**To click on a tag, so I can filter all notes to those who have the tag.** -Clicking on a tag in the Markdown Display will add it to a filtering box (located above the note's title box) and filter the notes so only those with the selected tag are visible.
+
+•	**To select multiple tags, so I can filter notes with multiple criteria.** - Users can add multiple tags to the filtering box, which will filter the notes to show only those with **all** the selected tags. Tags in the filtering box are displayed as choice boxes. Users can replace a tag in the filtering box with another available tag, dynamically adjusting the filter. If no notes match the selected combination of tags, an alert will appear, and the change will be reverted.
+
+•	**To clear all selected tags, so I can easily go back to seeing all notes.** - A "Clear Tags" button is provided on the right side of the filtering box. Clicking this button will remove all tags from the filtering box, cancel all filters, and display all notes.
+
 ## Automated change synchronization
 
 •  We haven't implemented this
