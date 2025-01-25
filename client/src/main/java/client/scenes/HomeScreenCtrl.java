@@ -7,9 +7,7 @@ import commons.Collection;
 import commons.*;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.core.Response;
-import javafx.animation.FadeTransition;
-import javafx.animation.PauseTransition;
-import javafx.animation.SequentialTransition;
+import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -414,6 +412,8 @@ public class HomeScreenCtrl {
         loadSavedLanguageChoice();
         loadCollectionsFromServer();
         setUpCollections();
+        noteTitleF.setDisable(true);
+        noteBodyF.setDisable(true);
         markDownTitle();
         markDownContent();
         loadNotesFromServer();
@@ -647,54 +647,102 @@ public class HomeScreenCtrl {
      * Handles changing the currently selected note (Important for finalizing editing operations)
      */
     private void handleNoteChanges() {
-        // Listener for note selection changes in the ListView
         notesListView.getSelectionModel().selectedItemProperty()
                 .addListener((observable, oldNote, newNote) -> {
+                    if (isTitleEditInProgress && !titleBuffer.isEmpty()) {
+                        // Show a confirmation alert if edits are in progress
+                        isTitleEditInProgress = false;
+                        showConfirmationAlert(oldNote);
+                        return; // Exit early to avoid other operations
+                    }
+
+                    if (notesListView.getSelectionModel().getSelectedItem() == null) {
+                        // No note selected: disable fields
+                        noteTitleF.setDisable(true);
+                        noteBodyF.setDisable(true);
+                        noteTitleF.clear();
+                        noteBodyF.clear();
+                    } else {
+                        // Note selected: enable fields and update UI
+                        noteTitleF.setDisable(false);
+                        noteBodyF.setDisable(false);
+                        setNewNoteFields(newNote);
+                    }
+
                     if (shouldTitleBuffer) {
                         shouldTitleBuffer = false;
                         try {
                             boolean isDuplicate = validateTitleWithServer(
                                     currentCollection.getCollectionId(), titleBuffer);
-                            // Display alert for duplicate title
                             if (isDuplicate) {
                                 isDuplicateAlert(titleBuffer);
-                            }
-                            // Display alert for empty title
-                            else if (titleBuffer.isEmpty()) isEmptyAlert();
-                                // Else Revert the title
-                            else {
-                                notesListView.getSelectionModel().
-                                        getSelectedItem().setTitle(titleBuffer);
+                            } else if (titleBuffer.isEmpty()) {
+                                isEmptyAlert();
+                            } else {
+                                notesListView.getSelectionModel().getSelectedItem()
+                                        .setTitle(titleBuffer);
                             }
                             titleBuffer = "";
-                        } catch (IOException e) {  throw new RuntimeException(e); }
-                    }
-                    isProgrammaticChange = true; // Indicate it is not user edit
-                    if (isTitleEditInProgress && !titleBuffer.isEmpty()) {
-                        isTitleEditInProgress = false;
-                        // Show a confirmation alert if edits are in progress
-                        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                        alert.setTitle("Do you want to proceed?");
-                        alert.setHeaderText("You have unsaved changes.");
-                        alert.
-                                setContentText("If you continue, all changes will be discarded.");
-                        ButtonType cancelButton =
-                                new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-                        ButtonType okButton =
-                                new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
-                        alert.getButtonTypes().setAll(cancelButton, okButton);
-                        // Show the alert and wait for the user's response
-                        Optional<ButtonType> result = alert.showAndWait();
-                        if (!result.isPresent() || result.get() == cancelButton) {
-                            // Indicate that the title buffered should be restored
-                            shouldTitleBuffer = true;
-                            // Restore the old title
-                            notesListView.getSelectionModel().select(oldNote);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
                         }
-                        return;
                     }
-                    setNewNoteFields(newNote);
+
+                    isProgrammaticChange = true; // Indicate programmatic change
                 });
+    }
+
+
+    /**
+     * This method shows the confirmation alert that the user has unsaved changes
+     * The alert automatically closes after 4 seconds, simulating an ok switch
+     * @param oldNote - the old note
+     */
+    private void showConfirmationAlert(Note oldNote) {
+        // Load strings from the resource bundle
+        ResourceBundle bundle = ResourceBundle.getBundle("MyBundle", locale);
+        String alertTitle = bundle.getString("unsaved_changes_title");
+        String alertHeader = bundle.getString("unsaved_changes_header");
+        String alertContent = bundle.getString("unsaved_changes_content");
+        String cancelLabel = bundle.getString("cancel_button");
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle(alertTitle);
+        alert.setHeaderText(alertHeader);
+        alert.setContentText(alertContent);
+
+        ButtonType cancelButton = new ButtonType(cancelLabel, ButtonBar.ButtonData.CANCEL_CLOSE);
+        ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+        alert.getButtonTypes().setAll(cancelButton, okButton);
+
+        // Access the dialog's OK button node to update its text dynamically
+        DialogPane dialogPane = alert.getDialogPane();
+        Button okButtonNode = (Button) dialogPane.lookupButton(okButton);
+
+        // Start a countdown to update the OK button text
+        final int[] countdown = {4}; // Initial countdown value
+        Timeline countdownTimeline = new Timeline(
+                new KeyFrame(Duration.seconds(1), event -> {
+                    if (countdown[0] > 1) {
+                        countdown[0]--;
+                        okButtonNode.setText("OK (" + countdown[0] + ")");
+                    } else {
+                        alert.setResult(okButton); // Simulate OK button being clicked
+                        alert.hide();             // Close the alert
+                    }
+                })
+        );
+        countdownTimeline.setCycleCount(5); // Run for 5 seconds
+        countdownTimeline.play(); // Start the countdown
+
+        // Show the alert and wait for the user's response
+        Optional<ButtonType> result = alert.showAndWait();
+        if (!result.isPresent() || result.get() == cancelButton) {
+            // Indicate that the title buffer should be restored
+            shouldTitleBuffer = true;
+            // Restore the old title
+            notesListView.getSelectionModel().select(oldNote);
+        }
     }
 
 
@@ -779,11 +827,14 @@ public class HomeScreenCtrl {
     }
 
     private void showDefaultCollectionPopup() {
+        ResourceBundle bundle = ResourceBundle.getBundle("MyBundle", locale);
+        String alertTitle = bundle.getString("collection_title");
+        String alertContent = bundle.getString("collection_content");
+
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Default Collection Set");
+        alert.setTitle(alertTitle);
         alert.setHeaderText(null);
-        alert.setContentText("The default collection is set to 'Default'. " +
-                "All the notes that will be created while in 'Default' will be saved there.");
+        alert.setContentText(alertContent);
         alert.showAndWait();
     }
 
@@ -2096,6 +2147,7 @@ public class HomeScreenCtrl {
                         updateUIAfterChange();
                     } else if (newTitle.isEmpty()) {
                         // Revert to the original title
+                        isEmptyAlert();
                         Platform.runLater(() -> noteTitleF.setText(originalTitle));
                         updateUIAfterChange();
                     } else { // If not duplicate, update title and sync with server

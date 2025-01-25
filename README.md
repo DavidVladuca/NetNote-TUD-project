@@ -39,7 +39,7 @@ PLEASE NOTE - shortcuts are not available if you are focused in a text field, yo
 
 •  **To delete notes, so I can remove unneeded information.** - You can easily delete a note with the '-' button in the bottom left corner, or with the keyboard shortcut, the note gets deleted from the database
 
-•  **To sync every change in my notes automatically with the server, so I do not need to manually save.** - the titles are synced every time the user loses focus of the title field and if of course something changes, the content is synced every 5 seconds
+•  **To sync every change in my notes automatically with the server, so I do not need to manually save.** - the titles are synced every time the user loses focus of the title field and if of course something changes, the content is synced every 5 seconds - any unsaved progress within these 5 seconds is lost when switching to another note
 
 •  **To write note contents as free text, so I am not hindered by any structural requirements.** - You can write the content of the note in the content field under the title field
 
