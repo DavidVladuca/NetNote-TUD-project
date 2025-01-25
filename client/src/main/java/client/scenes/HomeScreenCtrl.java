@@ -1079,23 +1079,20 @@ public class HomeScreenCtrl {
      * 5 seconds is specified in initialize method
      */
     private void syncIfChanged() {
-        Platform.runLater(() -> {
+
             if (currentNote != null &&
                     !isTitleEditInProgress && // Prevent syncing if title is being edited
-                    (!currentNote.getBody().equals(lastSyncedBody) ||
-                            !currentNote.getTitle().equals(lastSyncedTitle))) {
+                    (!currentNote.getBody().equals(lastSyncedBody))) {
 
-                bodyEdit(); //Save body edits automatically
-                // Sync with the server if there is a change in title or body
-                syncNoteWithServer(currentNote);
+                //Save body edits automatically and syncs note with server
+                bodyEdit();
 
-                // Update the last synced title and body
                 lastSyncedTitle = currentNote.getTitle();
                 lastSyncedBody = currentNote.getBody();
 
                 System.out.println("Note synced with the server at: " + java.time.LocalTime.now());
             }
-        });
+
     }
 
     /**

@@ -2,6 +2,7 @@ package client.utils;
 
 import client.scenes.HomeScreenCtrl;
 import commons.Note;
+import javafx.application.Platform;
 
 import java.util.Stack;
 
@@ -32,6 +33,8 @@ public class EditBodyCommand implements Command {
     @Override
     public void execute() {
         note.setBody(newBody);
+
+        Platform.runLater(() -> {controller.syncNoteWithServer(note);});
     }
 
     /**
