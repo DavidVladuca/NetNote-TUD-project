@@ -598,7 +598,8 @@ public class HomeScreenCtrl {
     private void handleBodyEdits() {
         // Listener for focus changes on the body field
         noteBodyF.focusedProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue) { // Gaining focus
+            if (newValue) {
+                isProgrammaticChange = false;// Gaining focus
                 currentEditState = EditState.BODY;// Set active edit state
             } else { // Losing focus
                 // Finalize body edits if they are in progress
@@ -655,39 +656,40 @@ public class HomeScreenCtrl {
                             boolean isDuplicate = validateTitleWithServer(
                                     currentCollection.getCollectionId(), titleBuffer);
                             // Display alert for duplicate title
-                            if (isDuplicate) isDuplicateAlert(titleBuffer);
+                            if (isDuplicate) {isDuplicateAlert(titleBuffer); }
                             // Display alert for empty title
-                            if (titleBuffer.isEmpty()) isEmptyAlert();
+                            else if (titleBuffer.isEmpty()) isEmptyAlert();
                                 // Else Revert the title
                             else {
                                 notesListView.getSelectionModel().
                                         getSelectedItem().setTitle(titleBuffer);
                             }
+                            titleBuffer = "";
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
                     }
                     isProgrammaticChange = true; // Indicate it is not user edit
-                    if (isTitleEditInProgress) {
+
+                    if (isTitleEditInProgress && !titleBuffer.isEmpty()) {
                         isTitleEditInProgress = false;
                         // Show a confirmation alert if edits are in progress
                         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                        alert.setTitle(bundle.getString("Proceed"));
-                        alert.setHeaderText(bundle.getString("ProceedH"));
+                        alert.setTitle("Do you want to proceed?");
+                        alert.setHeaderText("You have unsaved changes.");
                         alert.
-                                setContentText(bundle.getString("ProceedM"));
+                                setContentText("If you continue, all changes will be discarded.");
                         ButtonType cancelButton =
-                                new ButtonType(bundle.getString("Cancel"),
-                                        ButtonBar.ButtonData.CANCEL_CLOSE);
+                                new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
                         ButtonType okButton =
-                                new ButtonType(bundle.getString("OK"),
-                                        ButtonBar.ButtonData.OK_DONE);
+                                new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
                         alert.getButtonTypes().setAll(cancelButton, okButton);
                         // Show the alert and wait for the user's response
                         Optional<ButtonType> result = alert.showAndWait();
                         if (!result.isPresent() || result.get() == cancelButton) {
                             // Indicate that the title buffered should be restored
-                            shouldTitleBuffer = true;// Restore the old title
+                            shouldTitleBuffer = true;
+                            // Restore the old title
                             notesListView.getSelectionModel().select(oldNote);
                         }
                         return;
@@ -779,9 +781,10 @@ public class HomeScreenCtrl {
 
     private void showDefaultCollectionPopup() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(bundle.getString("DefaultSet"));
+        alert.setTitle("Default Collection Set");
         alert.setHeaderText(null);
-        alert.setContentText(bundle.getString("DefaultSetM") + "'Default'");
+        alert.setContentText("The default collection is set to 'Default'. " +
+                "All the notes that will be created while in 'Default' will be saved there.");
         alert.showAndWait();
     }
 
@@ -1082,7 +1085,7 @@ public class HomeScreenCtrl {
 
             if (currentNote != null &&
                     !isTitleEditInProgress && // Prevent syncing if title is being edited
-                    (!currentNote.getBody().equals(lastSyncedBody))) {
+                    (!noteBodyF.equals(lastSyncedBody))) {
 
                 //Save body edits automatically and syncs note with server
                 bodyEdit();
@@ -2090,10 +2093,9 @@ public class HomeScreenCtrl {
                     // Show and alert if the title is duplicate
                     if (isDuplicate) {
                         isDuplicateAlert(newTitle);
-                        // Revert to the original title
                         Platform.runLater(() -> noteTitleF.setText(originalTitle));
+                        updateUIAfterChange();
                     } else if (newTitle.isEmpty()) {
-
                         // Revert to the original title
                         Platform.runLater(() -> noteTitleF.setText(originalTitle));
                         updateUIAfterChange();
@@ -3049,6 +3051,7 @@ public class HomeScreenCtrl {
         showWarningAlert(alertTitle,
                 alertHeader, alertContent1 + title
                         + alertContent2 + alertContent3);
+
     }
 
 }

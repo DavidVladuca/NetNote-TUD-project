@@ -31,7 +31,7 @@ public class EditTitleCommand implements Command {
     @Override
     public void execute() {
         note.setTitle(newTitle);
-        //controller.syncNoteWithServer(note);
+        controller.syncNoteWithServer(note);
     }
 
     /**
