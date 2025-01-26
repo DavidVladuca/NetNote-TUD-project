@@ -403,7 +403,7 @@ public class HomeScreenCtrl {
      */
     @FXML
     public void initialize() throws IOException {
-        final int period = 5;
+        final int period = 1;
         keyboardShortcuts();
         arrowKeyShortcuts();
         scheduler.scheduleAtFixedRate(
@@ -1132,10 +1132,9 @@ public class HomeScreenCtrl {
      * 5 seconds is specified in initialize method
      */
     private void syncIfChanged() {
-
         if (currentNote != null &&
                 !isTitleEditInProgress && // Prevent syncing if title is being edited
-                (!noteBodyF.equals(lastSyncedBody))) {
+                (!noteBodyF.getText().equals(lastSyncedBody))) {
 
             //Save body edits automatically and syncs note with server
             bodyEdit();
@@ -1145,7 +1144,6 @@ public class HomeScreenCtrl {
 
             System.out.println("Note synced with the server at: " + java.time.LocalTime.now());
         }
-
     }
 
     /**
