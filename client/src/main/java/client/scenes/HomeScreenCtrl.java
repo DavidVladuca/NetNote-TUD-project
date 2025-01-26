@@ -1127,9 +1127,9 @@ public class HomeScreenCtrl {
 
     /**
      * This method ensures that the title and the content of the Note
-     * will be synced with the database every 5 seconds if something was
+     * will be synced with the database every second if something was
      * changed.
-     * 5 seconds is specified in initialize method
+     * 1 second is specified in initialize method
      */
     private void syncIfChanged() {
         if (currentNote != null &&
