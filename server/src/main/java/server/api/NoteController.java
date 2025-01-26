@@ -46,8 +46,15 @@ public class NoteController {
      * @return - Response, indicating note was created
      */
     @PostMapping("/create")
-    public ResponseEntity<Note> createNote(@RequestBody Note note,
+    public ResponseEntity<?> createNote(@RequestBody Note note,
                                            @RequestParam Long collectionId) {
+        boolean exists = noteRepository
+                .existsByCollectionCollectionIdAndTitle(collectionId, note.getTitle());
+        if (exists) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body("A note with the same title already exists in this collection.");
+        }
         // Ensure default Server exists - if not, create it
         Server server = serverRepository.findById(0L)
                 .orElseGet(() -> {

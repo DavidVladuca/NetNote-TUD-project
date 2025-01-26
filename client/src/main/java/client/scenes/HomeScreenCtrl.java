@@ -1693,22 +1693,29 @@ public class HomeScreenCtrl {
      */
     public void refresh() {
         Platform.runLater(() -> {
-            System.out.println("Refreshing notes and tags...");
             try {
                 // Fetch updated notes from the server
-                loadNotesFromServer();
+                List<Note> fetchedNotes = serverUtils.loadNotesFromServer();
 
-                // Fetch updated collections (optional, if needed)
-                loadCollectionsFromServer();
+                // Clear the current notes list and add the fetched notes
+                notes.clear();
+                if (!fetchedNotes.isEmpty()) {
+                    notes.addAll(fetchedNotes);
+                    System.out.println("Fetched notes from server: " + fetchedNotes.size());
+                }
 
-                // Refresh tags (if tag list UI is separate, ensure it's updated too)
-                selectedTagsContainer.getChildren().clear();
-                togglePlaceholderText();
-
-                // Update the notes list view
+                // Update the ListView to reflect the changes
                 notesListView.setItems(FXCollections.observableArrayList(notes));
+                notesListView.refresh();
 
-                System.out.println("Refresh completed.");
+                // Clear selection and UI fields if there are no notes
+                if (notes.isEmpty()) {
+                    currentNote = null;
+                    noteTitleF.clear();
+                    noteBodyF.clear();
+                    noteTitleF.setDisable(true);
+                    noteBodyF.setDisable(true);
+                }
             } catch (Exception e) {
                 errorLogger.log(Level.SEVERE,
                         "Error during refresh: " + e.getMessage(), e);
@@ -1833,9 +1840,8 @@ public class HomeScreenCtrl {
         String baseTitle = "New note";
         String newTitle = baseTitle;
         int counter = 1;
-        List<String> existingTitles = notes.stream()
-                .map(Note::getTitle)
-                .toList();
+        List<String> existingTitles =
+                serverUtils.fetchNoteTitles(currentCollection.getCollectionId());
         while (existingTitles.contains(newTitle)) {
             newTitle = baseTitle + " (" + counter + ")";
             counter++;

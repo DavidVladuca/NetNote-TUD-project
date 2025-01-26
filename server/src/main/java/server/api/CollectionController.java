@@ -53,6 +53,18 @@ public class CollectionController {
     }
 
     /**
+     * This method retrieves the titles of the notes in the collection
+     * @param collectionId - the id of the collection
+     * @return a list of note titles in JSON format
+     */
+    @GetMapping("/{collectionId}/notes/titles")
+    public ResponseEntity<List<String>> getNoteTitles(@PathVariable Long collectionId) {
+        List<String> titles = collectionRepository.findNoteTitlesByCollectionId(collectionId);
+        return ResponseEntity.ok(titles);
+    }
+
+
+    /**
      * Endpoint for updating a collection
      * @param collection - Collection object to be updated
      * @param id - ID of the collection that needs an update

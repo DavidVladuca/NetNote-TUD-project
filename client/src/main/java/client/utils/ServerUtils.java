@@ -29,12 +29,10 @@ import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientConfig;
-import java.util.List;
+
+import java.util.*;
 import java.io.IOException;
 import java.net.ConnectException;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -415,6 +413,45 @@ public class ServerUtils {
             return null;
         }
     }
+
+    /**
+     * This method fetched all the note titles in the database
+     * @param collectionId - the id of the collection
+     * @return a list of titles in the database
+     */
+    public List<String> fetchNoteTitles(final long collectionId) {
+        String endpoint = "api/collections/" + collectionId + "/notes/titles";
+
+        try {
+            var response = ClientBuilder.newClient()
+                    .target(SERVER)
+                    .path(endpoint)
+                    .request(MediaType.APPLICATION_JSON)
+                    .get();
+
+            if (response.getStatus() == Response.Status.OK.getStatusCode()) {
+                String json = response.readEntity(String.class);
+                ObjectMapper mapper = new ObjectMapper();
+                return mapper.readValue(json, new TypeReference<List<String>>() {});
+            } else {
+                System.err.println(
+                        "Failed to fetch note titles for collection ID "
+                                + collectionId
+                                + ". Status code: "
+                                + response.getStatus()
+                );
+                return new ArrayList<>();
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching note titles for collection ID "
+                    + collectionId + ": "
+                    + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
+
 
     /**
      * This method saves the image to the server
