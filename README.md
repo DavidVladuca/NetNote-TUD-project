@@ -1,3 +1,7 @@
+# Short context about this project
+This project was developed as part of the TU Delft **Collaborative Software Engineering Project (CSEP)** course by a team of 5 over 10 weeks. We built **NetNote**, a distributed JavaFX note-taking application with a Spring Boot backend. We had weekly meetings to discuss milestones and get feedback from a teaching assistant (TA), and we overcame numerous challenges. In the end, we delivered a functional and aesthetically pleasing product on time. The following sections are from the README we built for the course.
+
+
 # CSEP Template Project
 
 To run the project from the command line, you either need to have [Maven](https://maven.apache.org/install.html) installed on your local system (`mvn`) or you need to use the Maven wrapper (`mvnw`). You can then execute
