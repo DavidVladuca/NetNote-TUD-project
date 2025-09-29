@@ -5208,3 +5208,9 @@ Caused by: org.h2.mvstore.MVStoreException: The file is locked: D:/SCHOOL/csep-t
 	at org.h2.mvstore.SingleFileStore.open(SingleFileStore.java:81)
 	at org.h2.mvstore.MVStore.<init>(MVStore.java:286)
 	... 58 more
+2025-09-29 13:27:13.689034+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "BODY CHARACTER VARYING(255)": "U&'<h2>This is how the app works </h1>\\000a\\000a<h3>You can have many types of t... (256)"; SQL statement:
+update note set body=?,collection_id=?,title=? where note_id=? [22001-224]
+2025-09-29 13:27:14.685577+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "BODY CHARACTER VARYING(255)": "U&'<h2>This is how the app works </h1>\\000a\\000a<h3>You can have many types of t... (260)"; SQL statement:
+update note set body=?,collection_id=?,title=? where note_id=? [22001-224]
