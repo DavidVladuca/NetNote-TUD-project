@@ -16,6 +16,8 @@ to start the server or ...
 
 to run the client. Please note that the server needs to be running, before you can start the client.
 
+<img width="1002" height="634" alt="image" src="https://github.com/user-attachments/assets/a91c26ea-98ee-4abe-b4f5-2b8cb9d192e8" />
+
 
 # Tutorial for the TAs :-)
 
